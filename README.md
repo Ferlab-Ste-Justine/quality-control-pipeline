@@ -1,3 +1,4 @@
+# quality-control-pipeline
 This minimalist template is meant to loosely follow nf-core guidelines without fully adhering to the open-source policy.
 It was created using nf-core create while skipping a maximum of steps, then by removing the modules and as many non-generic options as possible.
 
