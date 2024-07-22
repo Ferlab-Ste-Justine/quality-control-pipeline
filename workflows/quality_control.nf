@@ -14,7 +14,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_temp
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow TEMPLATE-NFCORE {
+workflow QUALITY_CONTROL {
 
     take:
     ch_samplesheet // channel: samplesheet read in from --input
