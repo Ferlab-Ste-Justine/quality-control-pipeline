@@ -24,9 +24,7 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     //               For Conda, the build (i.e. "h9402c20_2") must be EXCLUDED to support installation on different operating systems.
     // TODO nf-core: See section in main README for further information regarding finding and adding container addresses to the section below.
     conda "${moduleDir}/environment.yml"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
+    container "community.wave.seqera.io/library/python_pip_matplotlib_numpy_pandas:fdebccba073d233c"
 
     input:
     path coverage_per_contig
@@ -54,7 +52,7 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     // TODO nf-core: Please replace the example samtools command below with your module's command
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    python analyse_mosdepth.py ${args} $coverage_per_contig $multiqc_general_stats
+    python3 analyse_mosdepth.py ${args} $coverage_per_contig $multiqc_general_stats
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -19,12 +19,15 @@ tools:
 
 ## TODO nf-core: Add a description of all of the variables used as input
 input:
-  #
-  ## TODO nf-core: Delete / customise this example input
-  - bam:
-      type: file
-      description: Sorted BAM/CRAM/SAM file
-      pattern: "*.{bam,cram,sam}"
+  - coverage_per_contig:
+      type: path
+      description: path to coverage_per_contig info from multiqc results
+      pattern: "mqc_mosdepth-coverage-per-contig_1.txt"
+
+  - multiqc_general_stats:
+      type: path
+      description: path to multiqc_general_stats
+      pattern: "multiqc_general_stats.txt"
 
 ## TODO nf-core: Add a description of all of the variables used as output
 output:
@@ -34,10 +37,10 @@ output:
       description: File containing software versions
       pattern: "versions.yml"
   ## TODO nf-core: Delete / customise this example output
-  - bam:
+  - erreurs_de_couvertures_par_region:
       type: file
-      description: Sorted BAM/CRAM/SAM file
-      pattern: "*.{bam,cram,sam}"
+      description: txt file
+      pattern: "erreurs_de_couvertures_par_region.txt"
 
 authors:
   - "@remrem08007"
