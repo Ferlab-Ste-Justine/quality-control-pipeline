@@ -38,7 +38,7 @@ workflow FERLAB_TEMPLATE-NFCORE {
     //
     // WORKFLOW: Run pipeline
     //
-    TEMPLATE-NFCORE (
+    QUALITY_CONTROL (
         samplesheet
     )
 
