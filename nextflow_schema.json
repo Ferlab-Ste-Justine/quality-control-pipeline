@@ -41,15 +41,16 @@
         "config_profile_name": {
           "type": "string",
           "description": "Institutional config name.",
-          "fa_icon": "fas fa-users-cog"
+          "fa_icon": "fas fa-users-cog",
+          "hidden": true
         },
         "config_profile_description": {
           "type": "string",
           "description": "Institutional config description.",
-          "fa_icon": "fas fa-users-cog"
+          "fa_icon": "fas fa-users-cog",
+          "hidden": true
         }
-      },
-      "required": ["config_profile_name", "config_profile_description"]
+      }
     },
     "max_job_request_options": {
       "title": "Max job request options",
@@ -182,6 +183,10 @@
   "properties": {
     "coverage_per_contig": {
       "type": "string"
+    },
+    "multiqc_general_stats": {
+      "type": "string"
     }
-  }
+  },
+  "required": ["coverage_per_contig", "multiqc_general_stats"]
 }
