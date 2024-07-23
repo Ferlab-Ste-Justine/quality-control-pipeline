@@ -15,7 +15,7 @@ nextflow.enable.dsl = 2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { TEMPLATE-NFCORE  } from './workflows/template-nfcore'
+include { QUALITY_CONTROL  } from './workflows/quality_control'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_template-nfcore_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_template-nfcore_pipeline'
 
@@ -28,7 +28,7 @@ include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_temp
 //
 // WORKFLOW: Run main analysis pipeline depending on type of input
 //
-workflow FERLAB_TEMPLATE-NFCORE {
+workflow QUALITY_CONTROL_PIPELINE {
 
     take:
     samplesheet // channel: samplesheet read in from --input
@@ -72,7 +72,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    FERLAB_TEMPLATE-NFCORE (
+    QUALITY_CONTROL_PIPELINE (
         PIPELINE_INITIALISATION.out.samplesheet
     )
 
