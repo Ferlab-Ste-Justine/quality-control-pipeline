@@ -1,2 +1,6 @@
-# Ignore virtual environment directory
+*.log.*
+*.log
+results
+multiqc
+.nextflow# Ignore virtual environment directory
 venv
