@@ -86,7 +86,7 @@ pon                     = params.pon                     ? Channel.fromPath(para
 workflow QUALITY_CONTROL_PIPELINE {
 
     take:
-    samplesheet // channel: samplesheet read in from --input
+    // samplesheet // channel: samplesheet read in from --input
 
     main:
     versions = Channel.empty()
@@ -211,7 +211,7 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     QUALITY_CONTROL_PIPELINE (
-        PIPELINE_INITIALISATION.out.samplesheet
+        // PIPELINE_INITIALISATION.out.samplesheet
     )
 
     //
