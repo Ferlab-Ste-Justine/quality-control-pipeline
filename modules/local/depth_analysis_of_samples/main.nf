@@ -52,7 +52,7 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     // TODO nf-core: Please replace the example samtools command below with your module's command
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    python3 analyse_mosdepth.py ${args} $coverage_per_contig $multiqc_general_stats
+    analyse_mosdepth.py ${args} $coverage_per_contig $multiqc_general_stats
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -1,7 +1,9 @@
+#!/usr/bin/env python3
+
+import statistics
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import statistics
 
 reads_mapped = []
 sample_names = []
@@ -13,7 +15,7 @@ flagged_high_MQ0_samples = []
 flagged_high_unmapped_samples = []
 flagged_high_reads_QC_failed_percent = []
 
-samtools_df = pd.read_table("multiqc_samtools_stats.txt", 
+samtools_df = pd.read_table("multiqc/multiqc_data/multiqc_samtools_stats.txt", 
                             usecols=['reads_mapped', 'Sample', 'reads_MQ0',
                                      'reads_unmapped',
                                      'reads_QC_failed_percent'],)
