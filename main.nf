@@ -42,8 +42,8 @@ workflow QUALITY_CONTROL_PIPELINE {
         samplesheet
     )
 
-    emit:
-    multiqc_report = QUALITY_CONTROL_PIPELINE.out.multiqc_report // channel: /path/to/multiqc_report.html
+    // emit:
+    // multiqc_report = QUALITY_CONTROL_PIPELINE.out.multiqc_report // channel: /path/to/multiqc_report.html
 
 }
 /*
