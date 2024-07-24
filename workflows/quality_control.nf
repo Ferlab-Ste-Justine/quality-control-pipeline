@@ -28,7 +28,7 @@ workflow QUALITY_CONTROL {
     ch_multiqc_general_stats = Channel.fromPath(params.multiqc_general_stats)
 
 
-    DEPTH_ANALYSIS_OF_SAMPLES(coverage_per_contig: ch_coverage_per_contig, multiqc_general_stats: ch_multiqc_general_stats)
+    DEPTH_ANALYSIS_OF_SAMPLES(ch_coverage_per_contig, ch_multiqc_general_stats)
 
     // Collate and save software versions
     softwareVersionsToYAML(ch_versions)
