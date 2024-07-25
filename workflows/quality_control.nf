@@ -5,6 +5,7 @@
 */
 
 include { DEPTH_ANALYSIS_OF_SAMPLES } from '../modules/local/depth_analysis_of_samples'
+include { SAMTOOLS_ANALYSIS_OF_SAMPLES } from '../modules/local/samtools_analysis_of_samples'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'

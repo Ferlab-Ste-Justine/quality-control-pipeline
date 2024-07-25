@@ -57,6 +57,7 @@ aligner = params.aligner
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+<<<<<<< HEAD
 include { QUALITY_CONTROL                   } from './workflows/quality_control'
 include { PIPELINE_INITIALISATION           } from './subworkflows/local/utils_nfcore_template_pipeline'
 include { PIPELINE_COMPLETION               } from './subworkflows/local/utils_nfcore_template_pipeline'
@@ -76,6 +77,11 @@ germline_resource       = params.germline_resource       ? Channel.fromPath(para
 known_indels            = params.known_indels            ? Channel.fromPath(params.known_indels).collect()              : Channel.value([])
 known_snps              = params.known_snps              ? Channel.fromPath(params.known_snps).collect()                : Channel.value([])
 pon                     = params.pon                     ? Channel.fromPath(params.pon).collect()                       : Channel.value([]) // PON is optional for Mutect2 (but highly recommended)
+=======
+include { QUALITY_CONTROL  } from './workflows/quality_control'
+include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_mypipeline_pipeline'
+include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_mypipeline_pipeline'
+>>>>>>> 4f9421f (Made it work again)
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

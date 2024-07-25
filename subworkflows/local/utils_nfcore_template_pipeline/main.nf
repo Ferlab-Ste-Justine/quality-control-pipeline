@@ -78,6 +78,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Create channel from input file provided through params.input
     //
+<<<<<<< HEAD:subworkflows/local/utils_nfcore_template_pipeline/main.nf
     params.input_restart = retrieveInput((!params.build_only_index && !params.input), params.step, params.outdir)
 
     ch_from_samplesheet = params.build_only_index ? Channel.empty() : params.input ? Channel.fromSamplesheet("input") : Channel.fromSamplesheet("input_restart")
@@ -116,6 +117,28 @@ workflow PIPELINE_INITIALISATION {
     emit:
     samplesheet = SAMPLESHEET_TO_CHANNEL.out.input_sample
     versions    = ch_versions
+=======
+    // Channel
+    //     .fromSamplesheet("input")
+    //     .map {
+    //         meta, fastq_1, fastq_2 ->
+    //             if (!fastq_2) {
+    //                 return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
+    //             } else {
+    //                 return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
+    //             }
+    //     }
+    //     .groupTuple()
+    //     .map {
+    //         meta, fastqs ->
+    //             return [ meta, fastqs.flatten() ]
+    //     }
+    //     .set { ch_samplesheet }
+
+    // emit:
+    // samplesheet = ch_samplesheet
+    // versions    = ch_versions
+>>>>>>> 4f9421f (Made it work again):subworkflows/local/utils_nfcore_mypipeline_pipeline/main.nf
 }
 
 /*
