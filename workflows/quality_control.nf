@@ -16,7 +16,7 @@ include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pi
 workflow QUALITY_CONTROL {
 
     take:
-    ch_samplesheet // channel: samplesheet read in from --input
+    // ch_samplesheet // channel: samplesheet read in from --input
 
     main:
     ch_versions = Channel.empty()

@@ -31,16 +31,14 @@ include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_temp
 workflow QUALITY_CONTROL_PIPELINE {
 
     take:
-    samplesheet // channel: samplesheet read in from --input
+    // samplesheet // channel: samplesheet read in from --input
 
     main:
 
     //
     // WORKFLOW: Run pipeline
     //
-    QUALITY_CONTROL (
-        samplesheet
-    )
+    QUALITY_CONTROL ()
 
     // emit:
     // multiqc_report = QUALITY_CONTROL_PIPELINE.out.multiqc_report // channel: /path/to/multiqc_report.html
@@ -73,7 +71,7 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     QUALITY_CONTROL_PIPELINE (
-        PIPELINE_INITIALISATION.out.samplesheet
+        // PIPELINE_INITIALISATION.out.samplesheet
     )
 
     //
