@@ -2,5 +2,7 @@
 *.log
 results
 multiqc
-.nextflow# Ignore virtual environment directory
+.nextflow
+# Ignore virtual environment directory
 venv
+work
