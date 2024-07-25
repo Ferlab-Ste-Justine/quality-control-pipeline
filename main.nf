@@ -16,8 +16,8 @@ nextflow.enable.dsl = 2
 */
 
 include { QUALITY_CONTROL  } from './workflows/quality_control'
-include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_template-nfcore_pipeline'
-include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_template-nfcore_pipeline'
+include { PIPELINE_INITIALISATION } from 'subworkflows/local/utils_nfcore_mypipeline_pipeline'
+include { PIPELINE_COMPLETION     } from 'subworkflows/local/utils_nfcore_mypipeline_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
