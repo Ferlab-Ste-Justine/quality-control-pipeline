@@ -1,6 +1,6 @@
 {
-  "name": "ferlab/template-nfcore",
-  "homePage": "https://github.com/ferlab/template-nfcore",
+  "name": "ferlab/mypipeline",
+  "homePage": "https://github.com/ferlab/mypipeline",
   "repos": {
     "https://github.com/nf-core/modules.git": {
       "subworkflows": {
