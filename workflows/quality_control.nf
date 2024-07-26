@@ -5,6 +5,7 @@
 */
 
 include { DEPTH_ANALYSIS_OF_SAMPLES } from '../modules/local/depth_analysis_of_samples'
+include { SAMTOOLS_ANALYSIS_OF_SAMPLES } from '../modules/local/samtools_analysis_of_samples'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 /*
@@ -25,8 +26,11 @@ workflow QUALITY_CONTROL {
     ch_coverage_per_contig = Channel.fromPath(params.coverage_per_contig)
     ch_multiqc_general_stats = Channel.fromPath(params.multiqc_general_stats)
 
-
     DEPTH_ANALYSIS_OF_SAMPLES(ch_coverage_per_contig, ch_multiqc_general_stats)
+
+    ch_multiqc_samtools_stats = Channel.fromPath(params.multiqc_samtools_stats)
+
+    SAMTOOLS_ANALYSIS_OF_SAMPLES(ch_multiqc_samtools_stats)
 
     // Collate and save software versions
     softwareVersionsToYAML(ch_versions)

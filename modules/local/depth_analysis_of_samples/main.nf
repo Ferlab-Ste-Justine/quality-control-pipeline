@@ -34,6 +34,7 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     path "erreurs_de_couvertures_par_region.txt", emit: errors_by_region
     path "erreurs_de_couvertures_mediane.txt", emit: errors_by_median
     path "erreurs_de_couvertures_anormales.txt", emit: errors_by_outliers
+    path "mosdepth_analysis_output.txt", emit: mosdepth_analysis
     path "versions.yml", emit: versions
 
     when:
@@ -52,7 +53,7 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     // TODO nf-core: Please replace the example samtools command below with your module's command
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    analyse_mosdepth.py ${args} $coverage_per_contig $multiqc_general_stats
+    analyse_mosdepth.py ${args} $coverage_per_contig $multiqc_general_stats > mosdepth_analysis_output.txt 2>&1
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -71,6 +72,7 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     touch erreurs_de_couvertures_par_region.txt
     touch erreurs_de_couvertures_mediane.txt
     touch erreurs_de_couvertures_anormales.txt
+    touch mosdepth_analysis_output.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

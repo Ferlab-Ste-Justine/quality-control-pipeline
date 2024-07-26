@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 
+import os
 import statistics
-import pandas as pd
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+
+path_multiqc_samtools_stats = sys.argv[1]
 
 reads_mapped = []
 sample_names = []
@@ -15,7 +19,7 @@ flagged_high_MQ0_samples = []
 flagged_high_unmapped_samples = []
 flagged_high_reads_QC_failed_percent = []
 
-samtools_df = pd.read_table("multiqc/multiqc_data/multiqc_samtools_stats.txt", 
+samtools_df = pd.read_table(path_multiqc_samtools_stats, 
                             usecols=['reads_mapped', 'Sample', 'reads_MQ0',
                                      'reads_unmapped',
                                      'reads_QC_failed_percent'],)
@@ -150,6 +154,10 @@ plt.axhspan(highlight_band_bottom, highlight_band_top, color='red', alpha=0.3,
 plt.title('Représentation graphique du nombre de mapped reads, du nombre\n' +
           'reads avec un mapping quality de 0 et du nombre de unmapped reads')
 plt.legend()
-plt.show()
+
+if not os.path.exists('samtools_reads_plot'):
+    os.makedirs('samtools_reads_plot')
+
+plt.savefig('samtools_reads_plot/samtools_reads_info.png')
 
 # Plotting
