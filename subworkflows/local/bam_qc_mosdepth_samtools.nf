@@ -9,7 +9,7 @@ include { MOSDEPTH           } from '../../../modules/nf-core/mosdepth/main'
 
 workflow CRAM_QC_MOSDEPTH_SAMTOOLS {
     take:
-    cram                          // channel: [mandatory] [ meta, cram, crai ]
+    bam                          // channel: [mandatory] [ meta, bam, bai ]
     fasta                         // channel: [mandatory] [ fasta ]
     intervals
 
@@ -17,10 +17,10 @@ workflow CRAM_QC_MOSDEPTH_SAMTOOLS {
     versions = Channel.empty()
     reports = Channel.empty()
 
-    // Reports run on cram
-    SAMTOOLS_STATS(cram, fasta)
+    // Reports run on bam
+    SAMTOOLS_STATS(bam, fasta)
 
-    MOSDEPTH(cram.combine(intervals.map{ meta, bed -> [ bed ?: [] ] }), fasta)
+    MOSDEPTH(bam.combine(intervals.map{ meta, bed -> [ bed ?: [] ] }), fasta)
 
     // Gather all reports generated
     reports = reports.mix(SAMTOOLS_STATS.out.stats)
