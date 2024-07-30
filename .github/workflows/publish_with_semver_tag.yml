@@ -18,4 +18,5 @@ jobs:
           password: ${{ secrets.FERLAB_DOCKER_HUB_TOKEN }}
           image: ferlabcrsj/qc-pipeline-python
           location: containers/python
+          dockerfile: containers/python/Dockerfile
           tag_format: "{semver}"
