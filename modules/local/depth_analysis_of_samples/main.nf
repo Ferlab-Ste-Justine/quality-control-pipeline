@@ -24,17 +24,17 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     //               For Conda, the build (i.e. "h9402c20_2") must be EXCLUDED to support installation on different operating systems.
     // TODO nf-core: See section in main README for further information regarding finding and adding container addresses to the section below.
     conda "${moduleDir}/environment.yml"
-    container "community.wave.seqera.io/library/python_pip_matplotlib_numpy_pandas:fdebccba073d233c"
+    container "qc-pipeline-python:dev"
 
     input:
     path coverage_per_contig
     path multiqc_general_stats
 
     output:
-    path "erreurs_de_couvertures_par_region.txt", emit: errors_by_region
-    path "erreurs_de_couvertures_mediane.txt", emit: errors_by_median
-    path "erreurs_de_couvertures_anormales.txt", emit: errors_by_outliers
-    path "mosdepth_analysis_output.txt", emit: mosdepth_analysis
+    path "errors/erreurs_de_couvertures_par_region.txt", emit: errors_by_region
+    path "errors/erreurs_de_couvertures_mediane.txt", emit: errors_by_median
+    path "errors/erreurs_de_couvertures_anormales.txt", emit: errors_by_outliers
+    path "command_output_analyse_mosdepth/mosdepth_analysis_output.txt", emit: mosdepth_analysis
     path "versions.yml", emit: versions
 
     when:
@@ -53,7 +53,8 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     // TODO nf-core: Please replace the example samtools command below with your module's command
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    analyse_mosdepth.py ${args} $coverage_per_contig $multiqc_general_stats > mosdepth_analysis_output.txt 2>&1
+    mkdir -p command_output_analyse_mosdepth
+    analyse_mosdepth.py ${args} $coverage_per_contig $multiqc_general_stats > command_output_analyse_mosdepth/mosdepth_analysis_output.txt 2>&1
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
