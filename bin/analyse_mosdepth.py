@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import pandas as pd
+import os
 import sys
+import pandas as pd
 
 couverture_region_minimale = float(sys.argv[1])
 couverture_mediane_minimale = float(sys.argv[2])
@@ -62,10 +63,13 @@ if mosdepth_per_region_df.isin([0]).any().any():
     print("Pour plus de détails sur les régions manquantes," +
           " veuillez consulter le fichier de sortie " +
           "\'erreurs_de_couvertures_par_region.txt\'\n")
+    
+    if not os.path.exists('errors'):
+        os.makedirs('errors')
 
     try:
         # Ouvrir le fichier en mode écriture
-        with open('erreurs_de_couvertures_par_region.txt', 'w') as f:
+        with open('errors/erreurs_de_couvertures_par_region.txt', 'w') as f:
             f.write("Sample\tChromosome\tCoverage\n")
             for _, row in problems_df.iterrows():
                 f.write(f"{row['Sample']}\t{row['Chromosome']}\t" +
@@ -121,7 +125,7 @@ if mosdepth_general_df['Mosdepth_mqc-generalstats-' +
 
     try:
         # Write the details to the output file
-        with open('erreurs_de_couvertures_mediane.txt', 'w') as f:
+        with open('errors/erreurs_de_couvertures_mediane.txt', 'w') as f:
             f.write("Sample\tMedian_coverage\n")
             for _, row in problems_df.iterrows():
                 f.write(f"{row['Sample']}\t{row['Median_coverage']}\n")
@@ -160,7 +164,7 @@ if not (outliers['Mosdepth_mqc-generalstats-mosdepth-1_x_pc'].isna().all() and o
           "'erreurs_de_couvertures_anormales.txt'")
     try:
         # Écrire les détails dans le fichier de sortie
-        with open('erreurs_de_couvertures_anormales.txt', 'w') as f:
+        with open('errors/erreurs_de_couvertures_anormales.txt', 'w') as f:
             f.write("Sample\t1x\t5x\t10x\t30x\t50x\n")
             for _, row in outliers.iterrows():
                 f.write(f"{row['Sample']}\t{row['Mosdepth_mqc-generalstats-mosdepth-1_x_pc']}\t{row['Mosdepth_mqc-generalstats-mosdepth-5_x_pc']}\t{row['Mosdepth_mqc-generalstats-mosdepth-10_x_pc']}\t{row['Mosdepth_mqc-generalstats-mosdepth-30_x_pc']}\t{row['Mosdepth_mqc-generalstats-mosdepth-50_x_pc']}\n")
