@@ -10,7 +10,7 @@
       "type": "object",
       "fa_icon": "fas fa-terminal",
       "description": "Define where the pipeline should find input data and save output data.",
-      "required": ["outdir", "input"],
+      "required": ["input", "outdir"],
       "properties": {
         "input": {
           "type": "string",
@@ -27,7 +27,8 @@
           "type": "string",
           "format": "directory-path",
           "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
-          "fa_icon": "fas fa-folder-open"
+          "fa_icon": "fas fa-folder-open",
+          "default": "results"
         }
       }
     },
@@ -154,7 +155,8 @@
           "fa_icon": "far fa-check-circle",
           "description": "Validation of parameters in lenient more.",
           "hidden": true,
-          "help_text": "Allows string values that are parseable as numbers or booleans. For further information see [JSONSchema docs](https://github.com/everit-org/json-schema#lenient-mode)."
+          "help_text": "Allows string values that are parseable as numbers or booleans. For further information see [JSONSchema docs](https://github.com/everit-org/json-schema#lenient-mode).",
+          "default": true
         },
         "pipelines_testdata_base_path": {
           "type": "string",
@@ -186,7 +188,404 @@
     },
     "multiqc_general_stats": {
       "type": "string"
+    },
+    "multiqc_samtools_stats": {
+      "type": "string"
+    },
+    "input_restart": {
+      "type": "string"
+    },
+    "step": {
+      "type": "string",
+      "default": "mapping",
+      "hidden": true
+    },
+    "genome": {
+      "type": "string",
+      "default": "GATK.GRCh38"
+    },
+    "snpeff_cache": {
+      "type": "string",
+      "default": "s3://annotation-cache/snpeff_cache/"
+    },
+    "vep_cache": {
+      "type": "string",
+      "default": "s3://annotation-cache/vep_cache/"
+    },
+    "igenomes_ignore": {
+      "type": "boolean"
+    },
+    "save_reference": {
+      "type": "boolean"
+    },
+    "build_only_index": {
+      "type": "boolean"
+    },
+    "download_cache": {
+      "type": "boolean"
+    },
+    "no_intervals": {
+      "type": "boolean"
+    },
+    "nucleotides_per_second": {
+      "type": "integer",
+      "default": 200000
+    },
+    "tools": {
+      "type": "string"
+    },
+    "skip_tools": {
+      "type": "string"
+    },
+    "split_fastq": {
+      "type": "integer",
+      "default": 50000000
+    },
+    "trim_fastq": {
+      "type": "boolean"
+    },
+    "clip_r1": {
+      "type": "integer",
+      "default": 0
+    },
+    "clip_r2": {
+      "type": "integer",
+      "default": 0
+    },
+    "three_prime_clip_r1": {
+      "type": "integer",
+      "default": 0
+    },
+    "three_prime_clip_r2": {
+      "type": "integer",
+      "default": 0
+    },
+    "trim_nextseq": {
+      "type": "integer",
+      "default": 0
+    },
+    "save_trimmed": {
+      "type": "boolean"
+    },
+    "save_split_fastqs": {
+      "type": "boolean"
+    },
+    "umi_read_structure": {
+      "type": "string"
+    },
+    "group_by_umi_strategy": {
+      "type": "string",
+      "default": "Adjacency"
+    },
+    "aligner": {
+      "type": "string",
+      "default": "bwa-mem"
+    },
+    "use_gatk_spark": {
+      "type": "string"
+    },
+    "save_mapped": {
+      "type": "boolean"
+    },
+    "save_output_as_bam": {
+      "type": "boolean"
+    },
+    "seq_center": {
+      "type": "string"
+    },
+    "seq_platform": {
+      "type": "string",
+      "default": "ILLUMINA"
+    },
+    "ascat_ploidy": {
+      "type": "string"
+    },
+    "ascat_min_base_qual": {
+      "type": "integer",
+      "default": 20
+    },
+    "ascat_min_counts": {
+      "type": "integer",
+      "default": 10
+    },
+    "ascat_min_map_qual": {
+      "type": "integer",
+      "default": 35
+    },
+    "ascat_purity": {
+      "type": "string"
+    },
+    "cf_coeff": {
+      "type": "number",
+      "default": 0.05
+    },
+    "cf_contamination": {
+      "type": "integer",
+      "default": 0
+    },
+    "cf_contamination_adjustment": {
+      "type": "boolean"
+    },
+    "cf_mincov": {
+      "type": "integer",
+      "default": 0
+    },
+    "cf_minqual": {
+      "type": "integer",
+      "default": 0
+    },
+    "cf_window": {
+      "type": "string"
+    },
+    "cnvkit_reference": {
+      "type": "string"
+    },
+    "concatenate_vcfs": {
+      "type": "boolean"
+    },
+    "ignore_soft_clipped_bases": {
+      "type": "boolean"
+    },
+    "joint_germline": {
+      "type": "boolean"
+    },
+    "joint_mutect2": {
+      "type": "boolean"
+    },
+    "only_paired_variant_calling": {
+      "type": "boolean"
+    },
+    "sentieon_dnascope_emit_mode": {
+      "type": "string",
+      "default": "variant"
+    },
+    "sentieon_dnascope_pcr_indel_model": {
+      "type": "string",
+      "default": "CONSERVATIVE"
+    },
+    "sentieon_haplotyper_emit_mode": {
+      "type": "string",
+      "default": "variant"
+    },
+    "wes": {
+      "type": "boolean"
+    },
+    "bcftools_annotations": {
+      "type": "string"
+    },
+    "bcftools_annotations_tbi": {
+      "type": "string"
+    },
+    "bcftools_header_lines": {
+      "type": "string"
+    },
+    "dbnsfp": {
+      "type": "string"
+    },
+    "dbnsfp_consequence": {
+      "type": "string"
+    },
+    "dbnsfp_fields": {
+      "type": "string",
+      "default": "rs_dbSNP,HGVSc_VEP,HGVSp_VEP,1000Gp3_EAS_AF,1000Gp3_AMR_AF,LRT_score,GERP++_RS,gnomAD_exomes_AF"
+    },
+    "dbnsfp_tbi": {
+      "type": "string"
+    },
+    "outdir_cache": {
+      "type": "string"
+    },
+    "spliceai_indel": {
+      "type": "string"
+    },
+    "spliceai_indel_tbi": {
+      "type": "string"
+    },
+    "spliceai_snv": {
+      "type": "string"
+    },
+    "spliceai_snv_tbi": {
+      "type": "string"
+    },
+    "vep_custom_args": {
+      "type": "string",
+      "default": "--everything --filter_common --per_gene --total_length --offline --format vcf"
+    },
+    "vep_dbnsfp": {
+      "type": "string"
+    },
+    "vep_include_fasta": {
+      "type": "boolean"
+    },
+    "vep_loftee": {
+      "type": "string"
+    },
+    "vep_out_format": {
+      "type": "string",
+      "default": "vcf"
+    },
+    "vep_spliceai": {
+      "type": "string"
+    },
+    "vep_spliceregion": {
+      "type": "string"
+    },
+    "vep_version": {
+      "type": "string",
+      "default": "111.0-0"
+    },
+    "multiqc_config": {
+      "type": "string"
+    },
+    "multiqc_title": {
+      "type": "string"
+    },
+    "multiqc_logo": {
+      "type": "string"
+    },
+    "max_multiqc_email_size": {
+      "type": "string",
+      "default": "25.MB"
+    },
+    "multiqc_methods_description": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "email_on_fail": {
+      "type": "string"
+    },
+    "plaintext_email": {
+      "type": "boolean"
+    },
+    "hook_url": {
+      "type": "string"
+    },
+    "custom_config_version": {
+      "type": "string",
+      "default": "master"
+    },
+    "custom_config_base": {
+      "type": "string",
+      "default": "/Volumes/Untitled/ferlab-template-nfcore/../configs/"
+    },
+    "config_profile_contact": {
+      "type": "string"
+    },
+    "config_profile_url": {
+      "type": "string"
+    },
+    "test_data_base": {
+      "type": "string",
+      "default": "https://raw.githubusercontent.com/nf-core/test-datasets/sarek3"
+    },
+    "modules_testdata_base_path": {
+      "type": "string"
+    },
+    "ascat_alleles": {
+      "type": "string"
+    },
+    "ascat_genome": {
+      "type": "string"
+    },
+    "ascat_loci": {
+      "type": "string"
+    },
+    "ascat_loci_gc": {
+      "type": "string"
+    },
+    "ascat_loci_rt": {
+      "type": "string"
+    },
+    "bwa": {
+      "type": "string"
+    },
+    "bwamem2": {
+      "type": "string"
+    },
+    "cf_chrom_len": {
+      "type": "string"
+    },
+    "chr_dir": {
+      "type": "string"
+    },
+    "dbsnp": {
+      "type": "string"
+    },
+    "dbsnp_tbi": {
+      "type": "string"
+    },
+    "dbsnp_vqsr": {
+      "type": "string"
+    },
+    "dict": {
+      "type": "string"
+    },
+    "dragmap": {
+      "type": "string"
+    },
+    "fasta": {
+      "type": "string"
+    },
+    "fasta_fai": {
+      "type": "string"
+    },
+    "germline_resource": {
+      "type": "string"
+    },
+    "germline_resource_tbi": {
+      "type": "string"
+    },
+    "intervals": {
+      "type": "string"
+    },
+    "known_indels": {
+      "type": "string"
+    },
+    "known_indels_tbi": {
+      "type": "string"
+    },
+    "known_indels_vqsr": {
+      "type": "string"
+    },
+    "known_snps": {
+      "type": "string"
+    },
+    "known_snps_tbi": {
+      "type": "string"
+    },
+    "known_snps_vqsr": {
+      "type": "string"
+    },
+    "mappability": {
+      "type": "string"
+    },
+    "ngscheckmate_bed": {
+      "type": "string"
+    },
+    "pon": {
+      "type": "string"
+    },
+    "pon_tbi": {
+      "type": "string"
+    },
+    "sentieon_dnascope_model": {
+      "type": "string"
+    },
+    "snpeff_genome": {
+      "type": "string"
+    },
+    "vep_genome": {
+      "type": "string"
+    },
+    "vep_species": {
+      "type": "string"
     }
   },
-  "required": ["coverage_per_contig", "multiqc_general_stats"]
+  "required": [
+    "coverage_per_contig",
+    "multiqc_general_stats",
+    "multiqc_samtools_stats"
+  ]
 }

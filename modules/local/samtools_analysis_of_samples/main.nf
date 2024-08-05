@@ -24,14 +24,14 @@ process SAMTOOLS_ANALYSIS_OF_SAMPLES {
     //               For Conda, the build (i.e. "h9402c20_2") must be EXCLUDED to support installation on different operating systems.
     // TODO nf-core: See section in main README for further information regarding finding and adding container addresses to the section below.
     conda "${moduleDir}/environment.yml"
-    container "community.wave.seqera.io/library/python_pip_matplotlib_numpy_pandas:fdebccba073d233c"
+    container "qc-pipeline-python:dev"
 
     input:
     path multiqc_samtools_stats
 
     output:
     path "samtools_reads_plot/samtools_reads_info.png", emit: reads_info
-    path "samtools_analysis_output.txt", emit: samtools_analysis
+    path "command_output_analyse_samtools/samtools_analysis_output.txt", emit: samtools_analysis
     path "versions.yml", emit: versions
 
     when:
@@ -50,7 +50,8 @@ process SAMTOOLS_ANALYSIS_OF_SAMPLES {
     // TODO nf-core: Please replace the example samtools command below with your module's command
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    analyse_samtools.py $multiqc_samtools_stats > samtools_analysis_output.txt 2>&1
+    mkdir -p command_output_analyse_samtools
+    analyse_samtools.py $multiqc_samtools_stats > command_output_analyse_samtools/samtools_analysis_output.txt 2>&1
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

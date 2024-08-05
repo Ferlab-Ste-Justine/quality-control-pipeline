@@ -5,19 +5,96 @@
     "https://github.com/nf-core/modules.git": {
       "modules": {
         "nf-core": {
+          "bwa/index": {
+            "branch": "master",
+            "git_sha": "e0ff65e1fb313677de09f5f477ae3da30ce19b7b",
+            "installed_by": ["modules"]
+          },
+          "bwamem2/index": {
+            "branch": "master",
+            "git_sha": "7081e04c18de9480948d34513a1c1e2d0fa9126d",
+            "installed_by": ["modules"]
+          },
+          "dragmap/hashtable": {
+            "branch": "master",
+            "git_sha": "ae9e01cb5e77faada314047e78423b22b4f5bbc5",
+            "installed_by": ["modules"]
+          },
+          "ensemblvep/download": {
+            "branch": "master",
+            "git_sha": "3db4f8488315cd7d7cf3fcb64251f6603210e831",
+            "installed_by": ["modules"]
+          },
+          "gatk4/createsequencedictionary": {
+            "branch": "master",
+            "git_sha": "e6fe277739f5894711405af3e717b2470bd956b5",
+            "installed_by": ["modules"]
+          },
+          "gatk4/intervallisttobed": {
+            "branch": "master",
+            "git_sha": "d742e3143f2ccb8853c29b35cfcf50b5e5026980",
+            "installed_by": ["modules"]
+          },
+          "gawk": {
+            "branch": "master",
+            "git_sha": "cf3ed075695639b0a0924eb0901146df1996dc08",
+            "installed_by": ["modules"]
+          },
           "mosdepth": {
             "branch": "master",
             "git_sha": "e0616fba0919adb190bfe070d17fb12d76ba3a26",
             "installed_by": ["modules"]
           },
+          "msisensorpro/scan": {
+            "branch": "master",
+            "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
+            "installed_by": ["modules"]
+          },
+          "multiqc": {
+            "branch": "master",
+            "git_sha": "b80f5fd12ff7c43938f424dd76392a2704fa2396",
+            "installed_by": ["modules"]
+          },
+          "samtools/convert": {
+            "branch": "master",
+            "git_sha": "04fbbc7c43cebc0b95d5b126f6d9fe4effa33519",
+            "installed_by": ["modules"]
+          },
+          "samtools/faidx": {
+            "branch": "master",
+            "git_sha": "04fbbc7c43cebc0b95d5b126f6d9fe4effa33519",
+            "installed_by": ["modules"]
+          },
+          "samtools/stats": {
           "samtools/index": {
             "branch": "master",
             "git_sha": "46eca555142d6e597729fcb682adcc791796f514",
             "installed_by": ["modules"]
           },
+          "snpeff/download": {
+            "branch": "master",
+            "git_sha": "214d575774c172062924ad3564b4f66655600730",
+            "installed_by": ["modules"]
+          },
+          "tabix/bgziptabix": {
           "samtools/stats": {
             "branch": "master",
             "git_sha": "46eca555142d6e597729fcb682adcc791796f514",
+            "installed_by": ["modules"]
+          },
+          "tabix/tabix": {
+            "branch": "master",
+            "git_sha": "0840b387799172e77510393ed09e4d4ec1bc6d7c",
+            "installed_by": ["modules"]
+          },
+          "untar": {
+            "branch": "master",
+            "git_sha": "4e5f4687318f24ba944a13609d3ea6ebd890737d",
+            "installed_by": ["modules"]
+          },
+          "unzip": {
+            "branch": "master",
+            "git_sha": "b0c3ff2485534c09d9debbf20125d9c6b72ce118",
             "installed_by": ["modules"]
           }
         }
