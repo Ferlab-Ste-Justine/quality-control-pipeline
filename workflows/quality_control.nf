@@ -76,7 +76,7 @@ workflow QUALITY_CONTROL {
     ch_multiqc_files                      = ch_multiqc_files.mix(version_yaml)
     ch_multiqc_files                      = ch_multiqc_files.mix(reports)
 
-    ch_multiqc_files.collect().view()
+    // ch_multiqc_files.collect().view()
 
     MULTIQC (
             ch_multiqc_files.collect(),
@@ -85,14 +85,11 @@ workflow QUALITY_CONTROL {
             ch_multiqc_logo.toList()
         )
 
-    ch_coverage_per_contig = Channel.fromPath(params.coverage_per_contig)
-    ch_multiqc_general_stats = Channel.fromPath(params.multiqc_general_stats)
+    ch_multiqc_data = MULTIQC.out.data
 
-    DEPTH_ANALYSIS_OF_SAMPLES(ch_coverage_per_contig, ch_multiqc_general_stats)
+    DEPTH_ANALYSIS_OF_SAMPLES(ch_multiqc_data)
 
-    ch_multiqc_samtools_stats = Channel.fromPath(params.multiqc_samtools_stats)
-
-    SAMTOOLS_ANALYSIS_OF_SAMPLES(ch_multiqc_samtools_stats)
+    SAMTOOLS_ANALYSIS_OF_SAMPLES(ch_multiqc_data)
 
     // // Collate and save software versions
     // softwareVersionsToYAML(versions)

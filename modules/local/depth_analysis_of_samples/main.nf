@@ -27,8 +27,7 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     container "qc-pipeline-python:dev"
 
     input:
-    path coverage_per_contig
-    path multiqc_general_stats
+    path multiqc_data
 
     output:
     path "errors/erreurs_de_couvertures_par_region.txt", emit: errors_by_region
@@ -42,6 +41,8 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
 
     script:
     def args = task.ext.args ?: ''
+    def coverage_per_contig = "$multiqc_data/mosdepth_perchrom.txt"
+    def multiqc_general_stats = "$multiqc_data/multiqc_general_stats.txt"
     
     // TODO nf-core: Where possible, a command MUST be provided to obtain the version number of the software e.g. 1.10
     //               If the software is unable to output a version number on the command-line then it can be manually specified
