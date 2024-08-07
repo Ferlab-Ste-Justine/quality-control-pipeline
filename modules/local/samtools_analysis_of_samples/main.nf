@@ -27,7 +27,7 @@ process SAMTOOLS_ANALYSIS_OF_SAMPLES {
     container "qc-pipeline-python:dev"
 
     input:
-    path multiqc_samtools_stats
+    path multiqc_data
 
     output:
     path "samtools_reads_plot/samtools_reads_info.png", emit: reads_info
@@ -39,6 +39,7 @@ process SAMTOOLS_ANALYSIS_OF_SAMPLES {
 
     script:
     def args = task.ext.args ?: ''
+    def multiqc_samtools_stats = "$multiqc_data/multiqc_samtools_stats.txt"
     
     // TODO nf-core: Where possible, a command MUST be provided to obtain the version number of the software e.g. 1.10
     //               If the software is unable to output a version number on the command-line then it can be manually specified
