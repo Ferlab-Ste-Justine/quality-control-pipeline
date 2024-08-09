@@ -15,8 +15,8 @@
 // TODO nf-core: Optional inputs are not currently supported by Nextflow. However, using an empty
 //               list (`[]`) instead of a file can be used to work around this issue.
 
-process DEPTH_ANALYSIS_OF_SAMPLES {
-    tag 'depth_analysis'
+process QC_ANALYSIS_SAMTOOLS_OF_SAMPLES {
+    tag 'samtools_analysis'
     label 'process_single'
 
     // TODO nf-core: List required Conda package(s).
@@ -30,12 +30,8 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     path multiqc_data
 
     output:
-    path "errors/erreurs_de_couvertures_par_region.txt", emit: errors_by_region, optional: true
-    path "errors/erreurs_de_couvertures_mediane.txt", emit: errors_by_median, optional: true
-    path "errors/erreurs_de_couvertures_anormales.txt", emit: errors_by_outliers, optional: true
-    path "qc_pass", emit: qc_pass, optional: true
-    path "qc_fail", emit: qc_fail, optional: true
-    path "command_output_analyse_mosdepth/mosdepth_analysis_output.txt", emit: mosdepth_analysis
+    path "samtools_reads_plot/samtools_reads_info.png", emit: reads_info
+    path "command_output_analyse_samtools/samtools_analysis_output.txt", emit: samtools_analysis
     path "versions.yml", emit: versions
 
     when:
@@ -43,8 +39,7 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
 
     script:
     def args = task.ext.args ?: ''
-    def coverage_per_contig = "$multiqc_data/mosdepth_perchrom.txt"
-    def multiqc_general_stats = "$multiqc_data/multiqc_general_stats.txt"
+    def multiqc_samtools_stats = "$multiqc_data/multiqc_samtools_stats.txt"
     
     // TODO nf-core: Where possible, a command MUST be provided to obtain the version number of the software e.g. 1.10
     //               If the software is unable to output a version number on the command-line then it can be manually specified
@@ -56,12 +51,12 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     // TODO nf-core: Please replace the example samtools command below with your module's command
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    mkdir -p command_output_analyse_mosdepth
-    analyse_mosdepth.py ${args} $coverage_per_contig $multiqc_general_stats > command_output_analyse_mosdepth/mosdepth_analysis_output.txt 2>&1
+    mkdir -p command_output_analyse_samtools
+    analyse_samtools.py $multiqc_samtools_stats > command_output_analyse_samtools/samtools_analysis_output.txt 2>&1
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        depth_analysis_of_samples: \$(python --version |& sed '1!d ; s/python //')
+        depth_analysis_of_samples: \$(python3 --version |& sed '1!d ; s/python3 //')
     END_VERSIONS
     """
 
@@ -73,14 +68,12 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     //               Simple example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bcftools/annotate/main.nf#L47-L63
     //               Complex example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bedtools/split/main.nf#L38-L54
     """
-    touch erreurs_de_couvertures_par_region.txt
-    touch erreurs_de_couvertures_mediane.txt
-    touch erreurs_de_couvertures_anormales.txt
-    touch mosdepth_analysis_output.txt
+    touch samtools_reads_info.png
+    touch samtools_analysis_output.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        depth_analysis_of_samples: \$(python --version |& sed '1!d ; s/python //')
+        depth_analysis_of_samples: \$(python3 --version |& sed '1!d ; s/python3 //')
     END_VERSIONS
     """
 }
