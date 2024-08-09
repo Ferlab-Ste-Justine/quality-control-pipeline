@@ -30,9 +30,11 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     path multiqc_data
 
     output:
-    path "errors/erreurs_de_couvertures_par_region.txt", emit: errors_by_region
-    path "errors/erreurs_de_couvertures_mediane.txt", emit: errors_by_median
-    path "errors/erreurs_de_couvertures_anormales.txt", emit: errors_by_outliers
+    path "errors/erreurs_de_couvertures_par_region.txt", emit: errors_by_region, optional: true
+    path "errors/erreurs_de_couvertures_mediane.txt", emit: errors_by_median, optional: true
+    path "errors/erreurs_de_couvertures_anormales.txt", emit: errors_by_outliers, optional: true
+    path "qc_pass", emit: qc_pass, optional: true
+    path "qc_fail", emit: qc_fail, optional: true
     path "command_output_analyse_mosdepth/mosdepth_analysis_output.txt", emit: mosdepth_analysis
     path "versions.yml", emit: versions
 
