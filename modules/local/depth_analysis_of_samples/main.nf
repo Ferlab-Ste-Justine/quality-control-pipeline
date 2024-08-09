@@ -24,7 +24,7 @@ process DEPTH_ANALYSIS_OF_SAMPLES {
     //               For Conda, the build (i.e. "h9402c20_2") must be EXCLUDED to support installation on different operating systems.
     // TODO nf-core: See section in main README for further information regarding finding and adding container addresses to the section below.
     conda "${moduleDir}/environment.yml"
-    container "qc-pipeline-python:dev"
+    container "docker.io/ferlabcrsj/qc-pipeline-python:1.1.0"
 
     input:
     path multiqc_data

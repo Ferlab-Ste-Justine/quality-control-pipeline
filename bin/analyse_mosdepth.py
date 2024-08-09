@@ -81,6 +81,18 @@ if mosdepth_per_region_df.isin([0]).any().any():
 else:
     print("Toutes les régions ont ete correctement couvertes.")
 
+    try:
+        # Ouvrir le fichier en mode écriture
+        with open('errors/erreurs_de_couvertures_par_region.txt', 'w') as f:
+            f.write("Sample\tChromosome\tCoverage\n")
+            for _, row in problems_df.iterrows():
+                f.write(f"{row['Sample']}\t{row['Chromosome']}\t" +
+                        f"{row['Coverage']}\n")
+    except IOError as e:
+        print(f"Erreur lors de l'ouverture ou de l'écriture du fichier: {e}")
+    except Exception as e:
+        print(f"Une erreur inattendue est survenue: {e}")
+
 mosdepth_general_df = pd.read_table(path_multiqc_general_stats,
                                     usecols=['Sample',
                                              'Mosdepth_mqc-generalstats-' +
@@ -136,6 +148,18 @@ if mosdepth_general_df['Mosdepth_mqc-generalstats-' +
 else:
     print("Tous les echantillons ont une couverture medianne appropriee.")
 
+    for index, row in mosdepth_general_df.iterrows():
+        try:
+            cell_value = row['Mosdepth_mqc-generalstats-mosdepth-' +
+                             'median_coverage']
+            if cell_value is None or cell_value == "None" or cell_value == '':
+                cell_value = 0.0
+            if float(cell_value) <= couverture_mediane_minimale:
+                sample_name = row['Sample']
+                print(f"Sample: {sample_name}")
+                problems.append([sample_name, cell_value])
+        except (ValueError, TypeError) as e:
+            problems.append([row['Sample'], f"Erreur: {e}"])
 
 # Fonction pour détecter les valeurs anormales
 def detect_outliers(df, column, n_std=nombre_std):
@@ -174,3 +198,14 @@ if not (outliers['Mosdepth_mqc-generalstats-mosdepth-1_x_pc'].isna().all() and o
         print(f"Une erreur inattendue est survenue: {e}")
 else:
     print("Toutes les echantillons ont des couvertures normales.")
+
+    try:
+        # Écrire les détails dans le fichier de sortie
+        with open('errors/erreurs_de_couvertures_anormales.txt', 'w') as f:
+            f.write("Sample\t1x\t5x\t10x\t30x\t50x\n")
+            for _, row in outliers.iterrows():
+                f.write(f"{row['Sample']}\t{row['Mosdepth_mqc-generalstats-mosdepth-1_x_pc']}\t{row['Mosdepth_mqc-generalstats-mosdepth-5_x_pc']}\t{row['Mosdepth_mqc-generalstats-mosdepth-10_x_pc']}\t{row['Mosdepth_mqc-generalstats-mosdepth-30_x_pc']}\t{row['Mosdepth_mqc-generalstats-mosdepth-50_x_pc']}\n")
+    except IOError as e:
+        print(f"Erreur lors de l'ouverture ou de l'écriture du fichier: {e}")
+    except Exception as e:
+        print(f"Une erreur inattendue est survenue: {e}")
