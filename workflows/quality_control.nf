@@ -12,8 +12,11 @@ include { CRAM_QC_MOSDEPTH_SAMTOOLS as CRAM_QC_NO_MD  } from '../subworkflows/lo
 include { QC_ANALYSIS_DEPTH_OF_SAMPLES } from '../modules/local/qc_analysis_depth_of_samples'
 include { QC_ANALYSIS_SAMTOOLS_OF_SAMPLES } from '../modules/local/qc_analysis_samtools_of_samples'
 
-// Convert BAM files
-include { SAMTOOLS_CONVERT as BAM_TO_CRAM             } from '../modules/nf-core/samtools/convert/main'
+// QC for fastq files
+include { FASTQC                                      } from '../modules/nf-core/fastqc/main'
+
+// Convert BAM files to FASTQ files
+include { BAM_CONVERT_SAMTOOLS as CONVERT_FASTQ_INPUT } from '../../subworkflows/local/bam_convert_samtools/main'
 
 // Create multiqc report
 include { MULTIQC } from '../modules/nf-core/multiqc/main'                                                                                                                           
@@ -38,22 +41,27 @@ workflow QUALITY_CONTROL {
     reports          = Channel.empty()
     versions         = Channel.empty()
 
-    // bams are merged (when multiple lanes from the same sample), indexed and then converted to cram
-    // BAM_MERGE_INDEX_SAMTOOLS(bam_mapped)
+    // Check if input contains FASTQ files
+    contains_fastq = input_sample.view().any { it.data_type == "fastq" }
 
-    // BAM_TO_CRAM_MAPPING(BAM_MERGE_INDEX_SAMTOOLS.out.bam_bai, fasta, fasta_fai)
+    if (contains_fastq) {
 
-    // Gather used softwares versions
-    // versions = versions.mix(BAM_MERGE_INDEX_SAMTOOLS.out.versions)
-    // versions = versions.mix(BAM_TO_CRAM_MAPPING.out.versions)
+        FASTQC(ch_samplesheet)
 
-    CRAM_QC_NO_MD(ch_samplesheet, fasta, intervals_for_preprocessing)
+        reports = reports.mix(FASTQC.out.zip.collect{ meta, logs -> logs })
+        versions = versions.mix(FASTQC.out.versions.first())
+    
+    } else {
 
-    // Gather QC reports
-    reports = reports.mix(CRAM_QC_NO_MD.out.reports.collect{ meta, report -> [ report ] })
+        CRAM_QC_NO_MD(ch_samplesheet, fasta, intervals_for_preprocessing)
 
-    // Gather used softwares versions
-    versions = versions.mix(CRAM_QC_NO_MD.out.versions)
+        // Gather QC reports
+        reports = reports.mix(CRAM_QC_NO_MD.out.reports.collect{ meta, report -> [ report ] })
+
+        // Gather used softwares versions
+        versions = versions.mix(CRAM_QC_NO_MD.out.versions)
+
+    }
 
     //
     // Collate and save software versions
@@ -87,18 +95,10 @@ workflow QUALITY_CONTROL {
 
     ch_multiqc_data = MULTIQC.out.data
 
-    QC_ANALYSIS_DEPTH_OF_SAMPLES(ch_multiqc_data)
+    // QC_ANALYSIS_DEPTH_OF_SAMPLES(ch_multiqc_data)
 
-    QC_ANALYSIS_SAMTOOLS_OF_SAMPLES(ch_multiqc_data)
+    // QC_ANALYSIS_SAMTOOLS_OF_SAMPLES(ch_multiqc_data)
 
-    // // Collate and save software versions
-    // softwareVersionsToYAML(versions)
-    //     .collectFile(
-    //         storeDir: "${params.outdir}/pipeline_info",
-    //         name: 'nf_core_quality_control_software_mqc_versions.yml',
-    //         sort: true,
-    //         newLine: true
-    //     ).set { ch_collated_versions }
 }
 
 /*

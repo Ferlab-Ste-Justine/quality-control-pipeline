@@ -54,11 +54,8 @@ workflow  SAMPLESHEET_TO_CHANNEL{
 
             meta           = meta - meta.subMap('lane') + [num_lanes: num_lanes.toInteger(), read_group: read_group.toString(), data_type: 'fastq', size: 1]
 
-            if (step == 'mapping') return [ meta, [ fastq_1, fastq_2 ] ]
-            else {
-                error("Samplesheet contains fastq files but step is `$step`. Please check your samplesheet or adjust the step parameter.\nhttps://nf-co.re/sarek/usage#input-samplesheet-configurations")
-            }
-
+            return [ meta, [ fastq_1, fastq_2 ] ]
+            
         // start from BAM
         } else if (meta.lane && bam) {
             if (step != 'mapping' && !bai) {
@@ -79,20 +76,14 @@ workflow  SAMPLESHEET_TO_CHANNEL{
         } else if (table && cram) {
             meta = meta + [id: meta.sample, data_type: 'cram']
 
-            if (!(step == 'mapping' || step == 'annotate')) return [ meta - meta.subMap('lane'), cram, crai, table ]
-            else {
-                error("Samplesheet contains cram files but step is `$step`. Please check your samplesheet or adjust the step parameter.\nhttps://nf-co.re/sarek/usage#input-samplesheet-configurations")
-            }
+            return [ meta - meta.subMap('lane'), cram, crai, table ]
 
         // recalibration when skipping MarkDuplicates
         } else if (table && bam) {
             meta = meta + [id: meta.sample, data_type: 'bam']
 
-            if (!(step == 'mapping' || step == 'annotate')) return [ meta - meta.subMap('lane'), bam, bai, table ]
-            else {
-                error("Samplesheet contains bam files but step is `$step`. Please check your samplesheet or adjust the step parameter.\nhttps://nf-co.re/sarek/usage#input-samplesheet-configurations")
-            }
-
+            return [ meta - meta.subMap('lane'), bam, bai, table ]
+            
         // prepare_recalibration or variant_calling
         } else if (cram) {
             meta = meta + [id: meta.sample, data_type: 'cram']
@@ -106,10 +97,7 @@ workflow  SAMPLESHEET_TO_CHANNEL{
         } else if (bam) {
             meta = meta + [id: meta.sample, data_type: 'bam']
 
-            if (!(step == 'mapping' || step == 'annotate')) return [ meta - meta.subMap('lane'), bam, bai ]
-            else {
-                error("Samplesheet contains bam files but step is `$step`. Please check your samplesheet or adjust the step parameter.\nhttps://nf-co.re/sarek/usage#input-samplesheet-configurations")
-            }
+            return [ meta - meta.subMap('lane'), bam, bai ]
 
         // annotation
         } else if (vcf) {
