@@ -15,9 +15,6 @@ include { QC_ANALYSIS_SAMTOOLS_OF_SAMPLES } from '../modules/local/qc_analysis_s
 // QC for fastq files
 include { FASTQC                                      } from '../modules/nf-core/fastqc/main'
 
-// Convert BAM files to FASTQ files
-include { BAM_CONVERT_SAMTOOLS as CONVERT_FASTQ_INPUT } from '../../subworkflows/local/bam_convert_samtools/main'
-
 // Create multiqc report
 include { MULTIQC } from '../modules/nf-core/multiqc/main'                                                                                                                           
 
@@ -42,7 +39,17 @@ workflow QUALITY_CONTROL {
     versions         = Channel.empty()
 
     // Check if input contains FASTQ files
-    contains_fastq = input_sample.view().any { it.data_type == "fastq" }
+    def inputPath = params.input
+    def file = new File(inputPath)
+
+    // Read the first line of the file
+    def firstLine = file.withReader { reader ->
+        reader.readLine()
+    }
+
+    // Check if the first line contains "fastq"
+    contains_fastq = firstLine?.contains('fastq')
+
 
     if (contains_fastq) {
 
@@ -95,9 +102,17 @@ workflow QUALITY_CONTROL {
 
     ch_multiqc_data = MULTIQC.out.data
 
-    // QC_ANALYSIS_DEPTH_OF_SAMPLES(ch_multiqc_data)
+    if (contains_fastq){
 
-    // QC_ANALYSIS_SAMTOOLS_OF_SAMPLES(ch_multiqc_data)
+
+
+    } else {
+
+        QC_ANALYSIS_DEPTH_OF_SAMPLES(ch_multiqc_data)
+
+        QC_ANALYSIS_SAMTOOLS_OF_SAMPLES(ch_multiqc_data)
+    
+    }
 
 }
 
