@@ -9,6 +9,7 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 
 include { CRAM_QC_MOSDEPTH_SAMTOOLS as CRAM_QC_NO_MD  } from '../subworkflows/local/cram_qc_mosdepth_samtools/main'
+include { QC_ANALYSIS_FASTQC_OF_SAMPLES } from '../modules/local/qc_analysis_fastqc_of_samples'
 include { QC_ANALYSIS_DEPTH_OF_SAMPLES } from '../modules/local/qc_analysis_depth_of_samples'
 include { QC_ANALYSIS_SAMTOOLS_OF_SAMPLES } from '../modules/local/qc_analysis_samtools_of_samples'
 
@@ -104,7 +105,7 @@ workflow QUALITY_CONTROL {
 
     if (contains_fastq){
 
-
+        QC_ANALYSIS_FASTQC_OF_SAMPLES(ch_multiqc_data)
 
     } else {
 
