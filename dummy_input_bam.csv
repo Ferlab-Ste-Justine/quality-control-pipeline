@@ -1,2 +1,2 @@
 patient,sex,status,sample,bam,bai
-NA12878,XX,0,NA12878-20K,/Volumes/Untitled/wgs_bam/wgs_bam_NA12878_20k_hg38_NA12878.bam,/Volumes/Untitled/wgs_bam/wgs_bam_NA12878_20k_hg38_NA12878.bai
+NA12878,XX,0,NA12878-20K,/home/remi-antoine-joron/Downloads/wgs_bam/wgs_bam_NA12878_20k_hg38_NA12878.bam,/home/remi-antoine-joron/Downloads/wgs_bam/wgs_bam_NA12878_20k_hg38_NA12878.bai

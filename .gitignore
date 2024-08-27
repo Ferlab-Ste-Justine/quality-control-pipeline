@@ -4,6 +4,8 @@ results
 multiqc/multiqc_*
 .nextflow
 # Ignore virtual environment directory
+.venv
 venv
 work
 ._*
+*.fasta

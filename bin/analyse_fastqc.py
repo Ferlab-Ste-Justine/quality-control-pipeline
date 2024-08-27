@@ -44,14 +44,15 @@ comparison_df = pd.DataFrame(comparison_results)
 # Filter the DataFrame to only show rows where Are_Equal is False
 unequal_df = comparison_df[comparison_df['Are_Equal'] == False]
 
-if not os.path.exists('errors'):
-    os.makedirs('errors')
+if not unequal_df.empty:
+    if not os.path.exists('errors'):
+        os.makedirs('errors')
 
-# Define the output file path
-OUTPUT_FILE = "unequal_total_sequences_samples.csv"
+    # Define the output file path
+    OUTPUT_FILE = "unequal_total_sequences_samples.csv"
 
-# Write the filtered rows to a CSV file
-unequal_df.to_csv(f"errors/{OUTPUT_FILE}", index=False)
+    # Write the filtered rows to a CSV file
+    unequal_df.to_csv(f"errors/{OUTPUT_FILE}", index=False)
 
 # Save the entire DataFrame to a CSV file
 comparison_df.to_csv('fastqc_analysis.csv', index=False)
