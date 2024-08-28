@@ -86,7 +86,7 @@ def csv_to_html(results_csv, errors_csv, output_html, qc_file=None):
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: csv_to_html.py <results_csv> <errors_csv> <output_html> <path_qc>")
+        print("Usage: csv_to_html.py <results_csv> <errors_csv> <output_html> <qc_file>")
         sys.exit(1)
 
     results_csv = sys.argv[1]

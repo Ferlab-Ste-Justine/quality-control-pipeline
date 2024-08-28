@@ -12,9 +12,10 @@ include { CRAM_QC_MOSDEPTH_SAMTOOLS as CRAM_QC_NO_MD  } from '../subworkflows/lo
 include { QC_ANALYSIS_FASTQC_OF_SAMPLES } from '../modules/local/qc_analysis_fastqc_of_samples'
 include { QC_ANALYSIS_DEPTH_OF_SAMPLES } from '../modules/local/qc_analysis_depth_of_samples'
 include { QC_ANALYSIS_SAMTOOLS_OF_SAMPLES } from '../modules/local/qc_analysis_samtools_of_samples'
+include { RAPPORT_HTML_BAM } from '../modules/local/rapport_html_bam'
 
 // QC for fastq files
-include { FASTQC                                      } from '../modules/nf-core/fastqc/main'
+include { FASTQC } from '../modules/nf-core/fastqc/main'
 
 // Create multiqc report
 include { MULTIQC } from '../modules/nf-core/multiqc/main'                                                                                                                           
@@ -112,6 +113,22 @@ workflow QUALITY_CONTROL {
         QC_ANALYSIS_DEPTH_OF_SAMPLES(ch_multiqc_data)
 
         QC_ANALYSIS_SAMTOOLS_OF_SAMPLES(ch_multiqc_data)
+
+        ch_mosdepth_analysis = QC_ANALYSIS_DEPTH_OF_SAMPLES.out.mosdepth_analysis
+        ch_samtools_analysis = QC_ANALYSIS_SAMTOOLS_OF_SAMPLES.out.samtools_analysis
+        ch_plot = QC_ANALYSIS_SAMTOOLS_OF_SAMPLES.out.reads_info
+        ch_median_coverage = QC_ANALYSIS_DEPTH_OF_SAMPLES.out.errors_by_median
+        ch_errors_by_region = QC_ANALYSIS_DEPTH_OF_SAMPLES.out.errors_by_region
+        ch_errors_by_outliers = QC_ANALYSIS_DEPTH_OF_SAMPLES.out.errors_by_outliers
+
+        RAPPORT_HTML_BAM(
+            ch_mosdepth_analysis,
+            ch_samtools_analysis,
+            ch_plot,
+            ch_median_coverage,
+            ch_errors_by_region,
+            ch_errors_by_outliers
+            )
     
     }
 

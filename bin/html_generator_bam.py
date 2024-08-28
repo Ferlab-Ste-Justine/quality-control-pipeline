@@ -5,7 +5,9 @@ import os
 import sys
 
 def generate_html_report(mosdepth_txt, samtools_txt, plot_png, output_html, qc_file=None, median_coverage_csv=None, region_coverage_csv=None, other_error_csv=None):
-    with open(output_html, 'w') as html_file:
+    if not os.path.exists(output_html):
+        os.makedirs(output_html)
+    with open(f"{output_html}/qc_analysis_report.html", 'w') as html_file:
         # Handle mosdepth analysis
         with open(mosdepth_txt, 'r') as file:
             mosdepth_content = file.read().split('\n\n')  # Splitting into paragraphs
@@ -21,16 +23,26 @@ def generate_html_report(mosdepth_txt, samtools_txt, plot_png, output_html, qc_f
             
             for i, paragraph in enumerate(mosdepth_content):
                 html_file.write(f"<p>{paragraph}</p>\n")
+
                 # Insert corresponding CSV content after each paragraph, if available
-                if i == 1 and median_coverage_csv and os.path.exists(median_coverage_csv):
-                    median_df = pd.read_csv(median_coverage_csv, sep='\t')
-                    html_file.write(median_df.to_html(index=False))
-                elif i == 0 and region_coverage_csv and os.path.exists(region_coverage_csv):
-                    region_df = pd.read_csv(region_coverage_csv, sep='\t')
-                    html_file.write(region_df.to_html(index=False))
-                elif i == 2 and other_error_csv and os.path.exists(other_error_csv):
-                    other_df = pd.read_csv(other_error_csv, sep='\t')
-                    html_file.write(other_df.to_html(index=False))
+                if i == 1 and median_coverage_csv and os.path.exists(median_coverage_csv) and os.path.getsize(median_coverage_csv) > 0:
+                    try:
+                        median_df = pd.read_csv(median_coverage_csv, sep='\t')
+                        html_file.write(median_df.to_html(index=False))
+                    except Exception:
+                        html_file.write("<p>No errors.</p>\n")
+                elif i == 0 and region_coverage_csv and os.path.exists(region_coverage_csv) and os.path.getsize(region_coverage_csv) > 0:
+                    try:
+                        region_df = pd.read_csv(region_coverage_csv, sep='\t')
+                        html_file.write(region_df.to_html(index=False))
+                    except Exception:
+                        html_file.write("<p>No errors.</p>\n")
+                elif i == 2 and other_error_csv and os.path.exists(other_error_csv) and os.path.getsize(other_error_csv) > 0:
+                    try:
+                        other_df = pd.read_csv(other_error_csv, sep='\t')
+                        html_file.write(other_df.to_html(index=False))
+                    except Exception:
+                        html_file.write("<p>No errors.</p>\n")
 
         # Handle samtools analysis
         with open(samtools_txt, 'r') as file:

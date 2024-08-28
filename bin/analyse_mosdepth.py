@@ -83,6 +83,9 @@ if mosdepth_per_region_df.isin([0]).any().any():
     qc_pass = False
 else:
     print("Toutes les régions ont ete correctement couvertes.\n")
+    
+    open('errors/erreurs_de_couvertures_par_region.txt', 'w')
+    
 
     # try:
     #     # Ouvrir le fichier en mode écriture
@@ -152,6 +155,7 @@ if mosdepth_general_df['Mosdepth_mqc-generalstats-' +
         qc_pass = False
 else:
     print("Tous les echantillons ont une couverture medianne appropriee.\n")
+    open('errors/erreurs_de_couvertures_mediane.txt', 'w')
 
     # for index, row in mosdepth_general_df.iterrows():
     #     try:
@@ -205,6 +209,7 @@ if not (outliers['Mosdepth_mqc-generalstats-mosdepth-1_x_pc'].isna().all() and o
     qc_pass = False
 else:
     print("Toutes les echantillons ont des couvertures normales.\n")
+    open('errors/erreurs_de_couvertures_anormales.txt', 'w')
 
     # try:
     #     # Écrire les détails dans le fichier de sortie
