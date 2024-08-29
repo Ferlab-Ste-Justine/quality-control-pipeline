@@ -15,6 +15,7 @@ process RAPPORT_HTML_BAM {
 
     output:
     path "qc/qc_analysis_report.html", emit: report
+    path "samtools_reads_info.png", emit: plot
     path "versions.yml", emit: versions
 
     when:

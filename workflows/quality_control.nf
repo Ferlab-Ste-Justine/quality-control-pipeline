@@ -13,6 +13,7 @@ include { QC_ANALYSIS_FASTQC_OF_SAMPLES } from '../modules/local/qc_analysis_fas
 include { QC_ANALYSIS_DEPTH_OF_SAMPLES } from '../modules/local/qc_analysis_depth_of_samples'
 include { QC_ANALYSIS_SAMTOOLS_OF_SAMPLES } from '../modules/local/qc_analysis_samtools_of_samples'
 include { RAPPORT_HTML_BAM } from '../modules/local/rapport_html_bam'
+include { RAPPORT_HTML_FASTQ } from '../modules/local/rapport_html_fastq'
 
 // QC for fastq files
 include { FASTQC } from '../modules/nf-core/fastqc/main'
@@ -107,6 +108,11 @@ workflow QUALITY_CONTROL {
     if (contains_fastq){
 
         QC_ANALYSIS_FASTQC_OF_SAMPLES(ch_multiqc_data)
+
+        RAPPORT_HTML_FASTQ(
+            QC_ANALYSIS_FASTQC_OF_SAMPLES.out.fastqc_analysis,
+            QC_ANALYSIS_FASTQC_OF_SAMPLES.out.unequal_total_sequences,
+            )
 
     } else {
 

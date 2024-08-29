@@ -9,3 +9,4 @@ venv
 work
 ._*
 *.fasta
+*.gz

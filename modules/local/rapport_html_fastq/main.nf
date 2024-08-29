@@ -6,7 +6,8 @@ process RAPPORT_HTML_FASTQ {
     container "docker.io/ferlabcrsj/qc-pipeline-python:1.1.0"
 
     input:
-    path
+    path analyse_fastq
+    path errors
 
     output:
     path "qc/qc_analysis_report.html", emit: report
@@ -16,12 +17,11 @@ process RAPPORT_HTML_FASTQ {
     task.ext.when == null || task.ext.when
 
     script:
-    def median = median_coverage_csv ? median_coverage_csv : ""
-    def region = region_coverage_csv ? region_coverage_csv : ""
-    def other = other_error_csv ? other_error_csv : ""
     """
     html_generator_fastq.py \\
-        
+    $analyse_fastq \\
+    $errors \\
+    qc \\   
     
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
