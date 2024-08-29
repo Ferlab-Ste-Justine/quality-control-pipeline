@@ -1,0 +1,48 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "depth_analysis_of_samples"
+## TODO nf-core: Add a description of the module and list keywords
+description: write your description here
+keywords:
+  - sort
+  - example
+  - genomics
+tools:
+  - "depth_analysis_of_samples":
+      ## TODO nf-core: Add a description and other details for the software below
+      description: ""
+      homepage: ""
+      documentation: ""
+      tool_dev_url: ""
+      doi: ""
+      licence: 
+
+## TODO nf-core: Add a description of all of the variables used as input
+input:
+  - coverage_per_contig:
+      type: path
+      description: path to coverage_per_contig info from multiqc results
+      pattern: "mqc_mosdepth-coverage-per-contig_1.txt"
+
+  - multiqc_general_stats:
+      type: path
+      description: path to multiqc_general_stats
+      pattern: "multiqc_general_stats.txt"
+
+## TODO nf-core: Add a description of all of the variables used as output
+output:
+  #
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+  ## TODO nf-core: Delete / customise this example output
+  - erreurs_de_couvertures_par_region:
+      type: file
+      description: txt file
+      pattern: "erreurs_de_couvertures_par_region.txt"
+
+authors:
+  - "@remrem08007"
+maintainers:
+  - "@remrem08007"

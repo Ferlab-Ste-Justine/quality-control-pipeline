@@ -1,0 +1,3 @@
+patient,sample,lane,fastq_1,fastq_2
+PATIENT_ID,SAMPLE_PAIRED_END,LANE_1,/Volumes/Untitled/cqdg-denovo-pipeline/wgs_fastq_NA12878_20k_H06HDADXX130110.1.ATCACGAT.20k_reads_1.fastq.gz,/Volumes/Untitled/cqdg-denovo-pipeline/wgs_fastq_NA12878_20k_H06HDADXX130110.1.ATCACGAT.20k_reads_2.fastq.gz
+PATIENT_ID,SAMPLE_PAIRED_END_2,LANE_1,/Volumes/Untitled/cqdg-denovo-pipeline/wgs_fastq_NA12878_20k_H06HDADXX130110.1.ATCACGAT.20k_reads_1.fastq.gz,/Volumes/Untitled/cqdg-denovo-pipeline/wgs_fastq_NA12878_20k_H06HDADXX130110.1.ATCACGAT.20k_reads_2.fastq.gz
