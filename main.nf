@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    ferlab/mypipeline-nfcore
+    Ferlab-Ste-Justine/quality-control-pipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/ferlab/mypipeline
+    Github : https://github.com/Ferlab-Ste-Justine/quality-control-pipeline
 ----------------------------------------------------------------------------------------
 */
 
