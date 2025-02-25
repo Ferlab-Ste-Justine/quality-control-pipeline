@@ -1,6 +1,6 @@
 {
-    "name": "Ferlab-Ste-Justine/validation_qc",
-    "homePage": "https://github.com/Ferlab-Ste-Justine/validation_qc",
+    "name": "Ferlab-Ste-Justine/quality-control-pipeline",
+    "homePage": "https://github.com/Ferlab-Ste-Justine/quality-control-pipeline",
     "repos": {
         "https://github.com/nf-core/modules.git": {
             "modules": {

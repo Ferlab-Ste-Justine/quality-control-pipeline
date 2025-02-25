@@ -1,8 +1,21 @@
-repository_type: pipeline
-
-nf_core_version: 3.2.0
-
 lint:
+  files_exist:
+    - conf/igenomes.config
+    - LICENSE
+    - assets/email_template.html
+    - assets/sendmail_template.txt
+    - assets/email_template.txt
+    - LICENSE
+    - assets/email_template.html
+    - assets/sendmail_template.txt
+    - assets/email_template.txt
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-validation_qc_logo_light.png
+    - docs/images/nf-core-validation_qc_logo_light.png
+    - docs/images/nf-core-validation_qc_logo_dark.png
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/workflows/awstest.yml
+    - .github/workflows/awsfulltest.yml
   files_unchanged:
     - .github/CONTRIBUTING.md
     - LICENSE
@@ -23,6 +36,9 @@ lint:
     - .github/PULL_REQUEST_TEMPLATE.md
     - assets/email_template.txt
     - docs/README.md
+  included_configs: false
+  multiqc_config:
+    - report_comment
   nextflow_config:
     - process.cpus
     - process.memory
@@ -36,34 +52,15 @@ lint:
     - validation.help.afterText
     - validation.summary.beforeText
     - validation.summary.afterText
-  multiqc_config:
-    - report_comment
-  files_exist:
-    - conf/igenomes.config
-    - LICENSE
-    - assets/email_template.html
-    - assets/sendmail_template.txt
-    - assets/email_template.txt
-    - LICENSE
-    - assets/email_template.html
-    - assets/sendmail_template.txt
-    - assets/email_template.txt
-    - CODE_OF_CONDUCT.md
-    - assets/nf-core-validation_qc_logo_light.png
-    - docs/images/nf-core-validation_qc_logo_light.png
-    - docs/images/nf-core-validation_qc_logo_dark.png
-    - .github/ISSUE_TEMPLATE/config.yml
-    - .github/workflows/awstest.yml
-    - .github/workflows/awsfulltest.yml
-  included_configs: false
-
+nf_core_version: 3.2.0
+repository_type: pipeline
 template:
-  org: Ferlab-Ste-Justine
-  name: validation_qc
-  description: Pipeline to validate and QC genomic datasets
   author: Georgette Femerling
-  version: 1.0.0dev
-  force: true
+  description: Pipeline to validate and QC genomic datasets
+  force: false
+  is_nfcore: false
+  name: quality-control-pipeline
+  org: Ferlab-Ste-Justine
   outdir: .
   skip_features:
     - nf_core_configs
@@ -74,4 +71,4 @@ template:
     - adaptivecard
     - slackreport
     - seqera_platform
-  is_nfcore: false
+  version: 1.0.0dev
