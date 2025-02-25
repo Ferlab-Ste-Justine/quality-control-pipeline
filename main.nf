@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Ferlab-Ste-Justine/validationqc
+    Ferlab-Ste-Justine/quality-control-pipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/Ferlab-Ste-Justine/validationqc
+    Github : https://github.com/Ferlab-Ste-Justine/quality-control-pipeline
 ----------------------------------------------------------------------------------------
 */
 
@@ -13,10 +13,10 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { VALIDATIONQC  } from './workflows/validationqc'
-include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_validationqc_pipeline'
-include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_validationqc_pipeline'
-include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_validationqc_pipeline'
+include { QUALITY-CONTROL-PIPELINE  } from './workflows/quality-control-pipeline'
+include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
+include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
+include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -38,7 +38,7 @@ params.fasta = getGenomeAttribute('fasta')
 //
 // WORKFLOW: Run main analysis pipeline depending on type of input
 //
-workflow FERLABSTEJUSTINE_VALIDATIONQC {
+workflow FERLABSTEJUSTINE_QUALITY-CONTROL-PIPELINE {
 
     take:
     samplesheet // channel: samplesheet read in from --input
@@ -48,11 +48,11 @@ workflow FERLABSTEJUSTINE_VALIDATIONQC {
     //
     // WORKFLOW: Run pipeline
     //
-    VALIDATIONQC (
+    QUALITY-CONTROL-PIPELINE (
         samplesheet
     )
     emit:
-    multiqc_report = VALIDATIONQC.out.multiqc_report // channel: /path/to/multiqc_report.html
+    multiqc_report = QUALITY-CONTROL-PIPELINE.out.multiqc_report // channel: /path/to/multiqc_report.html
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,7 +78,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    FERLABSTEJUSTINE_VALIDATIONQC (
+    FERLABSTEJUSTINE_QUALITY-CONTROL-PIPELINE (
         PIPELINE_INITIALISATION.out.samplesheet
     )
     //
@@ -87,7 +87,7 @@ workflow {
     PIPELINE_COMPLETION (
         params.outdir,
         params.monochrome_logs,
-        FERLABSTEJUSTINE_VALIDATIONQC.out.multiqc_report
+        FERLABSTEJUSTINE_QUALITY-CONTROL-PIPELINE.out.multiqc_report
     )
 }
 

@@ -1,4 +1,4 @@
-# Ferlab-Ste-Justine/validationqc: Output
+# Ferlab-Ste-Justine/quality-control-pipeline: Output
 
 ## Introduction
 

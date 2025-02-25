@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an idea for the Ferlab-Ste-Justine/validationqc pipeline
+description: Suggest an idea for the Ferlab-Ste-Justine/quality-control-pipeline pipeline
 labels: enhancement
 body:
   - type: textarea
