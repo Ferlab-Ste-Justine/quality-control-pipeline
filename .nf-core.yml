@@ -1,0 +1,77 @@
+repository_type: pipeline
+
+nf_core_version: 3.2.0
+
+lint:
+  files_unchanged:
+    - .github/CONTRIBUTING.md
+    - LICENSE
+    - .prettierignore
+    - .prettierignore
+    - .prettierignore
+    - .github/CONTRIBUTING.md
+    - LICENSE
+    - .prettierignore
+    - .prettierignore
+    - .prettierignore
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-validation_qc_logo_light.png
+    - docs/images/nf-core-validation_qc_logo_light.png
+    - docs/images/nf-core-validation_qc_logo_dark.png
+    - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/CONTRIBUTING.md
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - assets/email_template.txt
+    - docs/README.md
+  nextflow_config:
+    - process.cpus
+    - process.memory
+    - process.time
+    - custom_config
+    - params.custom_config_version
+    - params.custom_config_base
+    - manifest.name
+    - manifest.homePage
+    - validation.help.beforeText
+    - validation.help.afterText
+    - validation.summary.beforeText
+    - validation.summary.afterText
+  multiqc_config:
+    - report_comment
+  files_exist:
+    - conf/igenomes.config
+    - LICENSE
+    - assets/email_template.html
+    - assets/sendmail_template.txt
+    - assets/email_template.txt
+    - LICENSE
+    - assets/email_template.html
+    - assets/sendmail_template.txt
+    - assets/email_template.txt
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-validation_qc_logo_light.png
+    - docs/images/nf-core-validation_qc_logo_light.png
+    - docs/images/nf-core-validation_qc_logo_dark.png
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/workflows/awstest.yml
+    - .github/workflows/awsfulltest.yml
+  included_configs: false
+
+template:
+  org: Ferlab-Ste-Justine
+  name: validation_qc
+  description: Pipeline to validate and QC genomic datasets
+  author: Georgette Femerling
+  version: 1.0.0dev
+  force: true
+  outdir: .
+  skip_features:
+    - nf_core_configs
+    - gitpod
+    - codespaces
+    - license
+    - email
+    - adaptivecard
+    - slackreport
+    - seqera_platform
+  is_nfcore: false
