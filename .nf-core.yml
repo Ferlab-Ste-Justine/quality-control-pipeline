@@ -59,7 +59,7 @@ template:
   description: Pipeline to validate and QC genomic datasets
   force: false
   is_nfcore: false
-  name: quality-control-pipeline
+  name: validationqc
   org: Ferlab-Ste-Justine
   outdir: .
   skip_features:
