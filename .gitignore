@@ -1,2 +1,13 @@
+# added automatically by nf-core
+.nextflow*
+work/
+data/
+results/
+.DS_Store
+testing/
+testing*
+*.pyc
+null/
+
 # Ignore virtual environment directory
 venv
