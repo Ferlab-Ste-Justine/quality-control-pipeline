@@ -1,5 +1,5 @@
 //
-// Subworkflow with functionality specific to the Ferlab-Ste-Justine/validation_qc pipeline
+// Subworkflow with functionality specific to the Ferlab-Ste-Justine/quality-control-pipeline pipeline
 //
 
 /*
