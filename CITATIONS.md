@@ -1,4 +1,4 @@
-# Ferlab-Ste-Justine/quality-control-pipeline: Citations
+# Ferlab-Ste-Justine/validationqc: Citations
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 
