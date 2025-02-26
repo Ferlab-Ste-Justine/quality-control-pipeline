@@ -13,7 +13,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { QUALITY-CONTROL-PIPELINE  } from './workflows/quality-control-pipeline'
+include { QUALITYCONTROL  } from './workflows/qualitycontrol'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
 include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
@@ -38,7 +38,7 @@ params.fasta = getGenomeAttribute('fasta')
 //
 // WORKFLOW: Run main analysis pipeline depending on type of input
 //
-workflow FERLABSTEJUSTINE_QUALITY-CONTROL-PIPELINE {
+workflow FERLABSTEJUSTINE_QUALITYCONTROL {
 
     take:
     samplesheet // channel: samplesheet read in from --input
@@ -48,11 +48,11 @@ workflow FERLABSTEJUSTINE_QUALITY-CONTROL-PIPELINE {
     //
     // WORKFLOW: Run pipeline
     //
-    QUALITY-CONTROL-PIPELINE (
+    QUALITYCONTROL (
         samplesheet
     )
     emit:
-    multiqc_report = QUALITY-CONTROL-PIPELINE.out.multiqc_report // channel: /path/to/multiqc_report.html
+    multiqc_report = QUALITYCONTROL.out.multiqc_report // channel: /path/to/multiqc_report.html
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,7 +78,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    FERLABSTEJUSTINE_QUALITY-CONTROL-PIPELINE (
+    FERLABSTEJUSTINE_QUALITYCONTROL (
         PIPELINE_INITIALISATION.out.samplesheet
     )
     //
@@ -87,7 +87,7 @@ workflow {
     PIPELINE_COMPLETION (
         params.outdir,
         params.monochrome_logs,
-        FERLABSTEJUSTINE_QUALITY-CONTROL-PIPELINE.out.multiqc_report
+        FERLABSTEJUSTINE_QUALITYCONTROL.out.multiqc_report
     )
 }
 
