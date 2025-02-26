@@ -16,7 +16,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_qual
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow QUALITY-CONTROL-PIPELINE {
+workflow QUALITYCONTROL {
 
     take:
     ch_samplesheet // channel: samplesheet read in from --input
