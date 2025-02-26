@@ -1,4 +1,3 @@
-# added automatically by nf-core
 .nextflow*
 work/
 data/
@@ -8,6 +7,4 @@ testing/
 testing*
 *.pyc
 null/
-
-# Ignore virtual environment directory
-venv
+.vscode
