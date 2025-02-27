@@ -1,5 +1,8 @@
 lint:
+  pipeline_name_conventions: false
   files_exist:
+    - .github/.dockstore.yml
+    - .github/workflows/branch.yml
     - conf/igenomes.config
     - LICENSE
     - assets/email_template.html
@@ -15,6 +18,8 @@ lint:
     - .github/.dockstore.yml
     - .github/workflows/branch.yml
   files_unchanged:
+    - .github/.dockstore.yml
+    - .github/workflows/branch.yml
     - .github/CONTRIBUTING.md
     - LICENSE
     - .prettierignore
