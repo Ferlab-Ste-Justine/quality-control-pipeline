@@ -1,5 +1,8 @@
 lint:
+  pipeline_name_conventions: false
   files_exist:
+    - .github/.dockstore.yml
+    - .github/workflows/branch.yml
     - conf/igenomes.config
     - LICENSE
     - assets/email_template.html
@@ -10,13 +13,15 @@ lint:
     - assets/sendmail_template.txt
     - assets/email_template.txt
     - CODE_OF_CONDUCT.md
-    - assets/nf-core-validation_qc_logo_light.png
-    - docs/images/nf-core-validation_qc_logo_light.png
-    - docs/images/nf-core-validation_qc_logo_dark.png
+    - assets/nf-core-quality-control-pipeline_logo_light.png
+    - docs/images/nf-core-quality-control-pipeline_logo_light.png
+    - docs/images/nf-core-quality-control-pipeline_logo_dark.png
     - .github/ISSUE_TEMPLATE/config.yml
     - .github/workflows/awstest.yml
     - .github/workflows/awsfulltest.yml
   files_unchanged:
+    - .github/.dockstore.yml
+    - .github/workflows/branch.yml
     - .github/CONTRIBUTING.md
     - LICENSE
     - .prettierignore
