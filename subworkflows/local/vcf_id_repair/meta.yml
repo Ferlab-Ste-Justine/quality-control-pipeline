@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "vcf_id_repair"
+description: Query sampleID in vcf, validate if == to meta.id, and edit sampleID in vcf to match
+keywords:
+  - reheader
+  - vcf
+  - tbi
+components:
+  - bcftools/query
+  - bcftools/reheader
+input:
+  - ch_bam:
+      type: file
+      description: |
+        The input channel containing the VCF and tbi files
+        Structure: [ val(meta), path(vcf), path(tbi) ]
+      pattern: "*.{vcf.gz,vcf.gz.tbi}"
+output:
+  - vcf_tbi:
+      type: file
+      description: |
+        Channel containing BAM files
+        Structure: [ val(meta), path(vcf), path(tbi) ]
+      pattern: "*.{vcf.gz,vcf.gz.tbi}"
+  - versions:
+      type: file
+      description: |
+        File containing software versions
+        Structure: [ path(versions.yml) ]
+      pattern: "versions.yml"
+authors:
+  - "@georgette-femerling"
+maintainers:
+  - "@georgette-femerling"
