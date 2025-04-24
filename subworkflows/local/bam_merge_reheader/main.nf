@@ -1,3 +1,4 @@
+include { SAMTOOLS_SAMPLES     } from '../../../modules/local/samtools/samples/main'
 include { SAMTOOLS_REHEADER  } from '../../../modules/local/samtools/reheader/main'
 include { SAMTOOLS_MERGE     } from '../../../modules/nf-core/samtools/merge/main'
 include { SAMTOOLS_INDEX     } from '../../../modules/nf-core/samtools/index/main'
@@ -6,7 +7,7 @@ workflow BAM_MERGE_REHEADER {
 
     take:
     // TODO nf-core: edit input (take) channels
-    ch_bam      // channel: [mandatory] meta, bam
+    ch_bam      // channel: [mandatory] meta, bam/cram
     fasta       // channel: [mandatory for cram] fasta
     fasta_fai   // channel: [mandatory for cram] fai
 
@@ -14,7 +15,10 @@ workflow BAM_MERGE_REHEADER {
     ch_versions = Channel.empty()
 
     // TODO: define channel of files grouped by sample
-    bam_to_merge = ch_bam.groupTuple()
+    bam_to_merge = ch_bam.branch { meta, bam ->
+        merge: bam.size() > 1
+        direct: bam.size() <= 1
+    }
 
     // merge mapped files by samplex
     SAMTOOLS_MERGE( bam_to_merge,
