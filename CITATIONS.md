@@ -10,13 +10,24 @@
 
 ## Pipeline tools
 
+- [BCFTools](https://pubmed.ncbi.nlm.nih.gov/21903627/)
+> Li H: A statistical framework for SNP calling, mutation discovery, association mapping and population genetical parameter estimation from sequencing data. Bioinformatics. 2011 Nov 1;27(21):2987-93. doi: 10.1093/bioinformatics/btr509. PubMed PMID: 21903627; PubMed Central PMCID: PMC3198575.
+
 - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 
 > Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online].
 
-- [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
+- [Fq](https://github.com/stjude-rust-labs/fq)
 
+- [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
 > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
+
+- [Samtools](https://pubmed.ncbi.nlm.nih.gov/19505943/)
+> Li H, Handsaker B, Wysoker A, Fennell T, Ruan J, Homer N, Marth G, Abecasis G, Durbin R; 1000 Genome Project Data Processing Subgroup. The Sequence Alignment/Map format and SAMtools. Bioinformatics. 2009 Aug 15;25(16):2078-9. doi: 10.1093/bioinformatics/btp352. Epub 2009 Jun 8. PubMed PMID: 19505943; PubMed Central PMCID: PMC2723002.
+
+- [Somalier](https://pubmed.ncbi.nlm.nih.gov/32664994/)
+> Pedersen BS, Bhetariya PJ, Brown J, Kravitz SN, Marth G, Jensen RL, Bronner MP, Underhill HR, Quinlan AR. Somalier: rapid relatedness estimation for cancer and germline studies using efficient genome sketches. Genome Med. 2020 Jul 14;12(1):62. doi: 10.1186/s13073-020-00761-2. PMID: 32664994; PMCID: PMC7362544.
+
 
 ## Software packaging/containerisation tools
 
