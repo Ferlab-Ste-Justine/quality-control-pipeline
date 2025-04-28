@@ -1,3 +1,5 @@
-sample,fastq_1,fastq_2
-SAMPLE_PAIRED_END,/path/to/fastq/files/AEG588A1_S1_L002_R1_001.fastq.gz,/path/to/fastq/files/AEG588A1_S1_L002_R2_001.fastq.gz
-SAMPLE_SINGLE_END,/path/to/fastq/files/AEG588A4_S4_L003_R1_001.fastq.gz,
+participant,sample,sex,familyId,lane,fastq_1,fastq_2,cram,crai,bam,bai,gvcf
+P001,S001,XX,f1,L001,test_data/sample1_R1.fastq.gz,test_data/sample1_R2.fastq.gz,,,,
+P001,S001,XX,f1,L002,test_data/sample1_lane2_R1.fastq.gz,test_data/sample1_lane2_R2.fastq.gz,,,,
+P002,S002,XY,f2,,,,,,test_data/sample2.bam,test_data/sample2.bam.bai,
+P003,S003,XX,f3,,,,,test_data/sample3.bam,test_data/sample3.bam.bai,test_data/sample3.gvcf.gz,test_data/sample3.gvcf.gz
