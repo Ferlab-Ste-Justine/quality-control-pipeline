@@ -11,4 +11,30 @@ report_section_order:
 
 export_plots: true
 
+run_modules:
+  - fastqc
+  - fastp
+  - qualimap
+  - picard
+  - somalier
+  - mosdepth
+  - verifybamid
+
+module_order:
+  - fastqc:
+      name: "FastQC"
+      path_filters:
+        - "*.zip"
+  - picard:
+      name: "Picard"
+  - qualimap:
+      name: "Qualimap"
+  - fastp:
+      name: "fastp"
+  - somalier:
+      name: "Somalier"
+  - verifybamid:
+      name: "VerifyBamID2"
+
+
 disable_version_detection: true
