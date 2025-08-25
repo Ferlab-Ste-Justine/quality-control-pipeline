@@ -121,6 +121,7 @@
                         "branch": "master",
                         "git_sha": "2d20463181b1c38981a02e90d3084b5f9fa8d540",
                         "installed_by": [
+                            
                             "modules"
                         ]
                     },
@@ -129,6 +130,30 @@
                         "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
                         "installed_by": [
                             "modules"
+                        
+                        ]
+                    },
+                    "somalier/extract": {
+                        "branch": "master",
+                        "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
+                        "installed_by": [
+                            "modules",
+                            "vcf_extract_relate_somalier"
+                        ]
+                    },
+                    "somalier/relate": {
+                        "branch": "master",
+                        "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
+                        "installed_by": [
+                            "modules",
+                            "vcf_extract_relate_somalier"
+                        ]
+                    },
+                    "tabix/tabix": {
+                        "branch": "master",
+                        "git_sha": "f2cfcf9d3f6a2d123e6c44aefa788aa232204a7a",
+                        "installed_by": [
+                            "vcf_extract_relate_somalier"
                         ]
                     }
                 }
@@ -152,6 +177,13 @@
                     "utils_nfschema_plugin": {
                         "branch": "master",
                         "git_sha": "2fd2cd6d0e7b273747f32e465fdc6bcc3ae0814e",
+                        "installed_by": [
+                            "subworkflows"
+                        ]
+                    },
+                    "vcf_extract_relate_somalier": {
+                        "branch": "master",
+                        "git_sha": "bfa183cf1af24b399537ac01cc2dd6fe791b3c4a",
                         "installed_by": [
                             "subworkflows"
                         ]
