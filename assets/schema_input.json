@@ -17,7 +17,7 @@
                 "type": "string",
                 "pattern": "^\\S+$",
                 "errorMessage": "Sample ID must be provided and cannot contain spaces",
-                "meta": ["sample"]
+                "meta": ["id","sample"]
             },
             "familyId": {
                 "type": "string",
@@ -25,12 +25,17 @@
                 "errorMessage": "familyId must be provided and cannot contain spaces",
                 "meta": ["familyId"]
             },
+            "experimentalStrategy": {
+                "type": "string",
+                "errorMessage": "ExperimentalStrategy. Required if files from multiple strategies present in samplesheet.",
+                "meta": ["sequencingType"]
+            },
             "sex": {
-                "errorMessage": "Sex cannot contain spaces",
+                "errorMessage": "Sex can be female, male or other. Defaults to NA, if none is supplied.",
                 "meta": ["sex"],
                 "default": "NA",
                 "type": "string",
-                "pattern": "^\\S+$"
+                "enum": ["female", "male", "other", "NA"]
             },
             "status": {
                 "type": "integer",
@@ -105,12 +110,17 @@
                 "dependentRequired": {
                     "lane": ["bam"]
                 }
+            },
+            {
+                "dependentRequired": {
+                    "lane": ["cram"]
+                }
             }
         ],
         "dependentRequired": {
             "fastq_2": ["fastq_1"]
         },
         "required": ["participant", "familyId", "sample"],
-        "uniqueEntries": ["lane", "patient", "sample"]
+        "uniqueEntries": ["lane", "participant", "sample", "experimentalStrategy"]
     }
 }
