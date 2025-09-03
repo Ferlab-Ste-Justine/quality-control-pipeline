@@ -41,7 +41,9 @@ params.fasta = getGenomeAttribute('fasta')
 workflow FERLABSTEJUSTINE_QUALITYCONTROL {
 
     take:
-    samplesheet // channel: samplesheet read in from --input
+    samplesheet_fastq // channel: samplesheet read in from --input
+    samplesheet_aln // channel: samplesheet read in from --input
+    samplesheet_gvcf // channel: samplesheet read in from --input
 
     main:
 
@@ -49,7 +51,9 @@ workflow FERLABSTEJUSTINE_QUALITYCONTROL {
     // WORKFLOW: Run pipeline
     //
     QUALITYCONTROL (
-        samplesheet
+        samplesheet_fastq,
+        samplesheet_aln,
+        samplesheet_gvcf
     )
     emit:
     multiqc_report = QUALITYCONTROL.out.multiqc_report // channel: /path/to/multiqc_report.html
@@ -79,7 +83,9 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     FERLABSTEJUSTINE_QUALITYCONTROL (
-        PIPELINE_INITIALISATION.out.samplesheet
+        PIPELINE_INITIALISATION.out.samplesheet_fastq,
+        PIPELINE_INITIALISATION.out.samplesheet_aln,
+        PIPELINE_INITIALISATION.out.samplesheet_gvcf
     )
     //
     // SUBWORKFLOW: Run completion tasks

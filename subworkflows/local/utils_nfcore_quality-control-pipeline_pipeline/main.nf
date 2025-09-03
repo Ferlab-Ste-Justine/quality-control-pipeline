@@ -70,28 +70,31 @@ workflow PIPELINE_INITIALISATION {
     // Create channel from input file provided through params.input
     //
 
-    Channel
-        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+    ch_samplesheet = Channel
+        .fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
         .map {
-            meta, fastq_1, fastq_2 ->
-                if (!fastq_2) {
-                    return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
-                } else {
-                    return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
-                }
-        }
-        .groupTuple()
-        .map { samplesheet ->
-            validateInputSamplesheet(samplesheet)
-        }
-        .map {
-            meta, fastqs ->
-                return [ meta, fastqs.flatten() ]
-        }
-        .set { ch_samplesheet }
+            meta, fastq_1, fastq_2, cram, crai, bam, bai, gvcf ->
+                // [meta.participant + meta.sample, [meta, fastq_1, fastq_2, cram, crai, bam, bai, gvcf]]
+                [meta, fastq_1, fastq_2, cram, crai, bam, bai, gvcf]
+            }.tap { ch_participant_sample } // save input channel
+            // .groupTuple() // group by participant_sample
+            // branch input by type by data type. fastq, bam + bai, cram + crai, or gvcf
+            .branch { meta, fastq_1, fastq_2, cram, crai, bam, bai, gvcf ->
+                fastq: fastq_1
+                    // return channel [meta, fastq_1] or [meta, fastq_1, fastq_2] adding id, numLanes and paired_end to meta.
+                    return [ meta + [ id:"${meta.sample}-${meta.lane}", paired_end:fastq_2 ? true : false ], fastq_2 ? [ fastq_1, fastq_2 ] : [ fastq_1 ] ]
+                aln: cram || bam
+                    // return channel [meta, cram, crai] or [meta, bam, bai] adding id, numLanes to metadata.
+                    return [ meta + [id: "${meta.sample}"], cram ? [ cram, crai ] : [ bam, bai ] ]
+                gvcf: gvcf
+                    // return channel [meta, gvcf] adding id to metadata.
+                    return [ meta + [ id:meta.sample ], gvcf]
+            }
 
     emit:
-    samplesheet = ch_samplesheet
+    samplesheet_aln = ch_samplesheet.aln
+    samplesheet_fastq = ch_samplesheet.fastq
+    samplesheet_gvcf = ch_samplesheet.gvcf
     versions    = ch_versions
 }
 

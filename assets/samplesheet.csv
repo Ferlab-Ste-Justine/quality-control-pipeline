@@ -1,5 +1,5 @@
 participant,sample,sex,familyId,lane,fastq_1,fastq_2,cram,crai,bam,bai,gvcf
-P001,S001,XX,f1,L001,test_data/sample1_R1.fastq.gz,test_data/sample1_R2.fastq.gz,,,,
-P001,S001,XX,f1,L002,test_data/sample1_lane2_R1.fastq.gz,test_data/sample1_lane2_R2.fastq.gz,,,,
-P002,S002,XY,f2,,,,,,test_data/sample2.bam,test_data/sample2.bam.bai,
-P003,S003,XX,f3,,,,,test_data/sample3.bam,test_data/sample3.bam.bai,test_data/sample3.gvcf.gz,test_data/sample3.gvcf.gz
+P001,S001,female,f1,L001,../data-test/test1/sample1_R1.fastq.gz,../data-test/test1/sample1_R2.fastq.gz,,,,
+P001,S001,female,f1,L002,../data-test/test1/sample1_lane2_R1.fastq.gz,../data-test/test1/sample1_lane2_R2.fastq.gz,,,,
+P002,S002,male,f2,,,,,,../data-test/test1/sample2.bam,../data-test/test1/sample2.bam.bai,
+P003,S003,female,f3,,,,,,../data-test/test1/sample3.bam,../data-test/test1/sample3.bam.bai,../data-test/test1/sample3.gvcf.gz
