@@ -20,7 +20,10 @@ include { VCF_ID_REPAIR } from '../subworkflows/local/vcf_id_repair/main'
 workflow QUALITYCONTROL {
 
     take:
-    ch_samplesheet // channel: samplesheet read in from --input
+    ch_fastq
+    ch_aln
+    ch_gvcf // channel: samplesheet read in from --input
+
     main:
 
     ch_versions = Channel.empty()
