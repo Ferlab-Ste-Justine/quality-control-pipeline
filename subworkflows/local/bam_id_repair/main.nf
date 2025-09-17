@@ -1,5 +1,5 @@
 //
-// Workflow that checks if internal sampleID in VCF matches with sample_registration id and renames sampleid if not
+// Workflow that checks if internal sampleID in BAM/CRAM matches with sample_registration id and renames sampleid if not
 //
 include { SAMTOOLS_SAMPLES     } from '../../../modules/local/samtools/samples/main'
 include { SAMTOOLS_INDEX     } from '../../../modules/nf-core/samtools/index/main'
