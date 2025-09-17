@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "bam_qc"
+description: QC of BAM/CRAM files including depth of coverage, mapping quality, GC content, and contamination estimates.
+keywords:
+  - qc
+  - quality control
+  - quality check
+  - bam
+  - depth
+  - contamination
+  - cram
+components:
+  - mosdepth
+  - qualimap_bamqc
+  - qualimap_bamqccram
+  - verifybamid_verifybamid2
+input:
+  - ch_bam_bai:
+      type: file
+      description: |
+        The input channel containing the BAM/CRAM/SAM files and their indexes (BAI/CRAI)
+        Structure: [ val(meta), path(bam/cram), path(bai/crai) ]
+      pattern: "*.{bam/cram/sam},*.{bai/crai}"
+  - ch_fasta:
+      type: file
+      description: |
+        The input channel containing the reference genome FASTA file and its index (FAI) and dictionary (DICT)
+        Structure: [ path(fasta) ]
+      pattern: "*.fa*"
+  - ch_fai:
+      type: file
+      description: |
+        The input channel containing the reference genome FASTA index file (FAI)
+        Structure: [ path(fai) ]
+      pattern: "*.fai"
+  - ch_intervals:
+      type: file
+      description: |
+        The input channel containing the reference genome intervals file (BED)
+        Structure: [ path(bed) ]
+      pattern: "*.bed"
+  - ch_svd_in:
+      type: file
+      description: |
+        The input channel containing the SVD files for VerifyBamID2
+        Structure: [ path(svd_ud), path(svd_mu), path(svd_bed) ]
+      pattern: "*.UD,*.MU,*.bed"
+output:
+  - reports:
+      type: file
+      description: |
+        The output channel containing the QC reports
+        Structure: [ path(report1), path(report2), ... ]
+      pattern: "*.{html,txt,pdf}"
+  - versions:
+      type: file
+      description: |
+        File containing software versions
+        Structure: [ path(versions.yml) ]
+      pattern: "versions.yml"
+authors:
+  - "@georgette-femerling"
+maintainers:
+  - "@georgette-femerling"
