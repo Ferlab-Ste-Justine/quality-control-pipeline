@@ -9,7 +9,7 @@ process SOMALIER_EXTRACT {
         'biocontainers/somalier:0.2.19--h0c29559_0' }"
 
     input:
-    tuple val(meta), path(input), path(input_index)
+    tuple val(meta), path(input), path(input_index), env('SOMALIER_SAMPLE_NAME') // env var added
     tuple val(meta2), path(fasta)
     tuple val(meta3), path(fai)
     tuple val(meta4), path(sites)
