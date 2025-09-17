@@ -162,5 +162,40 @@
         {
             "$ref": "#/$defs/generic_options"
         }
-    ]
+    ],
+    "properties": {
+        "ped_file": {
+            "type": "string"
+        },
+        "publish_all": {
+            "type": "boolean"
+        },
+        "intervalsFile": {
+            "type": "string"
+        },
+        "fai": {
+            "type": "string"
+        },
+        "fasta_dict": {
+            "type": "string"
+        },
+        "somalier_sites": {
+            "type": "string"
+        },
+        "somalier_perfamily": {
+            "type": "boolean"
+        },
+        "regions_bed": {
+            "type": "string"
+        },
+        "verifybamid_svd_prefix": {
+            "type": "string"
+        },
+        "skip_reheader": {
+            "type": "boolean",
+            "default": false,
+            "description": "Skip reheadering of BAM/CRAM files when read group sample name does not match the sample name in the samplesheet/ped file.",
+            "help_text": "By default, if the read group sample name in a BAM/CRAM file does not match the sample name in the samplesheet/ped file, the pipeline will reheader the BAM/CRAM file to match. Use this option to skip this step and use the BAM/CRAM file as-is."
+        }
+    }
 }
