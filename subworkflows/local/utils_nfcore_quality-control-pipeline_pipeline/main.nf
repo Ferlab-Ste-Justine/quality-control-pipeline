@@ -72,23 +72,35 @@ workflow PIPELINE_INITIALISATION {
 
     ch_samplesheet = Channel
         .fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
-        .map {
-            meta, fastq_1, fastq_2, cram, crai, bam, bai, gvcf ->
-                // [meta.participant + meta.sample, [meta, fastq_1, fastq_2, cram, crai, bam, bai, gvcf]]
-                [meta, fastq_1, fastq_2, cram, crai, bam, bai, gvcf]
-            }.tap { ch_participant_sample } // save input channel
-            // .groupTuple() // group by participant_sample
-            // branch input by type by data type. fastq, bam + bai, cram + crai, or gvcf
-            .branch { meta, fastq_1, fastq_2, cram, crai, bam, bai, gvcf ->
+        .map { meta, fastq_1, fastq_2, cram, crai, bam, bai, gvcf, tbi ->
+                [ meta + [participant_sample: "${meta.participant}_${meta.sample}"], [fastq_1, fastq_2, cram, crai, bam, bai, gvcf, tbi] ]
+            } 
+            .tap { ch_participant_sample } // save raw input channel
+            .map { meta, files -> [ meta - meta.subMap('lane'), meta.lane, files ] }
+            .groupTuple() // group by meta
+            .map { meta, lanes, files  ->  [meta + [n_lanes:lanes.size()], lanes.withIndex(), files] } 
+            .transpose()
+            .map { meta, lane, files  ->  [meta + [lane:lane[0], lane_idx:lane[1]], files] } 
+            .map { meta, files -> [meta.sample, meta.sequencingType, meta, files] }
+            .groupTuple()
+            .map { sample, seqtypes, metas, files ->
+                def sequencingTypes = seqtypes.unique()
+                [ sequencingTypes.size(), metas, files ]
+            }
+            .transpose()
+            .map { n_sequencingTypes, meta, files -> [meta + [n_seqTypes:n_sequencingTypes ]] + files }
+            // // branch input by type by data type. fastq, bam + bai, cram + crai, or gvcf + tbi
+            .branch { meta, fastq_1, fastq_2, cram, crai, bam, bai, gvcf, tbi ->
                 fastq: fastq_1
-                    // return channel [meta, fastq_1] or [meta, fastq_1, fastq_2] adding id, numLanes and paired_end to meta.
-                    return [ meta + [ id:"${meta.sample}-${meta.lane}", paired_end:fastq_2 ? true : false ], fastq_2 ? [ fastq_1, fastq_2 ] : [ fastq_1 ] ]
+                    // return channel [meta, fastq_1] or [meta, fastq_1, fastq_2] adding id and if paired_end to meta.
+                    return [ meta + [ id:"${meta.sample}-${meta.lane}", paired_end:fastq_2 ? true : false, data_type:"fastq" ], fastq_2 ? [ fastq_1, fastq_2 ] : [ fastq_1 ] ]
                 aln: cram || bam
-                    // return channel [meta, cram, crai] or [meta, bam, bai] adding id, numLanes to metadata.
-                    return [ meta + [id: "${meta.sample}"], cram ? [ cram, crai ] : [ bam, bai ] ]
+                    data_type = cram ? "cram" : "bam"
+                    // return channel [meta, cram, crai] or [meta, bam, bai].
+                    return [ meta + [ data_type:data_type ] ] + (cram ? [ cram, crai ] : [ bam, bai ] )
                 gvcf: gvcf
                     // return channel [meta, gvcf] adding id to metadata.
-                    return [ meta + [ id:meta.sample ], gvcf]
+                    return [ meta - meta.subMap('lane') + [ data_type:"gvcf" ], gvcf, tbi]
             }
 
     emit:
