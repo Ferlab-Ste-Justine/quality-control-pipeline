@@ -22,10 +22,7 @@ workflow BAM_QC {
     // ----- MOSDEPTH -----
     //
     ch_input_mosdepth = ch_bam_bai
-        //add intervals only if data.type != 'WGS' else []  
-        .map{ meta, bam, bai, intervals ->
-        [ meta, bam, bai, ch_intervals ]
-    }
+        .combine(ch_intervals)
     
     MOSDEPTH(
         ch_input_mosdepth,
@@ -65,7 +62,7 @@ workflow BAM_QC {
     VERIFYBAMID_VERIFYBAMID2(
         ch_bam_bai, ch_svd_in, [], ch_fasta)
 
-    ch_reports = ch_reports.mix(VERIFYBAMID_VERIFYBAMID2.out.self_sm)
+    ch_reports = ch_reports.mix(VERIFYBAMID_VERIFYBAMID2.out.self_sm.map{it[1]}.collect().ifEmpty([]))
 
     // Collect versions
     ch_versions = ch_versions.mix(MOSDEPTH.out.versions)

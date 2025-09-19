@@ -4,7 +4,7 @@
 include { SAMTOOLS_MERGE     } from '../../../modules/nf-core/samtools/merge/main'
 include { SAMTOOLS_INDEX     } from '../../../modules/nf-core/samtools/index/main'
 
-workflow BAM_MERGE_REHEADER {
+workflow BAM_MERGE {
 
     take:
     ch_bam      // channel: [mandatory] meta, [bam/cram], [bai/crai]
@@ -15,19 +15,19 @@ workflow BAM_MERGE_REHEADER {
     ch_versions = Channel.empty()
 
     // branch bams that need merging or not. bam is a list of files
-    bam_to_merge = ch_bam.branch { meta, bam, bai ->
+    bam_to_merge_branch = ch_bam.branch { meta, bam, bai ->
         merge: bam.size() > 1
+            println "Merging ${bam.size()} files for sample ${meta.sample}"
             return [meta , bam]
         direct: bam.size() <= 1
-            return [meta, bam, bai]
+            return [meta, bam[0], bai[0]]
     }
 
     // merge mapped files by samplex
-    SAMTOOLS_MERGE( bam_to_merge.merge,
+    SAMTOOLS_MERGE( bam_to_merge_branch.merge,
                     fasta.map{ it -> [ [ id:'fasta' ], it ] },
                     fasta_fai.map{ it -> [ [ id:'fasta_fai' ], it ] } )
 
-    ch_out_merge = SAMTOOLS_MERGE.out.cram ?: SAMTOOLS_MERGE.out.bam
     ch_out_merge = SAMTOOLS_MERGE.out.bam
         .mix(SAMTOOLS_MERGE.out.cram)
 
@@ -39,7 +39,7 @@ workflow BAM_MERGE_REHEADER {
 
     bam_bai = ch_out_merge
         .join(ch_out_index, failOnMismatch:true, failOnDuplicate:true)
-        .mix(bam_to_merge.direct)
+        .mix(bam_to_merge_branch.direct)
 
     ch_versions = ch_versions.mix(SAMTOOLS_MERGE.out.versions.first())
     ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions.first())
