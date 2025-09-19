@@ -17,7 +17,7 @@ include { SAMTOOLS_SAMPLES       } from '../modules/local/samtools/samples'
 
 include { VCF_ID_REPAIR          } from '../subworkflows/local/vcf_id_repair'
 include { BAM_ID_REPAIR          } from '../subworkflows/local/bam_id_repair'
-include { BAM_MERGE              } from '../subworkflows/local/bam_merge_reheader'
+include { BAM_MERGE              } from '../subworkflows/local/bam_merge'
 include { CRAM_SOMALIER          } from '../subworkflows/local/cram_somalier'
 include { BAM_QC as BAM_QC_WGS   } from '../subworkflows/local/bam_qc'
 include { BAM_QC as BAM_QC_TARGET   } from '../subworkflows/local/bam_qc'
@@ -51,7 +51,7 @@ workflow QUALITYCONTROL {
     ch_svd_ud  = params.verifybamid_svd_prefix ? Channel.value(file(params.verifybamid_svd_prefix + '.UD', checkIfExists:true)) : Channel.value([])
     ch_svd_mu  = params.verifybamid_svd_prefix ? Channel.value(file(params.verifybamid_svd_prefix + '.mu', checkIfExists:true)) : Channel.value([])
     ch_svd_bed = params.verifybamid_svd_prefix ? Channel.value(file(params.verifybamid_svd_prefix + '.bed', checkIfExists:true)) : Channel.value([])
-    ch_svd_in = ch_svd_ud.mix(ch_svd_mu).mix(ch_svd_bed)
+    ch_svd_in = ch_svd_ud.combine(ch_svd_mu).combine(ch_svd_bed).collect()
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -134,6 +134,7 @@ workflow QUALITYCONTROL {
         [meta + [prefix:prefix, samplename_somalier:samplename_somalier, id:samplename_somalier], cram, crai, meta.n_lanes]
     }
 
+
     // Participant group - group aln files of the same participant together. Will not create file if resulting filter is empty
     ch_cram_crai_somalier
         .map{ meta, _cram, _crai, _lanes ->
@@ -188,24 +189,28 @@ workflow QUALITYCONTROL {
     //
     bam_to_merge = ch_cram_crai
         .map { meta, cram, crai ->
-        [groupKey(meta.subMap('id', 'participant', 'sample', 'sequencingType', 'status'), meta.n_lanes), cram, crai]
+        [ groupKey(meta.subMap('id', 'participant', 'sample', 'sequencingType', 'status'), meta.n_lanes), cram, crai ]
     }
     .groupTuple()
 
     BAM_MERGE(bam_to_merge, ch_fasta, ch_fai)
     ch_cram_crai_merged = BAM_MERGE.out.bam_bai
+
     ch_versions = ch_versions.mix(BAM_MERGE.out.versions)
 
     //
     // ----- ALIGNMENT QC -----
     //
     // separate qc for targeted seq vs wgs
-    ch_bam_qc = ch_cram_crai_merged
+    ch_bam_qc = BAM_MERGE.out.bam_bai
+        .map { groupKey, bam, bai ->
+        [groupKey.target, bam, bai]
+        }
         .branch { meta, bam, bai ->
             wgs: meta.sequencingType == 'WGS'
             targeted: meta.sequencingType != 'WGS'
         }
-
+    
     BAM_QC_WGS(
         ch_bam_qc.wgs,
         ch_fasta, 
@@ -276,8 +281,8 @@ workflow QUALITYCONTROL {
     ch_multiqc_files = ch_multiqc_files.mix(PICARD_VALIDATESAMFILE.out.txt.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.pairs_tsv.map { _meta, report -> report })
     ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.samples_tsv.map { _meta, report -> report })
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_WGS.out.multiqc.map{it[1]}.collect().ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_TARGET.out.multiqc.map{it[1]}.collect().ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_WGS.out.reports)
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_TARGET.out.reports)
 
     MULTIQC (
         ch_multiqc_files.collect(),
