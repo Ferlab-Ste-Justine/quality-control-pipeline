@@ -11,6 +11,7 @@ report_section_order:
 
 export_plots: true
 
+
 run_modules:
   - fastqc
   - fastp
@@ -27,14 +28,24 @@ module_order:
         - "*.zip"
   - picard:
       name: "Picard"
-  - qualimap:
-      name: "Qualimap"
   - fastp:
       name: "fastp"
   - somalier:
       name: "Somalier"
+  - mosdepth:
+      name: "Mosdepth"
+  - qualimap:
+      name: "Qualimap"
   - verifybamid:
       name: "VerifyBamID2"
 
+table_cond_formatting_rules:
+  mqc-generalstats-uniquely_mapped_percent:
+    pass:
+      - gt: 80
+    warn:
+      - lt: 80
+    fail:
+      - lt: 70
 
 disable_version_detection: true
