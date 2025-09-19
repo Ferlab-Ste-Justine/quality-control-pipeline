@@ -225,13 +225,15 @@ workflow QUALITYCONTROL {
     ch_versions = ch_versions.mix(BAM_QC_WGS.out.versions)
     ch_versions = ch_versions.mix(BAM_QC_TARGET.out.versions)
     
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_WGS.out.multiqc.map{it[1]}.collect().ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_TARGET.out.multiqc.map{it[1]}.collect().ifEmpty([]))
 
 
-    // //   
-    // Collate and save software versions
-    //
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    COLLECT SOFTWARE VERSIONS & MultiQC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
     softwareVersionsToYAML(ch_versions)
         .collectFile(
             storeDir: "${params.outdir}/pipeline_info",
@@ -274,8 +276,8 @@ workflow QUALITYCONTROL {
     ch_multiqc_files = ch_multiqc_files.mix(PICARD_VALIDATESAMFILE.out.txt.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.pairs_tsv.map { _meta, report -> report })
     ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.samples_tsv.map { _meta, report -> report })
-
-    ch_multiqc_files = ch_multiqc_files.mix(VERIFYBAMID_VERIFYBAMID2.out.self_sm.map{it[1]}.collect().ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_WGS.out.multiqc.map{it[1]}.collect().ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_TARGET.out.multiqc.map{it[1]}.collect().ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files.collect(),
