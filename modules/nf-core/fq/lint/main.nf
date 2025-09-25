@@ -12,6 +12,7 @@ process FQ_LINT {
 
     output:
     tuple val(meta), path("*.fq_lint.txt"), emit: lint
+    tuple val(meta), path("*.fq_lint.status.yml"), emit: status
     path "versions.yml"                   , emit: versions
 
     when:
@@ -21,14 +22,35 @@ process FQ_LINT {
     def args   = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
+    set +e
+    FQLINT_EXIT_CODE=0
+
+    echo "Running fq lint on ${fastq}"
     fq lint \\
         $args \\
-        $fastq > ${prefix}.fq_lint.txt || test -s ${prefix}.fq_lint.txt
+        $fastq > ${prefix}.fq_lint.txt
+    
+    FQ_LINT_EXIT_CODE=\$?
+    if [ \$FQ_LINT_EXIT_CODE -ne 0 ]; then
+        echo -e "fq lint returned a non-zero exit status. \$FQ_LINT_EXIT_CODE"
+        if [ \$FQ_LINT_EXIT_CODE -eq 1 ]; then
+            FQ_STATUS=FAIL
+            echo "ERROR: fq lint failed for ${prefix}"
+            echo \$FQ_STATUS > ${prefix}.fq_lint.status.yml
+        else
+            exit \$FQ_LINT_EXIT_CODE
+        fi
+    else
+        FQ_STATUS=PASS
+        echo \$FQ_STATUS > ${prefix}.fq_lint.status.yml 
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         fq: \$(echo \$(fq lint --version | sed 's/fq-lint //g'))
     END_VERSIONS
+
+    exit 0
     """
 
     stub:
