@@ -52,7 +52,8 @@
                         "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
                         "installed_by": [
                             "modules"
-                        ]
+                        ],
+                        "patch": "modules/nf-core/fq/lint/fq-lint.diff"
                     },
                     "mosdepth": {
                         "branch": "master",
@@ -137,7 +138,8 @@
                         "installed_by": [
                             "modules",
                             "vcf_extract_relate_somalier"
-                        ]
+                        ],
+                        "patch": "modules/nf-core/somalier/extract/somalier-extract.diff"
                     },
                     "somalier/relate": {
                         "branch": "master",

@@ -25,7 +25,6 @@ process FQ_LINT {
     set +e
     FQLINT_EXIT_CODE=0
 
-    echo "Running fq lint on ${fastq}"
     fq lint \\
         $args \\
         $fastq > ${prefix}.fq_lint.txt
