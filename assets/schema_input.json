@@ -120,7 +120,7 @@
         "dependentRequired": {
             "fastq_2": ["fastq_1"]
         },
-        "required": ["participant", "familyId", "sample"],
+        "required": ["participant", "sample"],
         "uniqueEntries": ["lane", "participant", "sample", "experimentalStrategy"]
     }
 }

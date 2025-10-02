@@ -35,7 +35,6 @@ lint:
     - assets/email_template.txt
     - docs/README.md
   include_configs: False
-  pipeline_name_conventions: False
   multiqc_config:
     - report_comment
   nextflow_config:
