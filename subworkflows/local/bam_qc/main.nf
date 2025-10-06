@@ -1,4 +1,5 @@
 include { QC_COVERAGE_REGIONS           } from '../qc_coverage_regions/main'
+include { SAMTOOLS_STATS } from '../../../modules/nf-core/samtools/stats/main'
 include { QUALIMAP_BAMQC     } from '../../../modules/nf-core/qualimap/bamqc/main'
 include { QUALIMAP_BAMQCCRAM } from '../../../modules/nf-core/qualimap/bamqccram/main'
 include { VERIFYBAMID_VERIFYBAMID2 } from '../../../modules/nf-core/verifybamid/verifybamid2/main'
@@ -21,7 +22,17 @@ workflow BAM_QC {
     ch_reports = channel.empty()
 
     //
-    // ----- COVERAGE -----
+    // ----- SAMTOOLS STATS -----
+    //
+
+    SAMTOOLS_STATS( ch_bam_bai,
+        ch_fasta.map { it -> [ [id:"fasta"], it] }
+    )
+    ch_reports = ch_reports.mix(SAMTOOLS_STATS.out.stats.map{it[1]}.collect())
+    ch_versions = ch_versions.mix(SAMTOOLS_STATS.out.versions)
+
+    //
+    // ----- MOSDEPTH -----
     //
     QC_COVERAGE_REGIONS (
         ch_bam_bai,
@@ -49,13 +60,13 @@ workflow BAM_QC {
         ch_intervals,
         ch_fasta, ch_fai)
 
-    ch_reports = ch_reports.mix(QUALIMAP_BAMQCCRAM.out.results.map{it[1]}.collect().ifEmpty([]))
+    ch_reports = ch_reports.mix(QUALIMAP_BAMQCCRAM.out.results.map{it[1]}.collect())
 
     QUALIMAP_BAMQC (
         ch_input_qualimap.bam.map { meta, bam, _idx -> [meta, bam] },
         ch_intervals )
 
-    ch_reports = ch_reports.mix(QUALIMAP_BAMQC.out.results.map{it[1]}.collect().ifEmpty([]))
+    ch_reports = ch_reports.mix(QUALIMAP_BAMQC.out.results.map{it[1]}.collect())
 
     //
     // ----- VERIFYBAMID2 - Contamination -----
@@ -63,7 +74,7 @@ workflow BAM_QC {
     VERIFYBAMID_VERIFYBAMID2(
         ch_bam_bai, ch_svd_in, [], ch_fasta)
 
-    ch_reports = ch_reports.mix(VERIFYBAMID_VERIFYBAMID2.out.self_sm.map{it[1]}.collect().ifEmpty([]))
+    ch_reports = ch_reports.mix(VERIFYBAMID_VERIFYBAMID2.out.self_sm.map{it[1]}.collect())
 
     // Collect versions
     ch_versions = ch_versions.mix(QC_COVERAGE_REGIONS.out.versions)

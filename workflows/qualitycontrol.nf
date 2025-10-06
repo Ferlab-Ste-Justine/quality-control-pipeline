@@ -61,19 +61,9 @@ workflow QUALITYCONTROL {
 
     FASTQ_QC ( ch_fastq )
         ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports.collect{it})
+        ch_final_reports = ch_final_reports.mix(FASTQ_QC.out.reports.collect{it})
         ch_versions = ch_versions.mix(FASTQ_QC.out.versions)
-
-
-    /*
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        FASTQ QUALITY CONTROL
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    */
-
-    FASTQ_QC ( ch_fastq )
-        ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports.collect{it})
-        ch_versions = ch_versions.mix(FASTQ_QC.out.versions)
-
+        
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         BAM/CRAM QC
@@ -194,7 +184,6 @@ workflow QUALITYCONTROL {
     .groupTuple()
 
     BAM_MERGE(bam_to_merge, ch_fasta, ch_fai)
-    ch_cram_crai_merged = BAM_MERGE.out.bam_bai
 
     ch_versions = ch_versions.mix(BAM_MERGE.out.versions)
 
