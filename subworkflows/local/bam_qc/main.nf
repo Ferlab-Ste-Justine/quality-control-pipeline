@@ -1,3 +1,4 @@
+include { SAMTOOLS_STATS } from '../../../modules/nf-core/samtools/stats/main'
 include { MOSDEPTH           } from '../../../modules/nf-core/mosdepth/main'
 include { QUALIMAP_BAMQC     } from '../../../modules/nf-core/qualimap/bamqc/main'
 include { QUALIMAP_BAMQCCRAM } from '../../../modules/nf-core/qualimap/bamqccram/main'
@@ -19,6 +20,16 @@ workflow BAM_QC {
     ch_reports = Channel.empty()
 
     //
+    // ----- SAMTOOLS STATS -----
+    //
+
+    SAMTOOLS_STATS( ch_bam_bai, 
+        ch_fasta.map { it -> [ [id:"fasta"], it] } 
+    )
+    ch_reports = ch_reports.mix(SAMTOOLS_STATS.out.stats.map{it[1]}.collect())
+    ch_versions = ch_versions.mix(SAMTOOLS_STATS.out.versions)
+
+    //
     // ----- MOSDEPTH -----
     //
     ch_input_mosdepth = ch_bam_bai
@@ -29,8 +40,8 @@ workflow BAM_QC {
         ch_fasta.map { it -> [ [id:"fasta"], it] }
     )
 
-    ch_reports = ch_reports.mix(MOSDEPTH.out.global_txt.map{it[1]}.collect().ifEmpty([]))
-    ch_reports = ch_reports.mix(MOSDEPTH.out.regions_txt.map{it[1]}.collect().ifEmpty([]))
+    ch_reports = ch_reports.mix(MOSDEPTH.out.global_txt.map{it[1]}.collect())
+    ch_reports = ch_reports.mix(MOSDEPTH.out.regions_txt.map{it[1]}.collect())
 
     //
     // ----- QUALIMAP -----
@@ -48,13 +59,13 @@ workflow BAM_QC {
         ch_intervals, 
         ch_fasta, ch_fai)
 
-    ch_reports = ch_reports.mix(QUALIMAP_BAMQCCRAM.out.results.map{it[1]}.collect().ifEmpty([]))
+    ch_reports = ch_reports.mix(QUALIMAP_BAMQCCRAM.out.results.map{it[1]}.collect())
 
     QUALIMAP_BAMQC (
         ch_input_qualimap.bam.map { meta, bam, _idx -> [meta, bam] },
         ch_intervals )
 
-    ch_reports = ch_reports.mix(QUALIMAP_BAMQC.out.results.map{it[1]}.collect().ifEmpty([]))
+    ch_reports = ch_reports.mix(QUALIMAP_BAMQC.out.results.map{it[1]}.collect())
 
     //
     // ----- VERIFYBAMID2 - Contamination -----
@@ -62,7 +73,7 @@ workflow BAM_QC {
     VERIFYBAMID_VERIFYBAMID2(
         ch_bam_bai, ch_svd_in, [], ch_fasta)
 
-    ch_reports = ch_reports.mix(VERIFYBAMID_VERIFYBAMID2.out.self_sm.map{it[1]}.collect().ifEmpty([]))
+    ch_reports = ch_reports.mix(VERIFYBAMID_VERIFYBAMID2.out.self_sm.map{it[1]}.collect())
 
     // Collect versions
     ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
