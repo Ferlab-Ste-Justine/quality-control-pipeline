@@ -69,6 +69,13 @@
                             "modules"
                         ]
                     },
+                    "picard/collectwgsmetrics": {
+                        "branch": "master",
+                        "git_sha": "df124e87c74d8b40285199f8cc20151f5aa57255",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
                     "preseq/ccurve": {
                         "branch": "master",
                         "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",

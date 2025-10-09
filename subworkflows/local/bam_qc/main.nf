@@ -1,5 +1,6 @@
 include { QC_COVERAGE_REGIONS           } from '../qc_coverage_regions/main'
 include { SAMTOOLS_STATS } from '../../../modules/nf-core/samtools/stats/main'
+include { PICARD_COLLECTWGSMETRICS } from '../../../modules/nf-core/picard/collectwgsmetrics/main'
 include { QUALIMAP_BAMQC     } from '../../../modules/nf-core/qualimap/bamqc/main'
 include { QUALIMAP_BAMQCCRAM } from '../../../modules/nf-core/qualimap/bamqccram/main'
 include { VERIFYBAMID_VERIFYBAMID2 } from '../../../modules/nf-core/verifybamid/verifybamid2/main'
@@ -29,7 +30,18 @@ workflow BAM_QC {
         ch_fasta.map { it -> [ [id:"fasta"], it] }
     )
     ch_reports = ch_reports.mix(SAMTOOLS_STATS.out.stats.map{it[1]}.collect())
-    ch_versions = ch_versions.mix(SAMTOOLS_STATS.out.versions)
+
+    //
+    // ----- PICARD COLLECTWGMETRICS -----
+    //
+
+    PICARD_COLLECTWGSMETRICS( ch_bam_bai,
+        ch_fasta.map { it -> [ [id:"fasta"], it] },
+        ch_fai.map { it -> [ [id:"fai"], it] },
+        ch_intervals
+    )
+
+    ch_reports = ch_reports.mix(PICARD_COLLECTWGSMETRICS.out.metrics.map{it[1]}.collect())
 
     //
     // ----- MOSDEPTH -----
@@ -78,6 +90,8 @@ workflow BAM_QC {
 
     // Collect versions
     ch_versions = ch_versions.mix(QC_COVERAGE_REGIONS.out.versions)
+    ch_versions = ch_versions.mix(SAMTOOLS_STATS.out.versions)
+    ch_versions = ch_versions.mix(PICARD_COLLECTWGSMETRICS.out.versions)
     ch_versions = ch_versions.mix(QUALIMAP_BAMQCCRAM.out.versions)
     ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions)
     ch_versions = ch_versions.mix(VERIFYBAMID_VERIFYBAMID2.out.versions)
