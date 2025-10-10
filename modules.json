@@ -55,6 +55,13 @@
                         ],
                         "patch": "modules/nf-core/fq/lint/fq-lint.diff"
                     },
+                    "gatk4/bedtointervallist": {
+                        "branch": "master",
+                        "git_sha": "ae8cd884f895585c6799ab4eb6a2c9f44df03336",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
                     "mosdepth": {
                         "branch": "master",
                         "git_sha": "2cd32e2448fb70ed1e1ab3143cee7dbdbede7271",
@@ -154,7 +161,8 @@
                         "installed_by": [
                             "modules",
                             "vcf_extract_relate_somalier"
-                        ]
+                        ],
+                        "patch": "modules/nf-core/somalier/relate/somalier-relate.diff"
                     },
                     "tabix/tabix": {
                         "branch": "master",
