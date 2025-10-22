@@ -4,7 +4,7 @@ include { PICARD_COLLECTWGSMETRICS } from '../../../modules/nf-core/picard/colle
 include { QUALIMAP_BAMQC     } from '../../../modules/nf-core/qualimap/bamqc/main'
 include { QUALIMAP_BAMQCCRAM } from '../../../modules/nf-core/qualimap/bamqccram/main'
 include { VERIFYBAMID_VERIFYBAMID2 } from '../../../modules/nf-core/verifybamid/verifybamid2/main'
-
+include { QC_COVERAGE_REGIONS } from '../qc_coverage_regions/main'
 workflow BAM_QC {
 
     take:
@@ -16,6 +16,8 @@ workflow BAM_QC {
     qc_regions_1 // channel: [optional] path to first qc regions file
     qc_regions_2 // channel: [optional] path to second qc regions file
     ch_svd_in       // channel: [optional] [ path(svd_ud), path(svd_mu), path(svd_bed) ]
+    qc_regions1
+    qc_regions2
 
     main:
 

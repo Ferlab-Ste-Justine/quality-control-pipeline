@@ -37,7 +37,7 @@
                 "meta": ["sex"],
                 "default": "NA",
                 "type": "string",
-                "enum": ["female", "male", "other", "NA"]
+                "enum": ["Female", "Male", "Other", "NA"]
             },
             "status": {
                 "type": "integer",
@@ -52,87 +52,36 @@
                 "pattern": "^\\S+$",
                 "meta": ["lane"]
             },
-            "fastq_1": {
-                "errorMessage": "FastQ file for reads 1 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'",
+            "runId": {
                 "type": "string",
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                "pattern": "^\\S+$",
+                "meta": ["runId"]
+            },
+            "fileType": {
+                "errorMessage": "File type must be one of: fastq, bam, cram, gvcf. Defaults to fastq, if none is supplied.",
+                "meta": ["fileType"],
+                "type": "string",
+                "enum": ["FASTQ","BAM","CRAM","GVCF","VCF", "fastq","bam","cram","gvcf","vcf"]
+            },
+            "file1":{
+                "errorMessage": "File name cannot contain spaces and must have a valid extension according to the fileType provided.",
+                "type": "string",
+                "pattern": "^\\S+\\.(f(ast)?q|cram|bam|g?vcf)(\\.gz)?$",
                 "format": "file-path",
                 "exists": true
             },
-            "fastq_2": {
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'",
+            "file2":{
+                "errorMessage": "File name cannot contain spaces and must have a valid extension according to the fileType provided.",
                 "type": "string",
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "format": "file-path",
-                "exists": true
-            },
-            "cram": {
-                "errorMessage": "CRAM file cannot contain spaces and must have extension '.cram'",
-                "type": "string",
-                "pattern": "^\\S+\\.cram$",
-                "format": "file-path",
-                "exists": true
-            },
-            "crai": {
-                "errorMessage": "CRAM index file cannot contain spaces and must have extension '.crai'",
-                "type": "string",
-                "pattern": "^\\S+\\.crai$",
-                "format": "file-path",
-                "exists": true
-            },
-            "bam": {
-                "errorMessage": "BAM file cannot contain spaces and must have extension '.bam'",
-                "type": "string",
-                "pattern": "^\\S+\\.bam$",
-                "format": "file-path",
-                "exists": true
-            },
-            "bai": {
-                "errorMessage": "BAM index file cannot contain spaces and must have extension '.bai'",
-                "type": "string",
-                "pattern": "^\\S+\\.bai$",
-                "format": "file-path",
-                "exists": true
-            },
-            "gvcf": {
-                "errorMessage": "gVCF file cannot contain spaces and must have extension '.gvcf.gz' or '.vcf.gz'",
-                "type": "string",
-                "pattern": "^\\S+\\.(vcf|gvcf)(\\.gz)?$",
-                "format": "file-path",
-                "exists": true
-            },
-            "tbi": {
-                "errorMessage": "gVCF index file cannot contain spaces and must have extension '.tbi'",
-                "type": "string",
-                "pattern": "^\\S+\\.(vcf|gvcf)(\\.gz)?(\\.tbi)$",
+                "pattern": "^\\S+\\.(f(ast)?q(\\.gz)?|crai|bai|csi|tbi|idx)$",
                 "format": "file-path",
                 "exists": true
             }
         },
-        "anyOf": [
-            {
-                "dependentRequired": {
-                    "lane": ["fastq_1"]
-                }
-            },
-            {
-                "dependentRequired": {
-                    "lane": ["bam"]
-                }
-            },
-            {
-                "dependentRequired": {
-                    "lane": ["cram"]
-                }
-            }
-        ],
         "dependentRequired": {
-            "fastq_2": ["fastq_1"],
-            "bai":["bam"],
-            "crai":["cram"],
-            "tbi":["gvcf"]
+            "file2": ["file1"]
         },
-        "required": ["participant", "sample"],
-        "uniqueEntries": ["lane", "participant", "sample", "experimentalStrategy"]
+        "required": ["participant", "sample", "fileType", "file1"],
+        "uniqueEntries": ["lane", "runId", "participant", "sample", "experimentalStrategy"]
     }
 }
