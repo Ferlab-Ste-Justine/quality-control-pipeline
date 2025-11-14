@@ -13,14 +13,15 @@
 - [BCFTools](https://pubmed.ncbi.nlm.nih.gov/21903627/)
 > Li H: A statistical framework for SNP calling, mutation discovery, association mapping and population genetical parameter estimation from sequencing data. Bioinformatics. 2011 Nov 1;27(21):2987-93. doi: 10.1093/bioinformatics/btr509. PubMed PMID: 21903627; PubMed Central PMCID: PMC3198575.
 
+- [d4tools](https://pubmed.ncbi.nlm.nih.gov/35936573/)
+> Hou H, Pedersen B, Quinlan A. Balancing efficient analysis and storage of quantitative genomics data with the D4 format and d4tools. Nat Comput Sci. 2021 Jun;1(6):441-447. doi: 10.1038/s43588-021-00085-0. Epub 2021 Jun 21. Erratum in: Nat Comput Sci. 2022 Feb;2(2):132. doi: 10.1038/s43588-022-00211-6. PMID: 35936573; PMCID: PMC9355464.
+
 - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 
 > Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online].
 
-- [Fq](https://github.com/stjude-rust-labs/fq)
-
-- [Seqfu](https://pubmed.ncbi.nlm.nih.gov/34066939/)
-> Telatin A, Fariselli P, Birolo G. SeqFu: A Suite of Utilities for the Robust and Reproducible Manipulation of Sequence Files. Bioengineering (Basel). 2021 May 7;8(5):59. doi: 10.3390/bioengineering8050059. PMID: 34066939; PMCID: PMC8148589.
+- [Mosdepth](https://pubmed.ncbi.nlm.nih.gov/29096012/)
+> Pedersen BS, Quinlan AR. Mosdepth: quick coverage calculation for genomes and exomes. Bioinformatics. 2018 Mar 1;34(5):867-868. doi: 10.1093/bioinformatics/btx699. PMID: 29096012; PMCID: PMC6030888.
 
 - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
 > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
