@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial release of Ferlab-Ste-Justine/quality-control-pipeline, created with the [nf-core](https://nf-co.re/) template.
 
 ### `Added`
+- [#21](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/21) Added option to calculate coverage metrics on multiple BED files using d4tools
 - [#20](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/20) Added FastQ validation and QC workflow
 - [#19](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/19) Added somalier workflow and modules
 - [#18](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/18) Added bam/cram merge workflow
