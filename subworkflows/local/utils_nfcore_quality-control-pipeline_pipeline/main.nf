@@ -33,7 +33,7 @@ workflow PIPELINE_INITIALISATION {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     //
     // Print version and exit if required and dump pipeline parameters to JSON file
@@ -70,58 +70,45 @@ workflow PIPELINE_INITIALISATION {
     // Create channel from input file provided through params.input
     //
 
-    ch_samplesheet = Channel
-        .fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.v2.json"))
+    ch_samplesheet = channel
+        .fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
         .map { meta, file1, file2 ->
-                [ meta + [participant_sample: "${meta.participant}_${meta.sample}"], [file1, file2] ]
+            def fileType = inferFileTypeFromExtension(file1, meta.fileType)
+            [ meta + [ participant_sample: "${meta.participant}_${meta.sample}", fileType: fileType ], [file1, file2] ]
+        }
+        .tap { ch_participant_sample } // save raw input channel
+        .map { meta, files -> [meta.participant, meta.sequencingType, meta, files] }
+        .groupTuple()
+        .map { participant, seqtypes, metas, files ->
+            def sequencingTypes = seqtypes.unique()
+            [ sequencingTypes.size(), metas, files ]
+        }
+        .transpose()
+        .map { n_sequencingTypes, meta, files -> [meta + [n_seqTypes:n_sequencingTypes ], files] }
+        .map { meta, files -> [ meta - meta.subMap('lane'), meta.lane, files ] }
+        .groupTuple() // group by meta
+        .map { meta, lanes, files  ->  [meta + [n_lanes:lanes.size()], lanes.withIndex(), files] }
+        .transpose()
+        .map { meta, lane, files  ->  [meta + [lane:lane[0], lane_idx:lane[1]]] + files }
+        .map { meta, file1, file2 ->
+            if (meta.fileType == "FASTQ") {
+                if (file2) {
+                    assert (file2.name.endsWith('.fastq.gz') || file2.name.endsWith('.fq.gz')) : log.error("File 2 for sample ${meta.sample} does not have a valid FASTQ extension.")
+                }
+                def new_id = meta.n_seqTypes > 1 ? "${meta.sample}_${meta.sequencingType}_${meta.lane}" : "${meta.sample}_${meta.lane}"
+                return [ meta + [ id:new_id, paired_end:file2 ? true : false ], file2 ? [ file1, file2 ] : [ file1 ] ]
             }
-            .tap { ch_participant_sample } // save raw input channel
-            .map { meta, files -> [meta.participant, meta.sequencingType, meta, files] }
-            .groupTuple()
-            .map { participant, seqtypes, metas, files ->
-                def sequencingTypes = seqtypes.unique()
-                [ sequencingTypes.size(), metas, files ]
+            else {
+                if (!file2) {
+                    def index_file = findIndex(meta.fileType, file1)
+                    return [ meta, [file1, index_file]]
+                }
             }
-            .transpose()
-            .map { n_sequencingTypes, meta, files -> [meta + [n_seqTypes:n_sequencingTypes ], files] }
-            .map { meta, files -> [ meta - meta.subMap('lane'), meta.lane, files ] }
-            .groupTuple() // group by meta
-            .map { meta, lanes, files  ->  [meta + [n_lanes:lanes.size()], lanes.withIndex(), files] }
-            .transpose()
-            .map { meta, lane, files  ->  [meta + [lane:lane[0], lane_idx:lane[1]]] + files }
-
-            // branch input by type by data type. fastq, bam + bai, cram + crai, or gvcf + tbi
-            .branch { meta, file1, file2 ->
-                fastq: (meta.fileType == "fastq") && (file1.name.endsWith('.fastq.gz') || file1.name.endsWith('.fq.gz'))
-                    // return channel [meta, file1] or [meta, file1, file2] adding id and if paired_end to meta.
-                    // check if file2 also ends with fastq
-                    if (file2) {
-                        // log.info("File 2 for sample ${meta.sample}.")
-                        assert (file2.name.endsWith('.fastq.gz') || file2.name.endsWith('.fq.gz')), log.error("File 2 for sample ${meta.sample} does not have a valid FASTQ extension.")
-                    }
-                    def new_id = meta.seqTypes > 1 ? "${meta.sample}_${meta.sequencingType}_${meta.lane}" : "${meta.sample}_${meta.lane}"
-                    return [ meta + [ id:new_id, paired_end:file2 ? true : false ], file2 ? [ file1, file2 ] : [ file1 ] ]
-                aln: (meta.fileType == "bam" || meta.fileType == "cram") && (file1.name.endsWith('.bam') || file1.name.endsWith('.cram'))
-                    def data_type = file1.name.endsWith('.cram') ? "cram" : "bam"
-                    // return channel [meta, cram, crai] or [meta, bam, bai].
-                    return [ meta, file1, file2 ]
-                vcf: (meta.fileType == "gvcf" || meta.fileType == "vcf") && file1.name.contains('vcf')
-                    // return channel [meta, g?vcf, tbi].
-                    return [ meta, file1, file2 ]
-                remainder: true
-                    log.warn("Unsupported fileType '${meta.fileType}' or file extension for sample '${meta.sample}'. Supported fileTypes are: fastq, bam, cram, gvcf.")
-            }
-            // .map { meta, files -> [ meta - meta.subMap('lane'), meta.lane, files ] }
-            // .groupTuple() // group by meta
-            // .map { meta, lanes, files  ->  [meta + [n_lanes:lanes.size()], lanes.withIndex(), files] }
-            // .transpose()
-            // .map { meta, lane, files  ->  [meta + [lane:lane[0], lane_idx:lane[1]], files] }
-
-
+            [ meta, [file1, file2] ]
+        }
+        
     emit:
-    samplesheet_aln = ch_samplesheet.aln
-    samplesheet_fastq = ch_samplesheet.fastq
-    samplesheet_gvcf = ch_samplesheet.vcf
+    samplesheet = ch_samplesheet
     versions    = ch_versions
 }
 
@@ -160,6 +147,50 @@ workflow PIPELINE_COMPLETION {
     FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
+//
+// Validate and Infer fileType from file extension
+//
+def inferFileTypeFromExtension(file, fileType=null) {
+    def name = file.getFileName().toString() - '.gz'
+
+    // Define mappings from file type to a list of possible extensions.
+    def fileTypeMappings = [
+        "GVCF" : ['.gvcf', '.g.vcf'],
+        "VCF"  : ['.vcf'],
+        "FASTQ": ['.fastq', '.fq'],
+        "BAM"  : ['.bam'],
+        "CRAM" : ['.cram']
+    ]
+
+    // Find the first map entry where any of its extensions match the end of the filename.
+    def matchedEntry = fileTypeMappings.find { entry ->
+        entry.value.any { extension -> name.endsWith(extension) }
+    }
+
+    if (matchedEntry) {
+        // if fileType exists, check it matches inferred fileType - Validation
+        if (fileType && matchedEntry?.key != fileType) {
+            error("Inferred fileType '${matchedEntry.key}' from file extension does not match provided fileType '${fileType}' for file: ${name}. Please check the input samplesheet.")
+        }
+        return matchedEntry.key
+    } else {
+        log.warn("Unsupported fileType or file extension for file '${name}'. Supported fileTypes are: fastq, bam, cram, gvcf.")
+    }
+}
+
+//
+// Find index file for alignment or variant files
+//
+def findIndex(fileType, dataFile) {
+    def index = dataFile.toString() + (fileType in ["BAM","CRAM"] ? (fileType == "BAM" ? '.bai' : '.crai') : '.tbi')
+    if(!file(index).exists()) {
+        log.debug("Index file not found for file: ${dataFile}. Expected index at: ${index}")
+        return []
+    }
+    return file(index)
+}
+
 //
 // Check and validate pipeline parameters
 //

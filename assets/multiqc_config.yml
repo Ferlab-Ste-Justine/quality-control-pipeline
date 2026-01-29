@@ -11,28 +11,33 @@ report_section_order:
 
 export_plots: true
 
+extra_fn_clean_exts:
+  - "*.qualimap"
+
+extra_fn_clean_trim:
+  - ".qualimap"
+
 run_modules:
+  - custom_content
   - fastqc
   - fastp
-  - samtools
+  - ngscheckmate
   - qualimap
+  - samtools
   - picard
   - somalier
   - mosdepth
   - verifybamid
-
-extra_fn_clean_exts:
-  - ".qualimap"
 
 module_order:
   - fastqc:
       name: "FastQC"
       path_filters:
         - "*.zip"
-  - fastp:
-      name: "fastp"
   - picard:
       name: "Picard"
+  - fastp:
+      name: "fastp"
   - samtools:
       name: "Samtools"
   - somalier:
@@ -52,5 +57,24 @@ table_cond_formatting_rules:
       - lt: 80
     fail:
       - lt: 70
+
+# Other MultiQC config stuff here
+custom_data:
+  example_files:
+    id: "checks"
+    description: "Example checks"
+    file_format: "tsv"
+    plot_type: "generalstats"
+    pconfig:
+      title: "Example Checks"
+      ylab: "Check"
+      hline:
+        - 0.5
+      table_cond_formatting:
+        - mqc-generalstats-Check
+
+sp:
+  example_files:
+    fn: "example_files_*"
 
 disable_version_detection: true

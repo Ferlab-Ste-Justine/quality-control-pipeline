@@ -61,7 +61,7 @@
                 "errorMessage": "File type must be one of: fastq, bam, cram, gvcf. Defaults to fastq, if none is supplied.",
                 "meta": ["fileType"],
                 "type": "string",
-                "enum": ["FASTQ","BAM","CRAM","GVCF","VCF", "fastq","bam","cram","gvcf","vcf"]
+                "enum": ["FASTQ","BAM","CRAM","GVCF","VCF","fastq","bam","cram","gvcf","vcf"]
             },
             "file1":{
                 "errorMessage": "File name cannot contain spaces and must have a valid extension according to the fileType provided.",

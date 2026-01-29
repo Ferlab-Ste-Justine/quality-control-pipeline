@@ -1,4 +1,3 @@
-include { QC_COVERAGE_REGIONS           } from '../qc_coverage_regions/main'
 include { SAMTOOLS_STATS } from '../../../modules/nf-core/samtools/stats/main'
 include { PICARD_COLLECTWGSMETRICS } from '../../../modules/nf-core/picard/collectwgsmetrics/main'
 include { QUALIMAP_BAMQC     } from '../../../modules/nf-core/qualimap/bamqc/main'
@@ -15,9 +14,8 @@ workflow BAM_QC {
     ch_intervals    // channel: [optional] [ path(intervals) ]
     qc_regions_1 // channel: [optional] path to first qc regions file
     qc_regions_2 // channel: [optional] path to second qc regions file
+    ch_intervals_list // channel: [optional] [ path(interval_list) ]
     ch_svd_in       // channel: [optional] [ path(svd_ud), path(svd_mu), path(svd_bed) ]
-    qc_regions1
-    qc_regions2
 
     main:
 
@@ -40,7 +38,7 @@ workflow BAM_QC {
     PICARD_COLLECTWGSMETRICS( ch_bam_bai,
         ch_fasta.map { it -> [ [id:"fasta"], it] },
         ch_fai.map { it -> [ [id:"fai"], it] },
-        ch_intervals
+        ch_intervals_list
     )
 
     ch_reports = ch_reports.mix(PICARD_COLLECTWGSMETRICS.out.metrics.map{it[1]}.collect())
