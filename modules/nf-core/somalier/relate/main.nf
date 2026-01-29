@@ -16,6 +16,7 @@ process SOMALIER_RELATE {
     tuple val(meta), path("*.html"),          emit: html
     tuple val(meta), path("*.pairs.tsv"),     emit: pairs_tsv
     tuple val(meta), path("*.samples.tsv"),   emit: samples_tsv
+    tuple val(meta), path("*.groups.tsv"),    optional: true, emit: groups_tsv
     path "versions.yml",                      emit: versions
 
     when:
@@ -49,6 +50,7 @@ process SOMALIER_RELATE {
     touch ${prefix}.html
     touch ${prefix}.pairs.tsv
     touch ${prefix}.samples.tsv
+    touch ${prefix}.groups.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
