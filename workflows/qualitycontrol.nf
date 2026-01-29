@@ -3,25 +3,19 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
-
-include { FASTQC                 } from '../modules/nf-core/fastqc'
-include { MULTIQC                } from '../modules/nf-core/multiqc'
-include { CREATE_FAMILY_PED      } from '../modules/local/create_family_ped'
-include { SAMTOOLS_CONVERT       } from '../modules/nf-core/samtools/convert/main'
-include { PICARD_VALIDATESAMFILE } from '../modules/local/picard/validatesamfile'
-include { SAMTOOLS_SAMPLES       } from '../modules/local/samtools/samples'
-
-include { VCF_ID_REPAIR          } from '../subworkflows/local/vcf_id_repair'
-include { BAM_ID_REPAIR          } from '../subworkflows/local/bam_id_repair'
+include { FASTQ_QC               } from '../subworkflows/local/fastq_qc/main'
+include { BAM_QC as BAM_QC_WGS   } from '../subworkflows/local/bam_qc/main'
+include { BAM_QC as BAM_QC_TARGET   } from '../subworkflows/local/bam_qc/main'
 include { BAM_MERGE              } from '../subworkflows/local/bam_merge'
 include { CRAM_SOMALIER          } from '../subworkflows/local/cram_somalier'
-include { BAM_QC as BAM_QC_WGS   } from '../subworkflows/local/bam_qc'
-include { BAM_QC as BAM_QC_TARGET   } from '../subworkflows/local/bam_qc'
-include { FASTQ_QC                 } from '../subworkflows/local/fastq_qc/main'
+include { GATK4_BEDTOINTERVALLIST } from '../modules/nf-core/gatk4/bedtointervallist/main'
+include { CREATE_FAMILY_PED      } from '../modules/local/create_family_ped/main'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -30,28 +24,41 @@ include { FASTQ_QC                 } from '../subworkflows/local/fastq_qc/main'
 workflow QUALITYCONTROL {
 
     take:
-    ch_fastq
-    ch_aln
-    ch_gvcf // channel: samplesheet read in from --input
+    ch_samplesheet    // channel: [ val(meta), path(fastq/cram/bam/vcf files) ]
 
     main:
+
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
-    ch_final_reports = Channel.empty()
 
     // inputs
-    ch_fasta = Channel.value(file(params.fasta, checkIfExists:true)) 
-    ch_fai   = Channel.value(file(params.fai, checkIfExists:true))
-    ch_dict   = params.fasta_dict ? Channel.value(file(params.fasta_dict, checkIfExists:true)) : Channel.value([])
-    ch_intervals = params.regions_bed ? Channel.value(file(params.regions_bed, checkIfExists: true)) : Channel.value([])
+    ch_fasta = params.fasta ? channel.value(file(params.fasta, checkIfExists:true)) : channel.value([])
+    ch_fai   = params.fai ? channel.value(file(params.fai, checkIfExists:true)) : channel.value([])
+    ch_dict   = params.fasta_dict ? channel.value(file(params.fasta_dict, checkIfExists:true)) : channel.value([])
+    ch_intervals = params.regions_bed ? channel.value(file(params.regions_bed, checkIfExists: true)) : channel.value([])
+    qc_regions_1 = params.qc_coverage_region_1 ? channel.value(file(params.qc_coverage_region_1, checkIfExists:true)) : channel.value([])
+    qc_regions_2 = params.qc_coverage_region_2 ? channel.value(file(params.qc_coverage_region_2, checkIfExists:true)) : channel.value([])
+
     // somalier sites VCF
-    ch_somalier_sites = params.somalier_sites ? Channel.value(file(params.somalier_sites, checkIfExists:true)) : Channel.value([])
-    ch_ped = params.ped_file ? Channel.value(file(params.ped_file, checkIfExists:true)) : Channel.of([])
+    ch_somalier_sites = params.somalier_sites ? channel.value(file(params.somalier_sites, checkIfExists:true)) : channel.value([])
+    ch_ped = params.ped_file ? channel.value(file(params.ped_file, checkIfExists:true)) : channel.of([])
     // verifybamid SVD files
-    ch_svd_ud  = params.verifybamid_svd_prefix ? Channel.value(file(params.verifybamid_svd_prefix + '.UD', checkIfExists:true)) : Channel.value([])
-    ch_svd_mu  = params.verifybamid_svd_prefix ? Channel.value(file(params.verifybamid_svd_prefix + '.mu', checkIfExists:true)) : Channel.value([])
-    ch_svd_bed = params.verifybamid_svd_prefix ? Channel.value(file(params.verifybamid_svd_prefix + '.bed', checkIfExists:true)) : Channel.value([])
+    ch_svd_ud  = params.verifybamid_svd_prefix ? channel.value(file(params.verifybamid_svd_prefix + '.UD', checkIfExists:true)) : channel.value([])
+    ch_svd_mu  = params.verifybamid_svd_prefix ? channel.value(file(params.verifybamid_svd_prefix + '.mu', checkIfExists:true)) : channel.value([])
+    ch_svd_bed = params.verifybamid_svd_prefix ? channel.value(file(params.verifybamid_svd_prefix + '.bed', checkIfExists:true)) : channel.value([])
     ch_svd_in = ch_svd_ud.combine(ch_svd_mu).combine(ch_svd_bed).collect()
+    ncm_snp_pt = params.ngscheckmate_snp_pt ? channel.value(file(params.ngscheckmate_snp_pt, checkIfExists:true)) : channel.value([])
+
+    // Input files can be fastq, cram/bam, or vcf - separate different data types
+    // Branch input based on file type
+    ch_samplesheet_parsed = ch_samplesheet
+        .branch { meta, files ->
+        fastq: meta.fileType == "FASTQ"
+        aln: meta.fileType in ["BAM", "CRAM"]
+            [ meta - meta.subMap('lane','runId'), files[0], files[1] ]
+        vcf:   meta.fileType in ["VCF","GVCF"]
+            [ meta - meta.subMap('lane','runId'), files[0], files[1] ]
+        }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,58 +66,83 @@ workflow QUALITYCONTROL {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
-    FASTQ_QC ( ch_fastq )
-        ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports.collect{it})
-        ch_final_reports = ch_final_reports.mix(FASTQ_QC.out.reports.collect{it})
-        ch_versions = ch_versions.mix(FASTQ_QC.out.versions)
-        
+    // If fastq files are provided, run FastQC, SeqFu, and ngsCheckMate
+    FASTQ_QC ( ch_samplesheet_parsed.fastq, ncm_snp_pt.map { it -> [ [id:"snp_pt"], it] } )
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports.collect{it})
+    ch_versions = ch_versions.mix(FASTQ_QC.out.versions.first())
+
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        BAM/CRAM QC
+        BAM/CRAM QUALITY CONTROL
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
+    GATK4_BEDTOINTERVALLIST(ch_intervals.map { it -> [[id:"bed"], it] },
+                            ch_dict.map { it -> [[id:"dict"], it] })
+
+    ch_interval_list = GATK4_BEDTOINTERVALLIST.out.interval_list
+                        .map { _meta, intervals -> intervals }
+                        .collect()
+                        .ifEmpty([])
+
+    // Merge multiple runs
     //
-    // ----- Picard validation ------ 
+    // ----- SAMTOOLS MERGE -----
     //
-    ch_in_validate = ch_aln
-        .map { meta, bam, bai ->
-            def new_lane = meta.n_lanes > 1 ? meta.lane : ""
-            def new_meta = meta + [id:meta.sample + (meta.n_lanes > 1 ? ".${meta.lane}" : "")] + [lane: new_lane]
-            [new_meta, bam, bai]
+    bam_to_merge = ch_samplesheet_parsed.aln
+        .map { meta, cram, crai ->
+        [ groupKey(meta.subMap('id', 'participant', 'sample', 'sequencingType', 'status'), meta.n_lanes), cram, crai ]
+    }
+    .groupTuple()
+
+    BAM_MERGE(bam_to_merge, ch_fasta, ch_fai)
+
+    ch_versions = ch_versions.mix(BAM_MERGE.out.versions)
+
+    //
+    // ----- ALIGNMENT QC -----
+    //
+    // separate qc for targeted seq vs wgs
+    ch_bam_qc = BAM_MERGE.out.bam_bai
+        .map { groupKey, bam, bai ->
+        [groupKey.target, bam, bai]
+        }
+        .branch { meta, bam, bai ->
+            wgs: meta.sequencingType == 'WGS'
+            targeted: meta.sequencingType != 'WGS'
         }
 
-    PICARD_VALIDATESAMFILE( 
-        ch_in_validate,
-        ch_fasta.map { it -> [ [id:"fasta"], it] }, 
-        ch_fai.map { it -> [ [id:"fai"], it] },
-        ch_dict.map { it -> [ [id:"dict"], it] }
+    BAM_QC_WGS(
+        ch_bam_qc.wgs,
+        ch_fasta,
+        ch_fai,
+        [],
+        qc_regions_1,
+        qc_regions_2,
+        [],
+        ch_svd_in
     )
 
-    ch_versions = ch_versions.mix(PICARD_VALIDATESAMFILE.out.versions)
+    BAM_QC_TARGET(
+        ch_bam_qc.targeted,
+        ch_fasta,
+        ch_fai,
+        ch_intervals,
+        qc_regions_1,
+        qc_regions_2,
+        ch_interval_list,
+        ch_svd_in
+    )
 
-    // Joining with validate output to create dependency
-    ch_cram_crai_validated = PICARD_VALIDATESAMFILE.out.txt
-        .join(ch_in_validate)
-        .map { meta, _txt, cram, crai ->
-        [meta, cram, crai]
-    }
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_WGS.out.reports)
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_TARGET.out.reports)
 
-    //
-    // ----- Validate ID
-    //
-    BAM_ID_REPAIR(ch_cram_crai_validated, ch_fasta)
-    ch_versions = ch_versions.mix(BAM_ID_REPAIR.out.versions)
-
-    ch_cram_crai = BAM_ID_REPAIR.out.bam_bai 
-        .map { meta, bam, bai ->
-        def new_meta = meta + [id: meta.sample] // Reset ID to sample name
-        [new_meta, bam, bai]
-        }
+    ch_versions = ch_versions.mix(BAM_QC_WGS.out.versions)
+    ch_versions = ch_versions.mix(BAM_QC_TARGET.out.versions)
 
     //
     // ----- CRAM_SOMALIER -----
     //
-    ch_cram_crai_somalier = ch_cram_crai
+    ch_cram_crai_somalier = BAM_MERGE.out.bam_bai
         .map { meta, cram, crai ->
         [meta.sample, meta, cram, crai]
         }
@@ -171,63 +203,13 @@ workflow QUALITYCONTROL {
         )
 
     ch_versions = ch_versions.mix(CRAM_SOMALIER.out.versions)
-    ch_final_reports = ch_final_reports.mix(CRAM_SOMALIER.out.html)
 
-    // Merge multiple runs 
-    //
-    // ----- SAMTOOLS MERGE -----
-    //
-    bam_to_merge = ch_cram_crai
-        .map { meta, cram, crai ->
-        [ groupKey(meta.subMap('id', 'participant', 'sample', 'sequencingType', 'status'), meta.n_lanes), cram, crai ]
-    }
-    .groupTuple()
-
-    BAM_MERGE(bam_to_merge, ch_fasta, ch_fai)
-
-    ch_versions = ch_versions.mix(BAM_MERGE.out.versions)
+    ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.pairs_tsv.map { _meta, report -> report })
+    ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.samples_tsv.map { _meta, report -> report })
 
     //
-    // ----- ALIGNMENT QC -----
+    // Collate and save software versions
     //
-    // separate qc for targeted seq vs wgs
-    ch_bam_qc = BAM_MERGE.out.bam_bai
-        .map { groupKey, bam, bai ->
-        [groupKey.target, bam, bai]
-        }
-        .branch { meta, bam, bai ->
-            wgs: meta.sequencingType == 'WGS'
-            targeted: meta.sequencingType != 'WGS'
-        }
-    
-    BAM_QC_WGS(
-        ch_bam_qc.wgs,
-        ch_fasta, 
-        ch_fai,
-        [],
-        ch_svd_in
-    )
-
-    BAM_QC_TARGET(
-        ch_bam_qc.targeted,
-        ch_fasta, 
-        ch_fai,
-        ch_intervals,
-        ch_svd_in
-    )
-
-    ch_versions = ch_versions.mix(BAM_QC_WGS.out.versions)
-    ch_versions = ch_versions.mix(BAM_QC_TARGET.out.versions)
-    
-
-
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    COLLECT SOFTWARE VERSIONS & MultiQC
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
     softwareVersionsToYAML(ch_versions)
         .collectFile(
             storeDir: "${params.outdir}/pipeline_info",
@@ -235,6 +217,7 @@ workflow QUALITYCONTROL {
             sort: true,
             newLine: true
         ).set { ch_collated_versions }
+
 
     //
     // MODULE: MultiQC
@@ -267,12 +250,6 @@ workflow QUALITYCONTROL {
         )
     )
 
-    ch_multiqc_files = ch_multiqc_files.mix(PICARD_VALIDATESAMFILE.out.txt.map{it[1]}.collect().ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.pairs_tsv.map { _meta, report -> report })
-    ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.samples_tsv.map { _meta, report -> report })
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_WGS.out.reports)
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_TARGET.out.reports)
-
     MULTIQC (
         ch_multiqc_files.collect(),
         ch_multiqc_config.toList(),
@@ -282,9 +259,7 @@ workflow QUALITYCONTROL {
         []
     )
 
-    emit:
-    final_reports  = ch_final_reports
-    multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+    emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
 }
