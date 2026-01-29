@@ -11,18 +11,11 @@ report_section_order:
 
 export_plots: true
 
-extra_fn_clean_exts:
-  - "*.qualimap"
-
-extra_fn_clean_trim:
-  - ".qualimap"
-
 run_modules:
   - custom_content
   - fastqc
   - fastp
   - ngscheckmate
-  - qualimap
   - samtools
   - picard
   - somalier
@@ -44,8 +37,6 @@ module_order:
       name: "Somalier"
   - mosdepth:
       name: "Mosdepth"
-  - qualimap:
-      name: "Qualimap"
   - verifybamid:
       name: "VerifyBamID2"
 
