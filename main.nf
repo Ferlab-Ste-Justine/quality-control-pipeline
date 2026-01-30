@@ -13,6 +13,9 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+// Enable Nextflow preview features
+nextflow.preview.topic = true
+
 include { QUALITYCONTROL  } from './workflows/qualitycontrol'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
@@ -41,9 +44,7 @@ params.fasta = getGenomeAttribute('fasta')
 workflow FERLABSTEJUSTINE_QUALITYCONTROL {
 
     take:
-    samplesheet_fastq // channel: samplesheet read in from --input
-    samplesheet_aln // channel: samplesheet read in from --input
-    samplesheet_gvcf // channel: samplesheet read in from --input
+    samplesheet
 
     main:
 
@@ -51,9 +52,7 @@ workflow FERLABSTEJUSTINE_QUALITYCONTROL {
     // WORKFLOW: Run pipeline
     //
     QUALITYCONTROL (
-        samplesheet_fastq,
-        samplesheet_aln,
-        samplesheet_gvcf
+        samplesheet
     )
     emit:
     multiqc_report = QUALITYCONTROL.out.multiqc_report // channel: /path/to/multiqc_report.html
@@ -83,9 +82,7 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     FERLABSTEJUSTINE_QUALITYCONTROL (
-        PIPELINE_INITIALISATION.out.samplesheet_fastq,
-        PIPELINE_INITIALISATION.out.samplesheet_aln,
-        PIPELINE_INITIALISATION.out.samplesheet_gvcf
+        PIPELINE_INITIALISATION.out.samplesheet
     )
     //
     // SUBWORKFLOW: Run completion tasks
