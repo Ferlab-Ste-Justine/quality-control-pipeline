@@ -7,6 +7,8 @@ include { BCFTOOLS_VIEW as HOM_INDEL	} from '../../../modules/nf-core/bcftools/v
 include { BCFTOOLS_VIEW as HET_INDEL	} from '../../../modules/nf-core/bcftools/view/main'
 include { BCFTOOLS_STATS as STATS_TSTV  } from '../../../modules/nf-core/bcftools/stats/main'
 
+include { VCF_METRICS                       } from '../../../modules/local/vcf_metrics/main'
+
 workflow VCF_QC {
 
     take:
@@ -92,13 +94,12 @@ workflow VCF_QC {
     .join(ch_het_indels)
     .join(ch_tstv)
     .map { meta, dels, ins, snvs, het_snv, hom_snv, hom_indel, het_indel, tstv_ratio ->
-        def het_hom_ratio_snvs = het_snv.count_het_snvs > 0 ? het_snv.count_het_snvs / hom_snv.count_hom_snvs : 0
-        def het_hom_ratio_indels = het_indel.count_het_indels > 0 ? het_indel.count_het_indels / hom_indel.count_hom_indels : 0
-        def ins_dels_ratio = ins.count_ins > 0 ? ins.count_ins / dels.count_dels : 0
-        [meta, dels + ins + snvs + het_snv + hom_snv + hom_indel + het_indel + [ het_hom_ratio_snvs: het_hom_ratio_snvs, het_hom_ratio_indels: het_hom_ratio_indels, ins_dels_ratio: ins_dels_ratio ] + tstv_ratio ]
+        [meta, dels + ins + snvs + het_snv + hom_snv + hom_indel + het_indel + tstv_ratio ]
     }
 
+    VCF_METRICS ( ch_vcf_metrics )
+
     emit:
-    vcf_metrics = ch_vcf_metrics   // channel: [ val(meta), val(metrics), path(tstv_stats) ]
+    vcf_metrics = VCF_METRICS.out.json   // channel: [ val(meta), val(metrics), path(metrics_file) ]
     vcf_stats = STATS_TSTV.out.stats   // channel: [ val(meta), path(stats) ]
 }
