@@ -7,8 +7,9 @@ testing/
 testing*
 *.pyc
 null/
-.vscode
+.vscode*
 localTest/
-data-test/
+data-test*
 .nf-test.log
 .nf-test/
+.devcontainer*
