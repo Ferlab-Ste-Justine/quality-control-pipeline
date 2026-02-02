@@ -188,6 +188,12 @@
         "regions_bed": {
             "type": "string"
         },
+        "exons_bed":{
+            "type": "string"
+        },
+        "targets_bed":{
+            "type": "string"
+        },
         "verifybamid_svd_prefix": {
             "type": "string"
         },

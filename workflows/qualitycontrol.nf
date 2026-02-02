@@ -11,6 +11,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_qual
 include { FASTQ_QC               } from '../subworkflows/local/fastq_qc/main'
 include { BAM_QC as BAM_QC_WGS   } from '../subworkflows/local/bam_qc/main'
 include { BAM_QC as BAM_QC_TARGET   } from '../subworkflows/local/bam_qc/main'
+include { VCF_QC                 } from '../subworkflows/local/vcf_qc/main'
 include { BAM_MERGE              } from '../subworkflows/local/bam_merge'
 include { CRAM_SOMALIER          } from '../subworkflows/local/cram_somalier'
 include { GATK4_BEDTOINTERVALLIST } from '../modules/nf-core/gatk4/bedtointervallist/main'
@@ -38,6 +39,8 @@ workflow QUALITYCONTROL {
     ch_intervals = params.regions_bed ? channel.value(file(params.regions_bed, checkIfExists: true)) : channel.value([])
     qc_regions_1 = params.qc_coverage_region_1 ? channel.value(file(params.qc_coverage_region_1, checkIfExists:true)) : channel.value([])
     qc_regions_2 = params.qc_coverage_region_2 ? channel.value(file(params.qc_coverage_region_2, checkIfExists:true)) : channel.value([])
+    ch_targets = params.targets_bed ? channel.value(file(params.targets_bed, checkIfExists:true)) : channel.value([])
+    ch_exons = params.exons_bed ? channel.value(file(params.exons_bed, checkIfExists:true)) : channel.value([])
 
     // somalier sites VCF
     ch_somalier_sites = params.somalier_sites ? channel.value(file(params.somalier_sites, checkIfExists:true)) : channel.value([])
@@ -56,7 +59,7 @@ workflow QUALITYCONTROL {
         fastq: meta.fileType == "FASTQ"
         aln: meta.fileType in ["BAM", "CRAM"]
             [ meta - meta.subMap('lane','runId'), files[0], files[1] ]
-        vcf:   meta.fileType in ["VCF","GVCF"]
+        vcf: meta.fileType in ["VCF","GVCF"]
             [ meta - meta.subMap('lane','runId'), files[0], files[1] ]
         }
 
@@ -165,7 +168,7 @@ workflow QUALITYCONTROL {
         .unique()
         .groupTuple()
         .filter{ participant, ch_samples -> ch_samples.size() > 1 }
-        .collectFile(name: 'sample_groups.txt') { 
+        .collectFile(name: 'sample_groups.txt') {
             participant, samples ->
             "${samples.join(',')}\n"
         }
@@ -178,7 +181,7 @@ workflow QUALITYCONTROL {
     if (params.somalier_perfamily) {
         ch_ped_grouped = ch_ped
             .splitCsv(sep: '\t', header: ["family_id","name","paternal_id", "maternal_id", "sex", "phenotype"], skip: 1)
-            .map { row -> 
+            .map { row ->
                 [['familyId':row.family_id], row] }
             .groupTuple()
 
@@ -187,11 +190,11 @@ workflow QUALITYCONTROL {
         ch_versions = ch_versions.mix(CREATE_FAMILY_PED.out.versions)
 
         ch_somalier_input_ped = CREATE_FAMILY_PED.out.ped_files
-            .map { meta, ped_file -> 
+            .map { meta, ped_file ->
                 [ [id: meta.familyId] + meta, ped_file ]
             }
     }
-    
+
     CRAM_SOMALIER(
             ch_cram_crai_somalier,
             ch_fasta.map { it -> [ [id:"fasta"], it] },
@@ -206,6 +209,22 @@ workflow QUALITYCONTROL {
 
     ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.pairs_tsv.map { _meta, report -> report })
     ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.samples_tsv.map { _meta, report -> report })
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        VCF QUALITY CONTROL
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
+    VCF_QC (
+        ch_samplesheet_parsed.vcf,
+        ch_fasta,
+        ch_intervals,
+        ch_targets,
+        ch_exons
+    )
+
+    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_stats.collect{_meta, report -> report})
 
     //
     // Collate and save software versions
