@@ -39,6 +39,8 @@ process VCF_METRICS {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.vcf_metrics.json
+    cat > ${prefix}.vcf_metrics.json <<'END'
+    {"sample_id":"stub"}
+    END
     """
 }
