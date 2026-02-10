@@ -22,7 +22,7 @@ workflow QC_COVERAGE_REGIONS {
         ch_input_mosdepth,
         fasta.map { it -> [ [id:"fasta"], it] }
     )
-    ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
+    // ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
     ch_reports = ch_reports.mix(MOSDEPTH.out.global_txt.map{it -> it[1]}.collect().ifEmpty([]))
     ch_reports = ch_reports.mix(MOSDEPTH.out.regions_txt.map{it -> it[1]}.collect().ifEmpty([]))
 
@@ -32,12 +32,14 @@ workflow QC_COVERAGE_REGIONS {
     )
     ch_reports = ch_reports.mix(D4_COVERAGE_STATS_R1.out.coverage_stats.map{it -> it[1]}.collect().ifEmpty([]))
 
-    D4_COVERAGE_STATS_R2(
-        MOSDEPTH.out.per_base_d4,
-        qc_regions_2.map { it -> [ [id:"qc_regions_2"], it] }
-    )
-    ch_reports = ch_reports.mix(D4_COVERAGE_STATS_R2.out.coverage_stats.map{it -> it[1]}.collect().ifEmpty([]))
-
+    // not run if no second qc regions file provided
+    if (!qc_regions_2.isEmpty()) {
+        D4_COVERAGE_STATS_R2(
+            MOSDEPTH.out.per_base_d4,
+            qc_regions_2.map { it -> [ [id:"qc_regions_2"], it] }
+        )
+        ch_reports = ch_reports.mix(D4_COVERAGE_STATS_R2.out.coverage_stats.map{it -> it[1]}.collect().ifEmpty([]))
+    }
     emit:
     reports  = ch_reports                     // channel: [ path(report files) ]
     versions = ch_versions                     // channel: [ versions.yml ]

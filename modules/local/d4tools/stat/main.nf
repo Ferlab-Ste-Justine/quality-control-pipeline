@@ -23,7 +23,7 @@ process D4TOOLS_STAT {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def regions_arg = bed_regions ? "--region ${bed_regions} " : ''
     """
-    d4tools stat -H \\
+    d4tools stat \\
         $args \\
         $regions_arg \\
         -t $task.cpus \\

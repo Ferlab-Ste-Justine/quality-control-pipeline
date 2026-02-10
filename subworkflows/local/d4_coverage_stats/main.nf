@@ -2,6 +2,7 @@ include { D4TOOLS_STAT as D4TOOLS_STAT_MEAN } from '../../../modules/local/d4too
 include { D4TOOLS_STAT as D4TOOLS_STAT_MEDIAN } from '../../../modules/local/d4tools/stat/main'
 include { D4TOOLS_STAT as D4TOOLS_STAT_PCOV } from '../../../modules/local/d4tools/stat/main'
 include { D4TOOLS_STAT as D4TOOLS_STAT_COUNT } from '../../../modules/local/d4tools/stat/main'
+// include { MERGE_REGIONS_COV } from '../../../modules/local/merge_regions_cov/main'
 
 workflow D4_COVERAGE_STATS {
 
@@ -39,6 +40,10 @@ workflow D4_COVERAGE_STATS {
         .join(D4TOOLS_STAT_MEDIAN.out.stat)
         .join(D4TOOLS_STAT_PCOV.out.stat)
         .join(D4TOOLS_STAT_COUNT.out.stat) // [ meta, mean, median, pcov, count ]
+
+    // MERGE_REGIONS_COV(
+    //     ch_stats
+    // )
 
     emit:
     coverage_stats = ch_stats                     // channel: [ val(meta), path("*.stat.txt") ]
