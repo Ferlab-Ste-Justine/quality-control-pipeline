@@ -3,7 +3,7 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { MULTIQC                } from '../modules/nf-core/multiqc/main'
+include { MULTIQC_PYTHON                } from '../modules/local/multiqc_python/main'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -223,20 +223,35 @@ workflow QUALITYCONTROL {
         ch_targets,
         ch_exons
     )
-
+    
+    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_metrics.collect{_meta, report -> report})
     ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_stats.collect{_meta, report -> report})
 
-    //
-    // Collate and save software versions
-    //
-    softwareVersionsToYAML(ch_versions)
+    // topic_versions = channel.topic('versions')
+    topic_versions = channel.topic("versions")
+        .distinct()
+        .branch { entry ->
+            versions_file: entry instanceof Path
+            versions_tuple: true
+        }
+
+    def topic_versions_string = topic_versions.versions_tuple
+        .map { process, tool, version ->
+            [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
+        }
+        .groupTuple(by:0)
+        .map { process, tool_versions ->
+            tool_versions.unique().sort()
+            "${process}:\n${tool_versions.join('\n')}"
+        }
+    ch_collated_versions = softwareVersionsToYAML(ch_versions.mix(topic_versions.versions_file))
+        .mix(topic_versions_string)
         .collectFile(
             storeDir: "${params.outdir}/pipeline_info",
             name:  'quality-control-pipeline_software_'  + 'mqc_'  + 'versions.yml',
             sort: true,
             newLine: true
-        ).set { ch_collated_versions }
-
+        )
 
     //
     // MODULE: MultiQC
@@ -269,16 +284,18 @@ workflow QUALITYCONTROL {
         )
     )
 
-    MULTIQC (
+    MULTIQC_PYTHON (
         ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList(),
-        [],
-        []
+        ch_multiqc_config.toList()
     )
+    //,
+    //     ch_multiqc_custom_config.toList(),
+    //     ch_multiqc_logo.toList(),
+    //     [],
+    //     []
+    // )
 
-    emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+    emit:multiqc_report = MULTIQC_PYTHON.out.report.toList() // channel: /path/to/multiqc_report.html
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
 }
