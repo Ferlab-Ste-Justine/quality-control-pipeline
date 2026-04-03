@@ -29,8 +29,8 @@ workflow QUALITYCONTROL {
 
     main:
 
-    ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
+    ch_versions = channel.empty()
+    ch_multiqc_files = channel.empty()
 
     // inputs
     ch_fasta = params.fasta ? channel.value(file(params.fasta, checkIfExists:true)) : channel.value([])
@@ -118,10 +118,10 @@ workflow QUALITYCONTROL {
         ch_bam_qc.wgs,
         ch_fasta,
         ch_fai,
-        [],
+        ch_intervals,
         qc_regions_1,
         qc_regions_2,
-        [],
+        ch_interval_list,
         ch_svd_in
     )
 
@@ -223,7 +223,7 @@ workflow QUALITYCONTROL {
         ch_targets,
         ch_exons
     )
-    
+
     ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_metrics.collect{_meta, report -> report})
     ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_stats.collect{_meta, report -> report})
 

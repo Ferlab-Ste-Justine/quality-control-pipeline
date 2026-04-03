@@ -1,7 +1,10 @@
 include { SAMTOOLS_STATS } from '../../../modules/nf-core/samtools/stats/main'
 include { PICARD_COLLECTWGSMETRICS } from '../../../modules/nf-core/picard/collectwgsmetrics/main'
 include { VERIFYBAMID_VERIFYBAMID2 } from '../../../modules/nf-core/verifybamid/verifybamid2/main'
-include { QC_COVERAGE_REGIONS } from '../qc_coverage_regions/main'
+include { MOSDEPTH } from '../../../modules/nf-core/mosdepth/main'
+include { QC_COVERAGE_REGIONS as QC_COVERAGE_REGIONS_R1 } from '../qc_coverage_regions/main'
+include { QC_COVERAGE_REGIONS as QC_COVERAGE_REGIONS_R2 } from '../qc_coverage_regions/main'
+
 workflow BAM_QC {
 
     take:
@@ -41,29 +44,48 @@ workflow BAM_QC {
 
     ch_reports = ch_reports.mix(PICARD_COLLECTWGSMETRICS.out.metrics.map{it[1]}.collect())
 
+
     //
     // ----- MOSDEPTH -----
     //
-    QC_COVERAGE_REGIONS (
-        ch_bam_bai,
-        ch_fasta,
-        ch_intervals,
-        qc_regions_1,
-        qc_regions_2
+    ch_input_mosdepth = ch_bam_bai.combine(ch_intervals)
+
+    MOSDEPTH(
+        ch_input_mosdepth,
+        ch_fasta.map { it -> [ [id:"fasta"], it] }
     )
 
-    ch_reports = ch_reports.mix(QC_COVERAGE_REGIONS.out.reports)
+    ch_reports = ch_reports.mix(MOSDEPTH.out.global_txt.map{it -> it[1]}.collect().ifEmpty([]))
+    ch_reports = ch_reports.mix(MOSDEPTH.out.regions_txt.map{it -> it[1]}.collect().ifEmpty([]))
 
+    // Coverage by gene for specified regions (if provided)
+    if (params.qc_coverage_region_1) {
+        QC_COVERAGE_REGIONS_R1(
+            ch_bam_bai,
+            qc_regions_1,
+            ch_fasta
+        )
+        ch_reports = ch_reports.mix(QC_COVERAGE_REGIONS_R1.out.reports.map{it -> it[1]}.collect().ifEmpty([]))
+    }
+
+    if (params.qc_coverage_region_2) {
+        QC_COVERAGE_REGIONS_R2(
+            ch_bam_bai,
+            qc_regions_2,
+            ch_fasta
+        )
+        ch_reports = ch_reports.mix(QC_COVERAGE_REGIONS_R2.out.reports.map{it -> it[1]}.collect().ifEmpty([]))
+    }
+    
     //
     // ----- VERIFYBAMID2 - Contamination -----
     //
     VERIFYBAMID_VERIFYBAMID2(
         ch_bam_bai, ch_svd_in, [], ch_fasta)
 
-    ch_reports = ch_reports.mix(VERIFYBAMID_VERIFYBAMID2.out.self_sm.map{it[1]}.collect())
+    ch_reports = ch_reports.mix(VERIFYBAMID_VERIFYBAMID2.out.self_sm.map{it -> it[1]}.collect())
 
     // Collect versions
-    ch_versions = ch_versions.mix(QC_COVERAGE_REGIONS.out.versions)
     ch_versions = ch_versions.mix(SAMTOOLS_STATS.out.versions)
     ch_versions = ch_versions.mix(PICARD_COLLECTWGSMETRICS.out.versions)
     ch_versions = ch_versions.mix(VERIFYBAMID_VERIFYBAMID2.out.versions)
