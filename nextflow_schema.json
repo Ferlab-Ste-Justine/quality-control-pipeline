@@ -216,7 +216,13 @@
         "qc_coverage_region_1": {
             "type": "string"
         },
+        "region_1_name": {
+            "type": "string"
+        },
         "qc_coverage_region_2": {
+            "type": "string"
+        },
+        "region_2_name": {
             "type": "string"
         }
     }
