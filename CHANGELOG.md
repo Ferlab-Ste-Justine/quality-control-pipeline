@@ -3,7 +3,10 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased - [03/04/2026]
+## Unreleased - [10/04/2026]
+
+### `Added`
+[#30](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/30) Added pipeline documentation and refactor configs.
 
 ### `Changed`
 [#29](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/29) Refactor coverage per gene workflow.

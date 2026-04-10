@@ -13,12 +13,12 @@
 - [BCFTools](https://pubmed.ncbi.nlm.nih.gov/21903627/)
 > Li H: A statistical framework for SNP calling, mutation discovery, association mapping and population genetical parameter estimation from sequencing data. Bioinformatics. 2011 Nov 1;27(21):2987-93. doi: 10.1093/bioinformatics/btr509. PubMed PMID: 21903627; PubMed Central PMCID: PMC3198575.
 
-- [d4tools](https://pubmed.ncbi.nlm.nih.gov/35936573/)
-> Hou H, Pedersen B, Quinlan A. Balancing efficient analysis and storage of quantitative genomics data with the D4 format and d4tools. Nat Comput Sci. 2021 Jun;1(6):441-447. doi: 10.1038/s43588-021-00085-0. Epub 2021 Jun 21. Erratum in: Nat Comput Sci. 2022 Feb;2(2):132. doi: 10.1038/s43588-022-00211-6. PMID: 35936573; PMCID: PMC9355464.
-
 - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 
 > Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online].
+
+- [GATK4](https://pubmed.ncbi.nlm.nih.gov/20644199/)
+> McKenna A, Hanna M, Banks E, Sivachenko A, Cibulskis K, Kernytsky A, Garimella K, Altshuler D, Gabriel S, Daly M, DePristo MA. The Genome Analysis Toolkit: A MapReduce framework for analyzing next-generation DNA sequencing data. Genome Res. 2010 Sep;20(9):1297-303. doi: 10.1101/gr.107524.110. PubMed PMID: 20644199.
 
 - [Mosdepth](https://pubmed.ncbi.nlm.nih.gov/29096012/)
 > Pedersen BS, Quinlan AR. Mosdepth: quick coverage calculation for genomes and exomes. Bioinformatics. 2018 Mar 1;34(5):867-868. doi: 10.1093/bioinformatics/btx699. PMID: 29096012; PMCID: PMC6030888.
@@ -26,11 +26,20 @@
 - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
 > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
 
+- [ngsCheckMate](https://pubmed.ncbi.nlm.nih.gov/28369524/)
+> Lee S, Zhao L, Rojas C, Bateman NW, Yao H, Lara OD, Celestino J, Chu RA, Gibbons DL, Lu KH, Deavers MT, Broaddus RR, Lutgendorf S, Sood AK, Mills GB, Bhatt DL. NGSCheckMate: software for validating sample identity in next-generation sequencing studies within and across data types. Nucleic Acids Res. 2017 May 5;45(11):e103. doi: 10.1093/nar/gkx193. PubMed PMID: 28369524.
+
+- [Picard](https://broadinstitute.github.io/picard/)
+> Broad Institute. Picard toolkit. Broad Institute, GitHub repository. https://broadinstitute.github.io/picard/
+
 - [Samtools](https://pubmed.ncbi.nlm.nih.gov/19505943/)
 > Li H, Handsaker B, Wysoker A, Fennell T, Ruan J, Homer N, Marth G, Abecasis G, Durbin R; 1000 Genome Project Data Processing Subgroup. The Sequence Alignment/Map format and SAMtools. Bioinformatics. 2009 Aug 15;25(16):2078-9. doi: 10.1093/bioinformatics/btp352. Epub 2009 Jun 8. PubMed PMID: 19505943; PubMed Central PMCID: PMC2723002.
 
 - [Somalier](https://pubmed.ncbi.nlm.nih.gov/32664994/)
 > Pedersen BS, Bhetariya PJ, Brown J, Kravitz SN, Marth G, Jensen RL, Bronner MP, Underhill HR, Quinlan AR. Somalier: rapid relatedness estimation for cancer and germline studies using efficient genome sketches. Genome Med. 2020 Jul 14;12(1):62. doi: 10.1186/s13073-020-00761-2. PMID: 32664994; PMCID: PMC7362544.
+
+- [VerifyBamID2](https://pubmed.ncbi.nlm.nih.gov/31879693/https://pmc.ncbi.nlm.nih.gov/articles/PMC7050530/)
+> Zhang F, Flickinger M, Taliun SAG, InPSYght Psychiatric Genetics Consortium, Abecasis GR, Scott LJ, McCaroll SA, Pato CN, Boehnke M, Kang HM. Ancestry-agnostic estimation of DNA contamination from whole-genome sequencing data. Genome Res. 2020 Feb;30(2):185-194. doi: 10.1101/gr.246934.118. PubMed PMID: 31980570.
 
 
 ## Software packaging/containerisation tools

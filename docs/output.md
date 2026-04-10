@@ -2,59 +2,238 @@
 
 ## Introduction
 
-This document describes the output produced by the pipeline. Most of the plots are taken from the MultiQC report, which summarises results at the end of the pipeline.
+This document describes the output produced by the pipeline. Most plots are taken from the MultiQC report, which summarises results at the end of the pipeline.
 
-The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
+All paths below are relative to the top-level output directory (`--outdir`).
 
-<!-- TODO nf-core: Write this documentation describing your workflow's output -->
+## Output directory structure
+
+```
+outdir/
+├── reports/
+│   ├── QC/
+│   │   └── {sample.id}/             # Per-sample QC outputs (one directory per sample)
+│   │       ├── *_fastqc.html/.zip   # FastQC
+│   │       ├── *.vaf                # ngsCheckMate per-sample VAF
+│   │       ├── *.txt                # Samtools stats / Mosdepth summaries
+│   │       ├── *.wgs_metrics        # Picard CollectWgsMetrics
+│   │       ├── *.selfSM             # VerifyBamID2 contamination
+│   │       ├── *.somalier           # Somalier extract
+│   │       └── *.tsv                # Coverage-by-gene reports
+│   │   └── snp_pt/                  # ngsCheckMate batch-level outputs
+│   └── pedigree/
+│       ├── {family.id}/             # Per-family somalier + PED (somalier_perfamily=true)
+│       │   ├── *.ped
+│       │   ├── *.html
+│       │   └── *.tsv
+│       └── *.html / *.tsv           # Cohort-level somalier outputs (somalier_perfamily=false)
+├── multiqc/
+│   ├── multiqc_report.html
+│   └── multiqc_data/
+├── results/
+│   └── {sequencingType}/
+│       ├── Merged/                  # Multi-run merged BAM/CRAM files
+│       └── ID_rename/               # Reheadered BAM/CRAM files
+└── pipeline_info/
+```
 
 ## Pipeline overview
 
-The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
+The pipeline processes FASTQ, BAM/CRAM, and VCF files through the following steps:
 
-- [FastQC](#fastqc) - Raw read QC
-- [MultiQC](#multiqc) - Aggregate report describing results and QC from the whole pipeline
-- [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
+- [FastQC](#fastqc) — Raw read quality metrics
+- [ngsCheckMate](#ngscheckmate) — FASTQ-level sample identity / cross-contamination
+- [Samtools](#samtools) — Alignment statistics and BAM header inspection
+- [Picard CollectWgsMetrics](#picard-collectwgsmetrics) — WGS coverage and quality metrics
+- [Mosdepth](#mosdepth) — Sequencing depth and coverage
+- [Coverage by gene](#coverage-by-gene) — Per-gene coverage summaries for defined regions
+- [VerifyBamID2](#verifybamid2) — Alignment-level contamination estimation
+- [Somalier](#somalier) — Sample identity and genetic relatedness
+- [VCF QC](#vcf-qc) — Variant-level quality metrics
+- [MultiQC](#multiqc) — Aggregate report summarising all QC results
+- [Pipeline information](#pipeline-information) — Nextflow execution reports
+
+---
+
+## FASTQ QC
 
 ### FastQC
 
 <details markdown="1">
 <summary>Output files</summary>
 
-- `fastqc/`
-  - `*_fastqc.html`: FastQC report containing quality metrics.
-  - `*_fastqc.zip`: Zip archive containing the FastQC report, tab-delimited data file and plot images.
+- `reports/QC/{sample.id}/`
+  - `*_fastqc.html`: FastQC report with per-base quality, GC content, adapter content, and overrepresented sequences.
+  - `*_fastqc.zip`: Zip archive containing the FastQC report, tab-delimited data, and plot images.
 
 </details>
 
-[FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) gives general quality metrics about your sequenced reads. It provides information about the quality score distribution across your reads, per base sequence content (%A/T/G/C), adapter contamination and overrepresented sequences. For further reading and documentation see the [FastQC help pages](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/).
+[FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) provides general quality metrics about sequenced reads including quality score distributions, per-base sequence content, and adapter contamination.
 
-### MultiQC
+### ngsCheckMate
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `reports/QC/{sample.id}/`
+  - `*.vaf`: Per-sample VAF (variant allele frequency) file at SNP positions used for identity checking.
+- `reports/QC/snp_pt/`
+  - `output_all.txt`: All pairwise sample comparisons with correlation scores.
+  - `output_matched.txt`: Sample pairs determined to be matched (same individual).
+  - `corr_matrix.txt`: Pairwise correlation matrix across all samples.
+  - `output.pdf` *(optional)*: Heatmap visualisation of the correlation matrix.
+
+</details>
+
+[ngsCheckMate](https://github.com/parklab/NGSCheckMate) detects sample swaps and cross-contamination by comparing VAF profiles at known SNP positions across all FASTQ inputs.
+
+---
+
+## BAM/CRAM QC
+
+### Samtools
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `reports/QC/{sample.id}/`
+  - `*.stats`: Comprehensive alignment statistics (flagstat, base quality, insert size, etc.) from `samtools stats`.
+  - `*.txt` *(samples)*: Sample names extracted from the BAM/CRAM read group headers.
+
+</details>
+
+[Samtools](http://www.htslib.org/) is used to merge multi-run BAM/CRAM files, inspect read group headers, and compute alignment statistics.
+
+> **Note:** Merged BAM/CRAM files are published under `results/{sequencingType}/Merged/`. Reheadered files (sample ID repair) are published under `results/{sequencingType}/ID_rename/`.
+
+### Picard CollectWgsMetrics
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `reports/QC/{sample.id}/`
+  - `*.wgs_metrics`: WGS coverage metrics including mean coverage, PCT_EXC_* exclusion fractions, and median insert size. Only produced for WGS samples.
+
+</details>
+
+[Picard CollectWgsMetrics](https://gatk.broadinstitute.org/hc/en-us/articles/360037269351-CollectWgsMetrics-Picard) summarises whole-genome sequencing coverage and base quality metrics.
+
+### Mosdepth
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `reports/QC/{sample.id}/`
+  - `*.mosdepth.global.dist.txt`: Cumulative coverage distribution across the genome.
+  - `*.mosdepth.region.dist.txt` *(if regions BED provided)*: Coverage distribution per region.
+  - `*.mosdepth.summary.txt`: Mean coverage per chromosome and total.
+  - `*.regions.bed.gz` *(QC coverage regions)*: Per-interval mean coverage for defined QC regions.
+  - `*.thresholds.bed.gz` *(QC coverage regions)*: Fraction of bases at coverage thresholds (5x, 15x, 20x, 30x, 50x, 100x, 200x, 300x, 400x, 500x, 1000x).
+
+</details>
+
+[Mosdepth](https://github.com/brentp/mosdepth) computes fast per-base and per-region sequencing depth. It is run twice: once for overall alignment QC and once per QC coverage region set (up to two region BED files).
+
+### Coverage by gene
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `reports/QC/{sample.id}/`
+  - `*.<region_name>.tsv`: Per-gene mean coverage and coverage-at-threshold summary, derived from Mosdepth output for each QC coverage region.
+
+</details>
+
+A local module aggregates Mosdepth region and threshold outputs into a per-gene coverage table. Output file names reflect the `--region_1_name` / `--region_2_name` parameters (defaults: `qc_regions_1`, `qc_regions_2`).
+
+### VerifyBamID2
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `reports/QC/{sample.id}/`
+  - `*.selfSM`: Per-sample contamination estimate. Key field: `FREEMIX` (estimated contamination fraction).
+
+</details>
+
+[VerifyBamID2](https://github.com/Griffan/VerifyBamID) estimates DNA contamination from aligned reads by comparing allele frequencies at known SNP positions against population reference SVD files.
+
+---
+
+## Somalier
+
+<details markdown="1">
+<summary>Output files — per-family mode (`--somalier_perfamily`)</summary>
+
+- `reports/QC/{sample.id}/`
+  - `*.somalier`: Somalier extract file per sample (fingerprint at sites VCF positions).
+- `reports/pedigree/{family.id}/`
+  - `*.ped`: Per-family PED file generated from the input pedigree.
+  - `*.html`: Interactive HTML relatedness report for the family.
+  - `*.pairs.tsv`: Pairwise relatedness metrics (IBS0, IBS2, kinship coefficient).
+  - `*.samples.tsv`: Per-sample summary (het rate, depth, ancestry PCs).
+
+</details>
+
+<details markdown="1">
+<summary>Output files — cohort mode (default)</summary>
+
+- `reports/QC/{sample.id}/`
+  - `*.somalier`: Somalier extract file per sample.
+- `reports/pedigree/`
+  - `*.html`: Interactive HTML relatedness report for the entire cohort.
+  - `*.pairs.tsv`: Pairwise relatedness metrics across all samples.
+  - `*.samples.tsv`: Per-sample summary across the cohort.
+
+</details>
+
+[Somalier](https://github.com/brentp/somalier) checks sample identity and genetic relatedness by extracting genotype-like information at known sites. It can run per-family (using a pedigree file split by family) or across the entire cohort.
+
+---
+
+## VCF QC
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `reports/QC/{sample.id}/`
+  - `*.metrics.json`: Variant counts including SNVs, insertions, deletions, het/hom breakdowns, and Ts/Tv ratio.
+  - `*.stats`: Full bcftools stats output.
+
+</details>
+
+VCF QC uses [BCFtools](https://samtools.github.io/bcftools/) to compute per-sample variant statistics. Counts are broken down by variant class (SNV, insertion, deletion) and zygosity (het/hom), and the Ts/Tv ratio is extracted from `bcftools stats`.
+
+---
+
+## MultiQC
 
 <details markdown="1">
 <summary>Output files</summary>
 
 - `multiqc/`
-  - `multiqc_report.html`: a standalone HTML file that can be viewed in your web browser.
-  - `multiqc_data/`: directory containing parsed statistics from the different tools used in the pipeline.
-  - `multiqc_plots/`: directory containing static images from the report in various formats.
+  - `multiqc_report.html`: Standalone HTML report summarising QC results from all tools and samples.
+  - `multiqc_data/`: Directory of parsed, tab-delimited statistics from each tool.
 
 </details>
 
-[MultiQC](http://multiqc.info) is a visualization tool that generates a single HTML report summarising all samples in your project. Most of the pipeline QC results are visualised in the report and further statistics are available in the report data directory.
+[MultiQC](http://multiqc.info) aggregates QC outputs from all tools in the pipeline into a single interactive report. The report is configured via `assets/multiqc_config.yml`.
 
-Results generated by MultiQC collate pipeline QC from supported tools e.g. FastQC. The pipeline has special steps which also allow the software versions to be reported in the MultiQC output for future traceability. For more information about how to use MultiQC reports, see <http://multiqc.info>.
+---
 
-### Pipeline information
+## Pipeline information
 
 <details markdown="1">
 <summary>Output files</summary>
 
 - `pipeline_info/`
-  - Reports generated by Nextflow: `execution_report.html`, `execution_timeline.html`, `execution_trace.txt` and `pipeline_dag.dot`/`pipeline_dag.svg`.
-  - Reformatted samplesheet files used as input to the pipeline: `samplesheet.valid.csv`.
-  - Parameters used by the pipeline run: `params.json`.
+  - `execution_report.html`: Nextflow execution report with task-level resource usage.
+  - `execution_timeline.html`: Timeline of task execution across the run.
+  - `execution_trace.txt`: Tab-delimited trace of every task (CPU, memory, wall time).
+  - `pipeline_dag.dot` / `pipeline_dag.svg`: Directed acyclic graph of the workflow.
+  - `params.json`: Parameters used for the pipeline run.
+  - `quality-control-pipeline_software_mqc_versions.yml`: Software versions for all tools.
 
 </details>
 
-[Nextflow](https://www.nextflow.io/docs/latest/tracing.html) provides excellent functionality for generating various reports relevant to the running and execution of the pipeline. This will allow you to troubleshoot errors with the running of the pipeline, and also provide you with other information such as launch commands, run times and resource usage.
+[Nextflow](https://www.nextflow.io/docs/latest/tracing.html) generates execution reports, timelines, and traces that are useful for troubleshooting and auditing pipeline runs.
