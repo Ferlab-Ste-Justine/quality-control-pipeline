@@ -79,7 +79,7 @@ workflow QUALITYCONTROL {
         BAM/CRAM QUALITY CONTROL
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
-    GATK4_BEDTOINTERVALLIST(ch_intervals.map { it -> [[id:"bed"], it] },
+    GATK4_BEDTOINTERVALLIST( ch_intervals.flatten().map { it -> [[id:"bed"], it] },
                             ch_dict.map { it -> [[id:"dict"], it] })
 
     ch_interval_list = GATK4_BEDTOINTERVALLIST.out.interval_list

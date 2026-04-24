@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Deprecated`
 [#29](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/29) Deprecated d4tools workflow and modules.
 
+### `Fixed`
+[#31](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/31) Fixed bug when processing without specified coverage regions.
+
 ## v1.0.0dev - [26/09/2025]
 
 ### `Added`

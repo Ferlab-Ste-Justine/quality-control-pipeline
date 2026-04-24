@@ -10,7 +10,7 @@ workflow QC_COVERAGE_REGIONS {
 
     main:
 
-    ch_input_mosdepth = ch_bam_bai.combine(qc_regions)
+    ch_input_mosdepth = ch_bam_bai.combine(qc_regions.toList())
 
     MOSDEPTH(
         ch_input_mosdepth,

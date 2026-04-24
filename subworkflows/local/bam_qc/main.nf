@@ -48,8 +48,7 @@ workflow BAM_QC {
     //
     // ----- MOSDEPTH -----
     //
-    ch_input_mosdepth = ch_bam_bai.combine(ch_intervals)
-
+    ch_input_mosdepth = ch_bam_bai.combine(ch_intervals.toList())
     MOSDEPTH(
         ch_input_mosdepth,
         ch_fasta.map { it -> [ [id:"fasta"], it] }
@@ -76,7 +75,7 @@ workflow BAM_QC {
         )
         ch_reports = ch_reports.mix(QC_COVERAGE_REGIONS_R2.out.reports.map{it -> it[1]}.collect().ifEmpty([]))
     }
-    
+
     //
     // ----- VERIFYBAMID2 - Contamination -----
     //
