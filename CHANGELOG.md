@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`
 [#29](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/29) Refactor coverage per gene workflow.
+[#32](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/32) Use biocontainers picard instead of broadinstitue's picard docker image.
 
 ### `Deprecated`
 [#29](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/29) Deprecated d4tools workflow and modules.
