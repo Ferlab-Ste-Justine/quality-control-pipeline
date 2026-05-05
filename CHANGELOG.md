@@ -5,6 +5,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased - [10/04/2026]
 
+### `Fixed`
+[#33](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/33) Fixed sample name parsing in picard and verifybamID multiqc modules. Removed default of 0 when value is None.
+
+
+## v0.0.2dev - [10/04/2026]
+
 ### `Added`
 [#30](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/30) Added pipeline documentation and refactor configs.
 
@@ -18,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Fixed`
 [#31](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/31) Fixed bug when processing without specified coverage regions.
 
-## v1.0.0dev - [26/09/2025]
+## v0.0.1dev - [26/09/2025]
 
 ### `Added`
 - [#28](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/28) Added first version of multiqc report and gathering of VCF stats.
