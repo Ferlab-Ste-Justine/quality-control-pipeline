@@ -17,10 +17,6 @@ import json
 # Initialise the logger
 log = logging.getLogger('multiqc')
 
-def _num(v, default=0):
-    """Return numeric value or default if None or not set."""
-    return default if v is None else v
-
 def get_alignment_and_pedigree_data():
     """Retrieve alignment and pedigree data from MultiQC's parsed data.
 
@@ -62,18 +58,19 @@ def get_alignment_and_pedigree_data():
                 continue
             for s_name, data in pdata.items():
                 s_name = _clean_sample_name(s_name)
-                print(s_name)
                 if not isinstance(data, dict) or 'MEAN_COVERAGE' not in data:
                     continue
                 mc = data.get('MEAN_COVERAGE')
                 mc = float(mc) if mc is not None else None
                 sd = data.get('SD_COVERAGE')
                 sd = float(sd) if sd is not None else None
+                mad = data.get('MAD_COVERAGE')
+                mad = float(mad) if mad is not None else None
                 p15 = data.get('PCT_15X') or data.get('PCT_15X')
                 p15 = float(p15) if p15 is not None else None
                 alignment_stats_data[s_name].update({
                     'mean_autosome_coverage': mc,
-                    'mad_autosome_coverage': sd,
+                    'mad_autosome_coverage': mad,
                     'pct_autosomes_15x': p15,
                 })
 
@@ -203,9 +200,9 @@ def add_general_status_section(module, alignment_stats_data, qc_thresholds, pedi
     status_data = {}
     for s_name in sorted(samples):
         data = alignment_stats_data.get(s_name, {})
-        pct_mapped = _num(data.get('pct_reads_mapped')) if data else None
-        pct_proper = _num(data.get('pct_reads_properly_paired')) if data else None
-        contam = _num(data.get('cross_contamination_rate')) if data else None
+        pct_mapped = data.get('pct_reads_mapped') if data else None
+        pct_proper = data.get('pct_reads_properly_paired') if data else None
+        contam = data.get('cross_contamination_rate') if data else None
         # Preserve None for missing mean coverage (don't default to 0.0X)
         mean_cov = data.get('mean_autosome_coverage') if data else None
 
@@ -228,7 +225,7 @@ def add_general_status_section(module, alignment_stats_data, qc_thresholds, pedi
             if vm is None:
                 vcf_quality = 'na'
             else:
-                total_snvs = _num(vm.get('total_snvs'), 0)
+                total_snvs = vm.get('total_snvs')
                 vcf_quality = 'pass' if total_snvs > 0 else 'fail'
 
         # If there were pedigree comparisons available for this sample, use pass/fail.
@@ -383,10 +380,10 @@ def add_gene_coverage_section(gene_coverage_data):
         rows[key] = {
             'sample': sample,
             'gene': gene,
-            'average_coverage': _num(rec.get('average_coverage')),
-            'coverage15': _num(rec.get('coverage15')),
-            'coverage30': _num(rec.get('coverage30')),
-            'coverage100': _num(rec.get('coverage100')),
+            'average_coverage': rec.get('average_coverage'),
+            'coverage15': rec.get('coverage15'),
+            'coverage30': rec.get('coverage30'),
+            'coverage100': rec.get('coverage100'),
         }
 
     # Build an HTML table so custom JS can search by gene (avoid automatic violin rendering)
@@ -554,7 +551,7 @@ def add_qc_metrics_module(module, alignment_stats_data, variant_metrics_data):
             key = sid
             row = {'sample': sid}
             for k, _ in fields:
-                row[k] = _num(rec.get(k))
+                row[k] = rec.get(k)
             rows[key] = row
 
         headers = {'sample': {'title': 'Sample', 'description': 'Sample ID'}}

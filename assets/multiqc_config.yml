@@ -45,6 +45,10 @@ remove_sections:
   - 'samtools-percent-mapped'
   - 'mosdepth-xy-coverage'
 
+use_filename_as_sample_name:
+  - picard
+  - verifybamid
+
 preserve_module_raw_data: true
 disable_version_detection: true
 show_analysis_paths: false
