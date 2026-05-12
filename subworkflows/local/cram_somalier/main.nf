@@ -15,9 +15,9 @@ workflow CRAM_SOMALIER {
         ch_peds                 // channel: [mandatory] [ val(meta), path(ped) ]
         ch_sample_groups        // channel: [optional]  [ path(txt) ]
         val_common_id           // string:  [optional]  A common identifier for the samples that need to be related. - Family ID for example
-        
+
     main:
-    
+
     ch_versions = Channel.empty()
 
     ch_input = ch_crams
@@ -27,14 +27,14 @@ workflow CRAM_SOMALIER {
             no_crai: crai == []
                 return [ meta, cram ]
         }
-    
+
     SAMTOOLS_INDEX ( ch_input.no_crai )
     ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions.first())
 
     ch_somalierextract_input = ch_input.no_crai
         .join(SAMTOOLS_INDEX.out.crai) //.bai
         .mix(ch_input.crai)
-        .map { meta, cram, crai -> 
+        .map { meta, cram, crai ->
             [ meta, cram, crai, meta.samplename_somalier ]
         }
 
@@ -56,7 +56,7 @@ workflow CRAM_SOMALIER {
                 def new_meta = val_common_id ? meta + [id:meta[val_common_id]] : meta
                 [ count ? groupKey(new_meta, count): new_meta, extract ]
             }
-            .groupTuple()        
+            .groupTuple()
             .join(ch_peds, failOnDuplicate: true, failOnMismatch: true)
             .map { meta, extract, ped ->
                 def extract2 = extract[0] instanceof ArrayList ? extract[0] : extract
@@ -64,13 +64,13 @@ workflow CRAM_SOMALIER {
                 def new_meta = meta instanceof nextflow.extension.GroupKey ? meta.target : meta
                 [ new_meta, sorted_extract, ped ]
             } // Sort and flatten the extract list, remove the GroupKey wrapper if present
-    } 
+    }
     else {
         ch_somalierrelate_input = SOMALIER_EXTRACT.out.extract
-            .map { meta, extract_path -> extract_path}
+            .map { _meta, extract_path -> extract_path}
             .collect()
             .map { paths_list -> [ [id: 'Cohort'], paths_list ] }
-            .combine(ch_peds.map { meta, ped -> ped  })
+            .combine(ch_peds.map { _meta, ped -> ped }.toList())
     }
 
     SOMALIER_RELATE(

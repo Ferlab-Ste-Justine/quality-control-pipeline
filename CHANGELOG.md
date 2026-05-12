@@ -3,7 +3,12 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased - [10/04/2026]
+## Unreleased
+
+### `Fixed`
+[#34](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/34) Fixed issue with ped file channel initialization.
+
+## v0.0.3dev - [10/04/2026]
 
 ### `Fixed`
 [#33](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/33) Fixed sample name parsing in picard and verifybamID multiqc modules. Removed default of 0 when value is None.

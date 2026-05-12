@@ -44,7 +44,7 @@ workflow QUALITYCONTROL {
 
     // somalier sites VCF
     ch_somalier_sites = params.somalier_sites ? channel.value(file(params.somalier_sites, checkIfExists:true)) : channel.value([])
-    ch_ped = params.ped_file ? channel.value(file(params.ped_file, checkIfExists:true)) : channel.of([])
+    ch_ped = params.ped_file ? channel.value(file(params.ped_file, checkIfExists:true)) : channel.value([])
     // verifybamid SVD files
     ch_svd_ud  = params.verifybamid_svd_prefix ? channel.value(file(params.verifybamid_svd_prefix + '.UD', checkIfExists:true)) : channel.value([])
     ch_svd_mu  = params.verifybamid_svd_prefix ? channel.value(file(params.verifybamid_svd_prefix + '.mu', checkIfExists:true)) : channel.value([])
