@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### `Fixed`
+[#35](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/35) Fixed issue with MultiQC report title argument.
 [#34](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/34) Fixed issue with ped file channel initialization.
 
 ## v0.0.3dev - [10/04/2026]

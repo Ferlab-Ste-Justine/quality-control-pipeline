@@ -571,6 +571,7 @@ def main():
     parser.add_argument('files', nargs='+', help="List of QC files to parse")
     parser.add_argument('--config', help="MultiQC config file to use.")
     parser.add_argument('--outdir', default='.', help="Output directory for the report.")
+    parser.add_argument('--title', required=False, help="Title for the MultiQC report.")
     args = parser.parse_args()
 
     other_files = list(args.files) #[f for f in args.files if f != parquet_file]
@@ -636,7 +637,7 @@ def main():
 
     # Write the final report
     multiqc.write_report(force=True,
-        exclude_modules=["general_stats"])
+        exclude_modules=["general_stats"], title=args.title or None)
 
     log.info("Custom MultiQC report generated successfully!")
 
