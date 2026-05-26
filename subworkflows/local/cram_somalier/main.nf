@@ -53,7 +53,7 @@ workflow CRAM_SOMALIER {
         ch_somalierrelate_input = SOMALIER_EXTRACT.out.extract
             .join(ch_crams, failOnDuplicate: true, failOnMismatch: true)
             .map { meta, extract, _cram, _crai, count ->
-                def new_meta = val_common_id ? meta + [id:meta[val_common_id]] : meta
+                def new_meta = val_common_id ? [id:meta[val_common_id]] : meta
                 [ count ? groupKey(new_meta, count): new_meta, extract ]
             }
             .groupTuple()

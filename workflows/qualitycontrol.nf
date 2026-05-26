@@ -15,7 +15,6 @@ include { VCF_QC                 } from '../subworkflows/local/vcf_qc/main'
 include { BAM_MERGE              } from '../subworkflows/local/bam_merge'
 include { CRAM_SOMALIER          } from '../subworkflows/local/cram_somalier'
 include { GATK4_BEDTOINTERVALLIST } from '../modules/nf-core/gatk4/bedtointervallist/main'
-include { CREATE_FAMILY_PED      } from '../modules/local/create_family_ped/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -93,7 +92,7 @@ workflow QUALITYCONTROL {
     //
     bam_to_merge = ch_samplesheet_parsed.aln
         .map { meta, cram, crai ->
-        [ groupKey(meta.subMap('id', 'participant', 'sample', 'sequencingType', 'status'), meta.n_lanes), cram, crai ]
+        [ groupKey(meta.subMap('id', 'participant', 'sample', 'familyId', 'sex', 'sequencingType', 'status'), meta.n_lanes), cram, crai ]
     }
     .groupTuple()
 
@@ -179,20 +178,19 @@ workflow QUALITYCONTROL {
 
     // If we want to run the analysis in a per-family basis or with the entire cohort
     if (params.somalier_perfamily) {
-        ch_ped_grouped = ch_ped
-            .splitCsv(sep: '\t', header: ["family_id","name","paternal_id", "maternal_id", "sex", "phenotype"], skip: 1)
+        def pedHeader = ['#family_id','name','paternal_id','maternal_id','sex','phenotype'].join('\t')
+        ch_somalier_input_ped = ch_ped
+            .splitCsv(sep: '\t', header: ["family_id","name","paternal_id","maternal_id","sex","phenotype"], skip: 1)
             .map { row ->
-                [['familyId':row.family_id], row] }
-            .groupTuple()
-
-        CREATE_FAMILY_PED(ch_ped_grouped)
-
-        ch_versions = ch_versions.mix(CREATE_FAMILY_PED.out.versions)
-
-        ch_somalier_input_ped = CREATE_FAMILY_PED.out.ped_files
-            .map { meta, ped_file ->
-                [ [id: meta.familyId] + meta, ped_file ]
+                def line = [row.family_id, row.name, row.paternal_id, row.maternal_id, row.sex, row.phenotype].join('\t')
+                [ "${row.family_id}.ped".toString(), line ]
             }
+            .collectFile(
+                newLine: true,
+                sort: true,
+                seed: pedHeader
+            )
+            .map { ped_file -> [ [id: ped_file.baseName], ped_file ] }
     }
 
     CRAM_SOMALIER(
