@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Fixed`
 [#35](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/35) Fixed issue with MultiQC report title argument.
 [#34](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/34) Fixed issue with ped file channel initialization.
+[#36](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/36) Fixed using MultiQC title in report.
+[#37](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/37) Fixed issue with somalier input ped file generation.
+
+### `Added`
+[#36](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/36) Added test profile
 
 ## v0.0.3dev - [10/04/2026]
 
