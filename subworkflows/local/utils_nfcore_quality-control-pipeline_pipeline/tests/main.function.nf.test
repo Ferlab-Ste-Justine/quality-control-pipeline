@@ -1,0 +1,281 @@
+nextflow_function {
+
+    name "Test pedigree helper functions"
+    script "../main.nf"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "utils_nfcore_quality-control-pipeline_pipeline"
+
+    //
+    // phenotypeForPed
+    //
+    test("phenotypeForPed: Affected -> 2") {
+        function "phenotypeForPed"
+        when { function { "input[0] = 'Affected'" } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == 2 }
+        ) }
+    }
+
+    test("phenotypeForPed: Unaffected -> 1") {
+        function "phenotypeForPed"
+        when { function { "input[0] = 'Unaffected'" } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == 1 }
+        ) }
+    }
+
+    test("phenotypeForPed: Unknown -> 0") {
+        function "phenotypeForPed"
+        when { function { "input[0] = 'Unknown'" } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == 0 }
+        ) }
+    }
+
+    test("phenotypeForPed: null/unrecognised -> 0") {
+        function "phenotypeForPed"
+        when { function { "input[0] = null" } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == 0 }
+        ) }
+    }
+
+    //
+    // pedParentsFor  (rel, fatherId, motherId, probandId, probandSex)
+    //
+    test("pedParentsFor: Proband links to both parents") {
+        function "pedParentsFor"
+        when { function { """
+            input[0] = 'Proband'
+            input[1] = 'DAD'
+            input[2] = 'MOM'
+            input[3] = 'PRO'
+            input[4] = 'Female'
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == ['DAD', 'MOM'] }
+        ) }
+    }
+
+    test("pedParentsFor: Fetus links to both parents (no Proband row)") {
+        function "pedParentsFor"
+        when { function { """
+            input[0] = 'Fetus'
+            input[1] = 'DAD'
+            input[2] = 'MOM'
+            input[3] = '0'
+            input[4] = null
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == ['DAD', 'MOM'] }
+        ) }
+    }
+
+    test("pedParentsFor: sibling links to both parents") {
+        function "pedParentsFor"
+        when { function { """
+            input[0] = 'Brother'
+            input[1] = 'DAD'
+            input[2] = 'MOM'
+            input[3] = 'PRO'
+            input[4] = 'Female'
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == ['DAD', 'MOM'] }
+        ) }
+    }
+
+    test("pedParentsFor: Son of a male proband -> proband is the father") {
+        function "pedParentsFor"
+        when { function { """
+            input[0] = 'Son'
+            input[1] = '0'
+            input[2] = '0'
+            input[3] = 'PRO'
+            input[4] = 'Male'
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == ['PRO', '0'] }
+        ) }
+    }
+
+    test("pedParentsFor: Daughter of a female proband -> proband is the mother") {
+        function "pedParentsFor"
+        when { function { """
+            input[0] = 'Daughter'
+            input[1] = '0'
+            input[2] = '0'
+            input[3] = 'PRO'
+            input[4] = 'Female'
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == ['0', 'PRO'] }
+        ) }
+    }
+
+    test("pedParentsFor: child of unknown-sex proband -> no parents") {
+        function "pedParentsFor"
+        when { function { """
+            input[0] = 'Son'
+            input[1] = '0'
+            input[2] = '0'
+            input[3] = 'PRO'
+            input[4] = 'NA'
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == ['0', '0'] }
+        ) }
+    }
+
+    test("pedParentsFor: Father/Mother/half-sibling/Other have no parents") {
+        function "pedParentsFor"
+        when { function { """
+            input[0] = 'Half-brother'
+            input[1] = 'DAD'
+            input[2] = 'MOM'
+            input[3] = 'PRO'
+            input[4] = 'Male'
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == ['0', '0'] }
+        ) }
+    }
+
+    //
+    // sexForPed  (meta, rel)
+    //
+    test("sexForPed: Female -> 2") {
+        function "sexForPed"
+        when { function { """
+            input[0] = [ sex: 'Female', samplename_somalier: 'S1' ]
+            input[1] = 'Mother'
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == 2 }
+        ) }
+    }
+
+    test("sexForPed: Male -> 1") {
+        function "sexForPed"
+        when { function { """
+            input[0] = [ sex: 'Male', samplename_somalier: 'S1' ]
+            input[1] = 'Father'
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == 1 }
+        ) }
+    }
+
+    test("sexForPed: NA/unknown -> 0") {
+        function "sexForPed"
+        when { function { """
+            input[0] = [ sex: 'NA', samplename_somalier: 'S1' ]
+            input[1] = 'Proband'
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == 0 }
+        ) }
+    }
+
+    test("sexForPed: relationship/sex mismatch still uses samplesheet sex") {
+        function "sexForPed"
+        when { function { """
+            input[0] = [ sex: 'Female', samplename_somalier: 'S1' ]
+            input[1] = 'Brother'
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == 2 }
+        ) }
+    }
+
+    //
+    // buildPedRowsForFamily  (familyId, metas, perFamily)
+    //
+    test("buildPedRowsForFamily: per-family trio") {
+        function "buildPedRowsForFamily"
+        when { function { """
+            input[0] = 'FAM1'
+            input[1] = [
+                [ samplename_somalier: 'CHILD', relationship_to_proband: 'Proband', sample_idx: 0, sex: 'Female', affected_status: 'Affected'   ],
+                [ samplename_somalier: 'DAD',   relationship_to_proband: 'Father',  sample_idx: 0, sex: 'Male',   affected_status: 'Unaffected' ],
+                [ samplename_somalier: 'MOM',   relationship_to_proband: 'Mother',  sample_idx: 0, sex: 'Female', affected_status: 'Unaffected' ],
+            ]
+            input[2] = true
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == [
+                [ 'FAM1.ped', "FAM1\tCHILD\tDAD\tMOM\t2\t2" ],
+                [ 'FAM1.ped', "FAM1\tDAD\t0\t0\t1\t1" ],
+                [ 'FAM1.ped', "FAM1\tMOM\t0\t0\t2\t1" ],
+            ] }
+        ) }
+    }
+
+    test("buildPedRowsForFamily: cohort mode writes Cohort.ped") {
+        function "buildPedRowsForFamily"
+        when { function { """
+            input[0] = 'FAM1'
+            input[1] = [
+                [ samplename_somalier: 'S1', relationship_to_proband: 'Proband', sample_idx: 0, sex: 'Male', affected_status: 'Unknown' ],
+            ]
+            input[2] = false
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == [ [ 'Cohort.ped', "FAM1\tS1\t0\t0\t1\t0" ] ] }
+        ) }
+    }
+
+    test("buildPedRowsForFamily: prenatal trio (Mother is proband, Fetus links to parents)") {
+        function "buildPedRowsForFamily"
+        when { function { """
+            input[0] = 'FAM2'
+            input[1] = [
+                [ samplename_somalier: 'MOM',   relationship_to_proband: 'Mother', sample_idx: 0, sex: 'Female',  affected_status: 'Unaffected' ],
+                [ samplename_somalier: 'DAD',   relationship_to_proband: 'Father', sample_idx: 0, sex: 'Male',    affected_status: 'Unaffected' ],
+                [ samplename_somalier: 'FETUS', relationship_to_proband: 'Fetus',  sample_idx: 0, sex: 'NA',      affected_status: 'Affected'   ],
+            ]
+            input[2] = true
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == [
+                [ 'FAM2.ped', "FAM2\tMOM\t0\t0\t2\t1" ],
+                [ 'FAM2.ped', "FAM2\tDAD\t0\t0\t1\t1" ],
+                [ 'FAM2.ped', "FAM2\tFETUS\tDAD\tMOM\t0\t2" ],
+            ] }
+        ) }
+    }
+
+    test("buildPedRowsForFamily: solo sample with no relationship defaults to proband, no parents") {
+        function "buildPedRowsForFamily"
+        when { function { """
+            input[0] = 'SOLO'
+            input[1] = [
+                [ samplename_somalier: 'X', relationship_to_proband: null, sample_idx: 0, sex: 'Female', affected_status: 'Unknown' ],
+            ]
+            input[2] = true
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == [ [ 'SOLO.ped', "SOLO\tX\t0\t0\t2\t0" ] ] }
+        ) }
+    }
+}
