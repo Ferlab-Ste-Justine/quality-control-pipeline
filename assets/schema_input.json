@@ -47,6 +47,20 @@
                 "minimum": 0,
                 "maximum": 1
             },
+            "relationship_to_proband": {
+                "errorMessage": "Relationship to proband. Defaults to Proband if not provided.",
+                "meta": ["relationship_to_proband"],
+                "default": "Proband",
+                "type": "string",
+                "enum": ["Proband", "Mother", "Father", "Brother", "Sister", "Half-brother", "Half-sister", "Identical twin", "Fraternal twin brother", "Fraternal twin sister", "Son", "Daughter", "Other", "Fetus"]
+            },
+            "affected_status": {
+                "errorMessage": "Affected status. Must be one of: Affected, Unaffected, Unknown. Defaults to Unknown.",
+                "meta": ["affected_status"],
+                "default": "Unknown",
+                "type": "string",
+                "enum": ["Affected", "Unaffected", "Unknown"]
+            },
             "lane": {
                 "type": "string",
                 "pattern": "^\\S+$",

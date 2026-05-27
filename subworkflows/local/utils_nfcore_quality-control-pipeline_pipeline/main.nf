@@ -106,7 +106,7 @@ workflow PIPELINE_INITIALISATION {
             }
             [ meta, [file1, file2] ]
         }
-        
+
     emit:
     samplesheet = ch_samplesheet
     versions    = ch_versions
@@ -189,6 +189,82 @@ def findIndex(fileType, dataFile) {
         return []
     }
     return file(index)
+}
+
+//
+// Build PED rows for one family from samplesheet meta. Returns a list of
+// [filename, tsv_line] tuples suitable for collectFile. In a prenatal trio
+// (Mother/Father/Fetus, no Proband row) the Mother row is the proband biologically;
+// Mother/Father still resolve to parents=0, and Fetus links to the family's
+// Father/Mother rows — same as any other child relationship.
+//
+def buildPedRowsForFamily(familyId, metas, perFamily) {
+    // Anchor parent/proband lookups to the primary sample row (sample_idx == 0),
+    // whose samplename_somalier equals meta.sample.
+    def fatherRow  = metas.find { m -> m.relationship_to_proband == 'Father'  && (m.sample_idx ?: 0) == 0 }
+    def motherRow  = metas.find { m -> m.relationship_to_proband == 'Mother'  && (m.sample_idx ?: 0) == 0 }
+    def probandRow = metas.find { m -> m.relationship_to_proband == 'Proband' && (m.sample_idx ?: 0) == 0 }
+
+    def fatherId  = fatherRow?.samplename_somalier  ?: '0'
+    def motherId  = motherRow?.samplename_somalier  ?: '0'
+    def probandId = probandRow?.samplename_somalier ?: '0'
+    def probandSex = probandRow?.sex
+
+    def filename = perFamily ? "${familyId}.ped".toString() : 'Cohort.ped'
+
+    return metas.collect { m ->
+        def rel = m.relationship_to_proband ?: 'Proband'
+        def parents = pedParentsFor(rel, fatherId, motherId, probandId, probandSex)
+        def sex = sexForPed(m, rel)
+        def phenotype = phenotypeForPed(m.affected_status)
+        def line = [familyId, m.samplename_somalier, parents[0], parents[1], sex, phenotype].join('\t')
+        [ filename, line ]
+    }
+}
+
+//
+// Map (relationship, family context) to [paternal_id, maternal_id].
+//
+def pedParentsFor(rel, fatherId, motherId, probandId, probandSex) {
+    // These all link to the family's Father/Mother rows (proband, full siblings and twins
+    // share both parents; the fetus links to its Mother/Father rows).
+    def is_child = ['Proband', 'Fetus', 'Brother', 'Sister',
+        'Identical twin', 'Fraternal twin brother', 'Fraternal twin sister']
+    if (rel in is_child) {
+        return [fatherId, motherId]
+    }
+    if (rel == 'Son' || rel == 'Daughter') {
+        if (probandSex == 'Male')   { return [probandId, '0'] }
+        if (probandSex == 'Female') { return ['0', probandId] }
+        return ['0', '0']
+    }
+    // Father, Mother, Half-brother, Half-sister, Other, null
+    return ['0', '0']
+}
+
+//
+// PED sex code from samplesheet, warning if it disagrees with the relationship label.
+//
+def sexForPed(meta, rel) {
+    def relationshipsBySex = [
+        'Male'   : ['Father', 'Brother', 'Half-brother', 'Fraternal twin brother', 'Son'],
+        'Female' : ['Mother', 'Sister', 'Half-sister', 'Fraternal twin sister', 'Daughter'],
+    ]
+    // Relationships not listed (Proband, Fetus, Identical twin, Other) imply no fixed sex.
+    def expected = relationshipsBySex.find { entry -> rel in entry.value }?.key
+    if (expected && meta.sex && meta.sex != 'NA' && meta.sex != expected) {
+        log.warn("Sample ${meta.samplename_somalier}: relationship '${rel}' expects sex=${expected} but samplesheet has '${meta.sex}'. Using samplesheet sex.")
+    }
+    return meta.sex == 'Female' ? 2 : (meta.sex == 'Male' ? 1 : 0)
+}
+
+//
+// PED phenotype code from affected_status.
+//
+def phenotypeForPed(status) {
+    if (status == 'Affected')   { return 2 }
+    if (status == 'Unaffected') { return 1 }
+    return 0
 }
 
 //

@@ -8,6 +8,7 @@ include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
+include { buildPedRowsForFamily  } from '../subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
 include { FASTQ_QC               } from '../subworkflows/local/fastq_qc/main'
 include { BAM_QC as BAM_QC_WGS   } from '../subworkflows/local/bam_qc/main'
 include { BAM_QC as BAM_QC_TARGET   } from '../subworkflows/local/bam_qc/main'
@@ -92,7 +93,7 @@ workflow QUALITYCONTROL {
     //
     bam_to_merge = ch_samplesheet_parsed.aln
         .map { meta, cram, crai ->
-        [ groupKey(meta.subMap('id', 'participant', 'sample', 'familyId', 'sex', 'sequencingType', 'status'), meta.n_lanes), cram, crai ]
+        [ groupKey(meta.subMap('id', 'participant', 'sample', 'familyId', 'sex', 'sequencingType', 'status', 'relationship_to_proband', 'affected_status'), meta.n_lanes), cram, crai ]
     }
     .groupTuple()
 
@@ -172,20 +173,44 @@ workflow QUALITYCONTROL {
             "${samples.join(',')}\n"
         }
         .ifEmpty{[]}
+        .first()  // value channel so the single sample_groups file is reused across every per-family relate
         .set{ch_sample_groups}
 
-    ch_somalier_input_ped =  ch_ped.map { it -> [ [id:"ped"], it ] }
+    //
+    // Build pedigree input for somalier.
+    //   1. If params.ped_file is set, use it (split per-family when somalier_perfamily).
+    //   2. Otherwise derive from samplesheet meta (relationship_to_proband, affected_status, sex).
+    //      Missing relationship_to_proband defaults to "Proband" with parents=0, so cohorts of
+    //      solo samples and singletons fall out of the same logic.
+    //
+    def pedHeader = ['#family_id','name','paternal_id','maternal_id','sex','phenotype'].join('\t')
 
-    // If we want to run the analysis in a per-family basis or with the entire cohort
-    if (params.somalier_perfamily) {
-        def pedHeader = ['#family_id','name','paternal_id','maternal_id','sex','phenotype'].join('\t')
-        ch_somalier_input_ped = ch_ped
-            .splitCsv(sep: '\t', header: ["family_id","name","paternal_id","maternal_id","sex","phenotype"], skip: 1)
-            .map { row ->
-                def line = [row.family_id, row.name, row.paternal_id, row.maternal_id, row.sex, row.phenotype].join('\t')
-                [ "${row.family_id}.ped".toString(), line ]
+    if (params.ped_file) {
+        if (params.somalier_perfamily) {
+            ch_somalier_input_ped = ch_ped
+                .splitCsv(sep: '\t', header: ["family_id","name","paternal_id","maternal_id","sex","phenotype"], skip: 1)
+                .map { row ->
+                    def line = [row.family_id, row.name, row.paternal_id, row.maternal_id, row.sex, row.phenotype].join('\t')
+                    [ "${row.family_id}.ped".toString(), line ]
+                }
+                .collectFile(
+                    newLine: true,
+                    sort: true,
+                    seed: pedHeader
+                )
+                .map { ped_file -> [ [id: ped_file.baseName], ped_file ] }
+        } else {
+            ch_somalier_input_ped = ch_ped.map { it -> [ [id:"ped"], it ] }
+        }
+    } else {
+        ch_somalier_input_ped = ch_cram_crai_somalier
+            .map { meta, _cram, _crai, _count -> [meta.familyId, meta] }
+            .groupTuple()
+            .flatMap { familyId, metas ->
+                buildPedRowsForFamily(familyId, metas, params.somalier_perfamily as boolean)
             }
             .collectFile(
+                storeDir: "${params.outdir}/reports/pedigree",
                 newLine: true,
                 sort: true,
                 seed: pedHeader
