@@ -182,8 +182,11 @@
         "somalier_sites": {
             "type": "string"
         },
-        "somalier_perfamily": {
-            "type": "boolean"
+        "cohort_mode": {
+            "type": "boolean",
+            "default": false,
+            "description": "Treat all samples as one cohort. When false, group samples by familyId: somalier runs per-family and one MultiQC report is generated per family.",
+            "help_text": "In cohort mode (default) the pipeline produces a single MultiQC report covering all samples and somalier runs once across the whole cohort. Disable for per-family runs (one MultiQC report per family, somalier runs once per family)."
         },
         "regions_bed": {
             "type": "string"

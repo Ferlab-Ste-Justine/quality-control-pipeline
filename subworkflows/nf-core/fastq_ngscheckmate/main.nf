@@ -7,7 +7,7 @@ workflow FASTQ_NGSCHECKMATE {
     ch_snp_pt // channel: [ val(meta2), snp_pt ]
 
     main:
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     NGSCHECKMATE_FASTQ(ch_fastq, ch_snp_pt.first())
     ch_versions = ch_versions.mix(NGSCHECKMATE_FASTQ.out.versions.first())

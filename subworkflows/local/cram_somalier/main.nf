@@ -49,7 +49,14 @@ workflow CRAM_SOMALIER {
 
      // Prepare input for CRAM Somalier subworkflow
 
-    if (params.somalier_perfamily) {
+    if (params.cohort_mode) {
+        ch_somalierrelate_input = SOMALIER_EXTRACT.out.extract
+            .map { _meta, extract_path -> extract_path}
+            .collect()
+            .map { paths_list -> [ [id: 'Cohort'], paths_list ] }
+            .combine(ch_peds.map { _meta, ped -> ped }.toList())
+    }
+    else {
         ch_somalierrelate_input = SOMALIER_EXTRACT.out.extract
             .join(ch_crams, failOnDuplicate: true, failOnMismatch: true)
             .map { meta, extract, _cram, _crai, count ->
@@ -64,13 +71,6 @@ workflow CRAM_SOMALIER {
                 def new_meta = meta instanceof nextflow.extension.GroupKey ? meta.target : meta
                 [ new_meta, sorted_extract, ped ]
             } // Sort and flatten the extract list, remove the GroupKey wrapper if present
-    }
-    else {
-        ch_somalierrelate_input = SOMALIER_EXTRACT.out.extract
-            .map { _meta, extract_path -> extract_path}
-            .collect()
-            .map { paths_list -> [ [id: 'Cohort'], paths_list ] }
-            .combine(ch_peds.map { _meta, ped -> ped }.toList())
     }
 
     SOMALIER_RELATE(

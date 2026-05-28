@@ -21,7 +21,7 @@ Prepare a CSV samplesheet with one row per file (or per sequencing run for multi
 | `fileType` | Yes | Type of input file. One of: `FASTQ`, `BAM`, `CRAM`, `VCF`, `GVCF` (case-insensitive). |
 | `file1` | Yes | Path to the primary file: FASTQ R1, BAM, CRAM, or VCF/GVCF. |
 | `file2` | No | Path to the secondary file: FASTQ R2, BAI index, CRAI index, or VCF TBI/CSI index. |
-| `familyId` | No | Family identifier. Required when using `--somalier_perfamily` or `--ped_file`. |
+| `familyId` | No | Family identifier. Required when running per-family (`--cohort_mode false`) or with `--ped_file`. |
 | `experimentalStrategy` | No | Sequencing strategy. One of: `WGS`, `WXS`, `TARS`, `RNAS`, `ATACS`, `BIS`, `TMS`, `CHIPS`. Defaults to `WGS`. Controls which QC modules run (e.g. Picard WGS metrics only run for `WGS`). |
 | `sex` | No | Sample sex. One of: `Female`, `Male`, `Other`, `NA`. Defaults to `NA`. |
 | `status` | No | Sample status. `0` = normal, `1` = tumor. Defaults to `0`. |
@@ -64,7 +64,7 @@ nextflow run Ferlab-Ste-Justine/quality-control-pipeline \
    --fasta_dict /path/to/GRCh38.dict \
    --somalier_sites /path/to/sites.hg38.vcf.gz \
    --ped_file /path/to/cohort.ped \
-   --somalier_perfamily \
+   --cohort_mode false \
    --verifybamid_svd_prefix /path/to/1000g.phase3 \
    --ngscheckmate_snp_pt /path/to/SNP_GRCh38_hg38_wChr.bed
 ```
@@ -87,7 +87,7 @@ fai: /path/to/GRCh38.fa.fai
 fasta_dict: /path/to/GRCh38.dict
 somalier_sites: /path/to/sites.hg38.vcf.gz
 ped_file: /path/to/cohort.ped
-somalier_perfamily: true
+cohort_mode: false
 verifybamid_svd_prefix: /path/to/1000g.phase3
 ngscheckmate_snp_pt: /path/to/SNP_GRCh38_hg38_wChr.bed
 ```
@@ -120,7 +120,7 @@ ngscheckmate_snp_pt: /path/to/SNP_GRCh38_hg38_wChr.bed
 |---|---|
 | `--somalier_sites` | VCF of known variant sites used by Somalier for fingerprinting. |
 | `--ped_file` | Pedigree file (PED format) describing family relationships. |
-| `--somalier_perfamily` | Run Somalier independently per family (splits the PED by `familyId`). Default: cohort-wide. |
+| `--cohort_mode` | Boolean. When `true` the pipeline runs as a single cohort: one Somalier relate across all samples, one MultiQC report. When `false` (default), samples are grouped by `familyId` — Somalier runs once per family and one MultiQC report is produced per family. |
 
 ### Contamination (VerifyBamID2)
 

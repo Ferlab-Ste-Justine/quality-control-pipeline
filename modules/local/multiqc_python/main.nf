@@ -1,5 +1,6 @@
 process MULTIQC_PYTHON {
     label 'process_single'
+    tag "${meta.id}"
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -7,13 +8,13 @@ process MULTIQC_PYTHON {
         'biocontainers/multiqc:1.30--pyhdfd78af_0' }"
 
     input:
-    path multiqc_files
+    tuple val(meta), path(multiqc_files)
     path multiqc_config
 
     output:
-    path "*multiqc_report.html", emit: report
-    path "*_data"              , emit: data
-    path "*_plots"             , optional:true, emit: plots
+    tuple val(meta), path("*multiqc_report.html"), emit: report
+    tuple val(meta), path("*_data")              , emit: data
+    tuple val(meta), path("*_plots")             , optional:true, emit: plots
     tuple val("${task.process}"), val('multiqc'), eval('multiqc --version | sed "s/.* //g"'), emit: versions
 
     when:
@@ -21,20 +22,22 @@ process MULTIQC_PYTHON {
 
     script:
     def args = task.ext.args ?: ''
-    // def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     def config = multiqc_config ? "--config $multiqc_config" : ''
     def file_list = multiqc_files.join(' ')
     """
     multiqc_report.py \\
         ${file_list} \\
         ${config} \\
+        --filename ${prefix}_multiqc_report.html \\
         $args
     """
 
     stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    mkdir multiqc_data
-    mkdir multiqc_plots
-    touch multiqc_report.html
+    mkdir ${prefix}_multiqc_data
+    mkdir ${prefix}_multiqc_plots
+    touch ${prefix}_multiqc_report.html
     """
 }
