@@ -22,11 +22,11 @@ outdir/
 │   │       └── *.tsv                # Coverage-by-gene reports
 │   │   └── snp_pt/                  # ngsCheckMate batch-level outputs
 │   └── pedigree/
-│       ├── {family.id}/             # Per-family somalier + PED (somalier_perfamily=true)
+│       ├── {family.id}/             # Per-family somalier + PED (cohort_mode=false)
 │       │   ├── *.ped
 │       │   ├── *.html
 │       │   └── *.tsv
-│       └── *.html / *.tsv           # Cohort-level somalier outputs (somalier_perfamily=false)
+│       └── *.html / *.tsv           # Cohort-level somalier outputs (cohort_mode=true)
 ├── multiqc/
 │   ├── multiqc_report.html
 │   └── multiqc_data/
@@ -163,7 +163,7 @@ A local module aggregates Mosdepth region and threshold outputs into a per-gene 
 ## Somalier
 
 <details markdown="1">
-<summary>Output files — per-family mode (`--somalier_perfamily`)</summary>
+<summary>Output files — per-family mode (`--cohort_mode false`)</summary>
 
 - `reports/QC/{sample.id}/`
   - `*.somalier`: Somalier extract file per sample (fingerprint at sites VCF positions).

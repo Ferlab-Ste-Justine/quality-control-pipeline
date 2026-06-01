@@ -8,23 +8,23 @@ workflow FASTQ_QC {
     ncm_snp_pt // channel: [ val(meta), path(snp_pt) ]
 
     main:
-    ch_reports = Channel.empty()
-    ch_versions = Channel.empty()
+    ch_reports = channel.empty()
+    ch_versions = channel.empty()
 
     FASTQ_NGSCHECKMATE (ch_fastq, ncm_snp_pt)
     ch_versions = ch_versions.mix(FASTQ_NGSCHECKMATE.out.versions)
-    ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.corr_matrix.map { _meta, report -> report })
-    ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.matched.map { _meta, report -> report })
-    ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.all.map { _meta, report -> report })
-    ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.vaf.map { _meta, report -> report })
-    ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.pdf.map { _meta, report -> report }.ifEmpty([]))
+    ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.corr_matrix)
+    ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.matched)
+    ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.all)
+    ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.vaf)
+    ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.pdf)
 
     FASTQC (ch_fastq)
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
-    ch_reports = ch_reports.mix(FASTQC.out.zip.collect{it[1]})
-    ch_reports = ch_reports.mix(FASTQC.out.html.collect{it[1]})
+    ch_reports = ch_reports.mix(FASTQC.out.zip)
+    ch_reports = ch_reports.mix(FASTQC.out.html)
 
     emit:
-    reports  = ch_reports                       // channel: [ *.tsv, *.html, *.zip ]
-    versions = ch_versions                     // channel: [ versions.yml ]
+    reports  = ch_reports                       // channel: [ val(meta), path(report) ]
+    versions = ch_versions                      // channel: [ versions.yml ]
 }

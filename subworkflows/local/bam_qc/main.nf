@@ -30,7 +30,7 @@ workflow BAM_QC {
     SAMTOOLS_STATS( ch_bam_bai,
         ch_fasta.map { it -> [ [id:"fasta"], it] }
     )
-    ch_reports = ch_reports.mix(SAMTOOLS_STATS.out.stats.map{it[1]}.collect())
+    ch_reports = ch_reports.mix(SAMTOOLS_STATS.out.stats)
 
     //
     // ----- PICARD COLLECTWGMETRICS -----
@@ -42,7 +42,7 @@ workflow BAM_QC {
         ch_intervals_list
     )
 
-    ch_reports = ch_reports.mix(PICARD_COLLECTWGSMETRICS.out.metrics.map{it[1]}.collect())
+    ch_reports = ch_reports.mix(PICARD_COLLECTWGSMETRICS.out.metrics)
 
 
     //
@@ -54,8 +54,8 @@ workflow BAM_QC {
         ch_fasta.map { it -> [ [id:"fasta"], it] }
     )
 
-    ch_reports = ch_reports.mix(MOSDEPTH.out.global_txt.map{it -> it[1]}.collect().ifEmpty([]))
-    ch_reports = ch_reports.mix(MOSDEPTH.out.regions_txt.map{it -> it[1]}.collect().ifEmpty([]))
+    ch_reports = ch_reports.mix(MOSDEPTH.out.global_txt)
+    ch_reports = ch_reports.mix(MOSDEPTH.out.regions_txt)
 
     // Coverage by gene for specified regions (if provided)
     if (params.qc_coverage_region_1) {
@@ -64,7 +64,7 @@ workflow BAM_QC {
             qc_regions_1,
             ch_fasta
         )
-        ch_reports = ch_reports.mix(QC_COVERAGE_REGIONS_R1.out.reports.map{it -> it[1]}.collect().ifEmpty([]))
+        ch_reports = ch_reports.mix(QC_COVERAGE_REGIONS_R1.out.reports)
     }
 
     if (params.qc_coverage_region_2) {
@@ -73,7 +73,7 @@ workflow BAM_QC {
             qc_regions_2,
             ch_fasta
         )
-        ch_reports = ch_reports.mix(QC_COVERAGE_REGIONS_R2.out.reports.map{it -> it[1]}.collect().ifEmpty([]))
+        ch_reports = ch_reports.mix(QC_COVERAGE_REGIONS_R2.out.reports)
     }
 
     //
@@ -82,7 +82,7 @@ workflow BAM_QC {
     VERIFYBAMID_VERIFYBAMID2(
         ch_bam_bai, ch_svd_in, [], ch_fasta)
 
-    ch_reports = ch_reports.mix(VERIFYBAMID_VERIFYBAMID2.out.self_sm.map{it -> it[1]}.collect())
+    ch_reports = ch_reports.mix(VERIFYBAMID_VERIFYBAMID2.out.self_sm)
 
     // Collect versions
     ch_versions = ch_versions.mix(SAMTOOLS_STATS.out.versions)
@@ -90,6 +90,6 @@ workflow BAM_QC {
     ch_versions = ch_versions.mix(VERIFYBAMID_VERIFYBAMID2.out.versions)
 
     emit:
-    reports = ch_reports                     // channel: [ path(report1), path(report2), ... ]
+    reports = ch_reports                     // channel: [ val(meta), path(report) ]
     versions = ch_versions                     // channel: [ versions.yml ]
 }

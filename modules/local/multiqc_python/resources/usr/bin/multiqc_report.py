@@ -572,6 +572,7 @@ def main():
     parser.add_argument('--config', help="MultiQC config file to use.")
     parser.add_argument('--outdir', default='.', help="Output directory for the report.")
     parser.add_argument('--title', required=False, help="Title for the MultiQC report.")
+    parser.add_argument('--filename', required=False, help="Output report filename (e.g. Cohort_multiqc_report.html).")
     args = parser.parse_args()
 
     other_files = list(args.files) #[f for f in args.files if f != parquet_file]
@@ -636,8 +637,10 @@ def main():
     multiqc.report.modules = [module] + multiqc.report.modules
 
     # Write the final report
-    multiqc.write_report(force=True,
-        exclude_modules=["general_stats"], title=args.title or None)
+    write_kwargs = dict(force=True, exclude_modules=["general_stats"], title=args.title or None)
+    if args.filename:
+        write_kwargs['filename'] = args.filename
+    multiqc.write_report(**write_kwargs)
 
     log.info("Custom MultiQC report generated successfully!")
 

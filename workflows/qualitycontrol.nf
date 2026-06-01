@@ -30,6 +30,9 @@ workflow QUALITYCONTROL {
     main:
 
     ch_versions = channel.empty()
+    // ch_multiqc_files emits [val(meta), path(file)] tuples. meta.familyId tags the
+    // family the file belongs to; cohort-wide files (no familyId) are routed to every
+    // family report in per-family mode, or merged into the single report in cohort mode.
     ch_multiqc_files = channel.empty()
 
     // inputs
@@ -71,7 +74,7 @@ workflow QUALITYCONTROL {
 
     // If fastq files are provided, run FastQC, SeqFu, and ngsCheckMate
     FASTQ_QC ( ch_samplesheet_parsed.fastq, ncm_snp_pt.map { it -> [ [id:"snp_pt"], it] } )
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports.collect{it})
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports)
     ch_versions = ch_versions.mix(FASTQ_QC.out.versions.first())
 
     /*
@@ -178,7 +181,7 @@ workflow QUALITYCONTROL {
 
     //
     // Build pedigree input for somalier.
-    //   1. If params.ped_file is set, use it (split per-family when somalier_perfamily).
+    //   1. If params.ped_file is set, use it (split per-family when !cohort_mode).
     //   2. Otherwise derive from samplesheet meta (relationship_to_proband, affected_status, sex).
     //      Missing relationship_to_proband defaults to "Proband" with parents=0, so cohorts of
     //      solo samples and singletons fall out of the same logic.
@@ -186,7 +189,9 @@ workflow QUALITYCONTROL {
     def pedHeader = ['#family_id','name','paternal_id','maternal_id','sex','phenotype'].join('\t')
 
     if (params.ped_file) {
-        if (params.somalier_perfamily) {
+        if (params.cohort_mode) {
+            ch_somalier_input_ped = ch_ped.map { it -> [ [id:"ped"], it ] }
+        } else {
             ch_somalier_input_ped = ch_ped
                 .splitCsv(sep: '\t', header: ["family_id","name","paternal_id","maternal_id","sex","phenotype"], skip: 1)
                 .map { row ->
@@ -199,15 +204,13 @@ workflow QUALITYCONTROL {
                     seed: pedHeader
                 )
                 .map { ped_file -> [ [id: ped_file.baseName], ped_file ] }
-        } else {
-            ch_somalier_input_ped = ch_ped.map { it -> [ [id:"ped"], it ] }
         }
     } else {
         ch_somalier_input_ped = ch_cram_crai_somalier
             .map { meta, _cram, _crai, _count -> [meta.familyId, meta] }
             .groupTuple()
             .flatMap { familyId, metas ->
-                buildPedRowsForFamily(familyId, metas, params.somalier_perfamily as boolean)
+                buildPedRowsForFamily(familyId, metas, !(params.cohort_mode as boolean))
             }
             .collectFile(
                 storeDir: "${params.outdir}/reports/pedigree",
@@ -230,8 +233,18 @@ workflow QUALITYCONTROL {
 
     ch_versions = ch_versions.mix(CRAM_SOMALIER.out.versions)
 
-    ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.pairs_tsv.map { _meta, report -> report })
-    ch_multiqc_files = ch_multiqc_files.mix(CRAM_SOMALIER.out.samples_tsv.map { _meta, report -> report })
+    // Somalier outputs are already grouped: meta.id is the familyId in per-family mode,
+    // or 'Cohort' in cohort mode. Map id -> familyId so the downstream grouping works.
+    ch_multiqc_files = ch_multiqc_files.mix(
+        CRAM_SOMALIER.out.pairs_tsv.map { meta, report ->
+            [ params.cohort_mode ? meta : meta + [familyId: meta.id], report ]
+        }
+    )
+    ch_multiqc_files = ch_multiqc_files.mix(
+        CRAM_SOMALIER.out.samples_tsv.map { meta, report ->
+            [ params.cohort_mode ? meta : meta + [familyId: meta.id], report ]
+        }
+    )
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -247,8 +260,8 @@ workflow QUALITYCONTROL {
         ch_exons
     )
 
-    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_metrics.collect{_meta, report -> report})
-    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_stats.collect{_meta, report -> report})
+    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_metrics)
+    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_stats)
 
     // topic_versions = channel.topic('versions')
     topic_versions = channel.topic("versions")
@@ -290,25 +303,54 @@ workflow QUALITYCONTROL {
 
     summary_params      = paramsSummaryMap(
         workflow, parameters_schema: "nextflow_schema.json")
-    ch_workflow_summary = Channel.value(paramsSummaryMultiqc(summary_params))
-    ch_multiqc_files = ch_multiqc_files.mix(
-        ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
     ch_multiqc_custom_methods_description = params.multiqc_methods_description ?
         file(params.multiqc_methods_description, checkIfExists: true) :
         file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
-    ch_methods_description                = Channel.value(
+    ch_methods_description                = channel.value(
         methodsDescriptionText(ch_multiqc_custom_methods_description))
 
-    ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions)
-    ch_multiqc_files = ch_multiqc_files.mix(
-        ch_methods_description.collectFile(
-            name: 'methods_description_mqc.yaml',
-            sort: true
-        )
-    )
+    // Cohort-wide multiqc inputs (no familyId). These are wrapped as [meta, file]
+    // with an empty meta so they merge cleanly with the per-sample/per-family files.
+    ch_multiqc_cohort_files = channel.empty()
+        .mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+        .mix(ch_collated_versions)
+        .mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml', sort: true))
+        .map { f -> [ [:], f ] }
+
+    ch_multiqc_files = ch_multiqc_files.mix(ch_multiqc_cohort_files)
+
+    if (params.cohort_mode) {
+        // Single cohort-wide MULTIQC report.
+        ch_multiqc_input = ch_multiqc_files
+            .map { _meta, f -> f }
+            .collect()
+            .map { fs -> [ [id: 'Cohort'], fs.flatten() ] }
+    }
+    else {
+        // One MULTIQC report per family. Cohort-wide files (no familyId) are
+        // attached to every family report so each is self-contained.
+        ch_multiqc_branched = ch_multiqc_files.branch { meta, mqc_file ->
+            per_family: meta.familyId
+                [ meta.familyId, mqc_file ]
+            cohort: true
+                mqc_file
+        }
+
+        // Wrap cohort_files in an extra list so .combine() treats it as a single
+        // positional value (combine unpacks tuples/lists into positional args otherwise).
+        ch_cohort_collected = ch_multiqc_branched.cohort.collect().map { fs -> [fs] }
+        ch_multiqc_input = ch_multiqc_branched.per_family
+            .groupTuple()
+            .combine(ch_cohort_collected)
+            .map { familyId, family_files, cohort_files ->
+                // flatten: some emits (e.g. paired-end fastqc zips) are lists of paths.
+                [ [id: familyId], (family_files + cohort_files).flatten() ]
+            }
+    }
 
     MULTIQC_PYTHON (
-        ch_multiqc_files.collect(),
+        ch_multiqc_input,
         ch_multiqc_config.toList()
     )
     //,
@@ -318,7 +360,7 @@ workflow QUALITYCONTROL {
     //     []
     // )
 
-    emit:multiqc_report = MULTIQC_PYTHON.out.report.toList() // channel: /path/to/multiqc_report.html
+    emit:multiqc_report = MULTIQC_PYTHON.out.report.map { _meta, report -> report }.toList() // channel: /path/to/multiqc_report.html
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
 }

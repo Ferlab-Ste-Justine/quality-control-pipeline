@@ -95,7 +95,9 @@ workflow PIPELINE_INITIALISATION {
                 if (file2) {
                     assert (file2.name.endsWith('.fastq.gz') || file2.name.endsWith('.fq.gz')) : log.error("File 2 for sample ${meta.sample} does not have a valid FASTQ extension.")
                 }
-                def new_id = meta.n_seqTypes > 1 ? "${meta.sample}_${meta.sequencingType}_${meta.lane}" : "${meta.sample}_${meta.lane}"
+                def seq_suffix = meta.n_seqTypes > 1 ? "_${meta.sequencingType}" : ""
+                def lane_suffix = meta.n_lanes > 1 ? "_${meta.lane}" : ""
+                def new_id = "${meta.sample}${seq_suffix}${lane_suffix}"
                 return [ meta + [ id:new_id, paired_end:file2 ? true : false ], file2 ? [ file1, file2 ] : [ file1 ] ]
             }
             else {
