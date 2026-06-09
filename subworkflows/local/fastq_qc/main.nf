@@ -17,7 +17,6 @@ workflow FASTQ_QC {
     ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.matched)
     ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.all)
     ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.vaf)
-    ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.pdf)
 
     FASTQC (ch_fastq)
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())

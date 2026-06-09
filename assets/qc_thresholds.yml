@@ -1,0 +1,38 @@
+# Default QC thresholds used by the MultiQC report's General Status and Pedigree
+# sections. Override by pointing --qc_thresholds at a YAML with any subset of
+# these keys; missing keys fall back to the bundled defaults.
+#
+# Top-level keys match the GA4GH WGS-QC reference JSON field names where
+# possible (pct_reads_mapped, pct_reads_properly_paired, cross_contamination_rate,
+# mean_autosome_coverage). Pedigree thresholds are pipeline-specific.
+
+# ---------- Alignment / contamination ----------
+
+# Percent of reads aligned to the reference (samtools stats reads_mapped_percent).
+pct_reads_mapped: 95
+
+# Percent of reads properly paired (samtools stats reads_properly_paired_percent).
+pct_reads_properly_paired: 95
+
+# Minimum acceptable mean autosome coverage. Picard MEAN_COVERAGE for WGS,
+# MEAN_TARGET_COVERAGE for WXS/targeted.
+mean_autosome_coverage: 25
+
+# Maximum acceptable cross-contamination rate (VerifyBamID2 FREEMIX).
+cross_contamination_rate: 0.02
+
+# ---------- Pedigree validation ----------
+# Applied to somalier pair-level relatedness vs expected_relatedness.
+#
+# For pairs where expected_relatedness ~= -1 (unrelated samples):
+#   relatedness < pedigree_unrelated_pass_max        -> pass    (green)
+#   pass_max <= relatedness <= warn_max              -> warn    (yellow; possible consanguinity)
+#   relatedness > pedigree_unrelated_warn_max        -> fail    (red)
+pedigree_unrelated_pass_max: 0.04
+pedigree_unrelated_warn_max: 0.15
+
+# For pairs where expected_relatedness ~= 0.5 (parent-child, full siblings):
+#   pedigree_related_pass_min <= relatedness <= pedigree_related_pass_max -> pass
+#   else                                                                  -> fail
+pedigree_related_pass_min: 0.40
+pedigree_related_pass_max: 0.60

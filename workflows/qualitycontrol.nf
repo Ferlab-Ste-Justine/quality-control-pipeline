@@ -117,26 +117,42 @@ workflow QUALITYCONTROL {
             targeted: meta.sequencingType != 'WGS'
         }
 
+    // HsMetrics needs bait + target intervals. Resolution order:
+    //   bait  : params.targets_bed > params.regions_bed > [] (no HsMetrics input)
+    //   target: params.exons_bed   > bait
+    def hs_bait_path   = params.targets_bed ?: params.regions_bed
+    def hs_target_path = params.exons_bed   ?: hs_bait_path
+    ch_hs_bait   = hs_bait_path   ? channel.value(file(hs_bait_path,   checkIfExists:true)) : channel.value([])
+    ch_hs_target = hs_target_path ? channel.value(file(hs_target_path, checkIfExists:true)) : channel.value([])
+
     BAM_QC_WGS(
         ch_bam_qc.wgs,
         ch_fasta,
         ch_fai,
+        ch_dict,
         ch_intervals,
         qc_regions_1,
         qc_regions_2,
         ch_interval_list,
-        ch_svd_in
+        ch_hs_bait,
+        ch_hs_target,
+        ch_svd_in,
+        'WGS'
     )
 
     BAM_QC_TARGET(
         ch_bam_qc.targeted,
         ch_fasta,
         ch_fai,
+        ch_dict,
         ch_intervals,
         qc_regions_1,
         qc_regions_2,
         ch_interval_list,
-        ch_svd_in
+        ch_hs_bait,
+        ch_hs_target,
+        ch_svd_in,
+        'TARGETED'
     )
 
     ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_WGS.out.reports)
@@ -349,9 +365,28 @@ workflow QUALITYCONTROL {
             }
     }
 
+    // Join PED to the multiqc input by id. In cohort mode the ped meta.id may be
+    // 'ped' (from params.ped_file) or 'Cohort' (samplesheet-derived); normalize.
+    ch_ped_by_id = ch_somalier_input_ped.map { ped_meta, ped ->
+        def id = params.cohort_mode ? 'Cohort' : ped_meta.id
+        [ id, ped ]
+    }
+    ch_multiqc_input_with_ped = ch_multiqc_input
+        .map { meta, files -> [ meta.id, meta, files ] }
+        .join(ch_ped_by_id, remainder: true)
+        .map { _id, meta, files, ped -> [ meta, files, ped ?: [] ] }
+
+    // Use the user-supplied thresholds when params.qc_thresholds is set; otherwise
+    // fall back to the bundled defaults in assets/qc_thresholds.yml.
+    ch_qc_thresholds = channel.value(file(
+        params.qc_thresholds ?: "$projectDir/assets/qc_thresholds.yml",
+        checkIfExists: true,
+    ))
+
     MULTIQC_PYTHON (
-        ch_multiqc_input,
-        ch_multiqc_config.toList()
+        ch_multiqc_input_with_ped,
+        ch_multiqc_config.toList(),
+        ch_qc_thresholds
     )
     //,
     //     ch_multiqc_custom_config.toList(),
