@@ -66,105 +66,141 @@ workflow QUALITYCONTROL {
             [ meta - meta.subMap('lane','runId'), files[0], files[1] ]
         }
 
-    /*
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        FASTQ QUALITY CONTROL
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    */
+    if (!params.dragen_metrics_dir) {
+        /*
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            FASTQ QUALITY CONTROL
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        */
 
-    // If fastq files are provided, run FastQC, SeqFu, and ngsCheckMate
-    FASTQ_QC ( ch_samplesheet_parsed.fastq, ncm_snp_pt.map { it -> [ [id:"snp_pt"], it] } )
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports)
-    ch_versions = ch_versions.mix(FASTQ_QC.out.versions.first())
+        // If fastq files are provided, run FastQC, SeqFu, and ngsCheckMate
+        FASTQ_QC ( ch_samplesheet_parsed.fastq, ncm_snp_pt.map { it -> [ [id:"snp_pt"], it] } )
+        ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports)
+        ch_versions = ch_versions.mix(FASTQ_QC.out.versions.first())
 
-    /*
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        BAM/CRAM QUALITY CONTROL
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    */
-    GATK4_BEDTOINTERVALLIST( ch_intervals.flatten().map { it -> [[id:"bed"], it] },
-                            ch_dict.map { it -> [[id:"dict"], it] })
+        /*
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            BAM/CRAM QUALITY CONTROL
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        */
+        GATK4_BEDTOINTERVALLIST( ch_intervals.flatten().map { it -> [[id:"bed"], it] },
+                                ch_dict.map { it -> [[id:"dict"], it] })
 
-    ch_interval_list = GATK4_BEDTOINTERVALLIST.out.interval_list
-                        .map { _meta, intervals -> intervals }
-                        .collect()
-                        .ifEmpty([])
+        ch_interval_list = GATK4_BEDTOINTERVALLIST.out.interval_list
+                            .map { _meta, intervals -> intervals }
+                            .collect()
+                            .ifEmpty([])
 
-    // Merge multiple runs
-    //
-    // ----- SAMTOOLS MERGE -----
-    //
-    bam_to_merge = ch_samplesheet_parsed.aln
-        .map { meta, cram, crai ->
-        [ groupKey(meta.subMap('id', 'participant', 'sample', 'familyId', 'sex', 'sequencingType', 'status', 'relationship_to_proband', 'affected_status'), meta.n_lanes), cram, crai ]
+        // Merge multiple runs
+        //
+        // ----- SAMTOOLS MERGE -----
+        //
+        bam_to_merge = ch_samplesheet_parsed.aln
+            .map { meta, cram, crai ->
+            [ groupKey(meta.subMap('id', 'participant', 'sample', 'familyId', 'sex', 'sequencingType', 'status', 'relationship_to_proband', 'affected_status'), meta.n_lanes), cram, crai ]
+        }
+        .groupTuple()
+
+        BAM_MERGE(bam_to_merge, ch_fasta, ch_fai)
+
+        ch_versions = ch_versions.mix(BAM_MERGE.out.versions)
+        // Post-merge per-sample CRAM/CRAI feeds somalier in normal mode.
+        ch_cram_crai_source = BAM_MERGE.out.bam_bai
+
+        //
+        // ----- ALIGNMENT QC -----
+        //
+        // separate qc for targeted seq vs wgs
+        ch_bam_qc = BAM_MERGE.out.bam_bai
+            .map { groupKey, bam, bai ->
+            [groupKey.target, bam, bai]
+            }
+            .branch { meta, bam, bai ->
+                wgs: meta.sequencingType == 'WGS'
+                targeted: meta.sequencingType != 'WGS'
+            }
+
+        // HsMetrics needs bait + target intervals. Resolution order:
+        //   bait  : params.targets_bed > params.regions_bed > [] (no HsMetrics input)
+        //   target: params.exons_bed   > bait
+        def hs_bait_path   = params.targets_bed ?: params.regions_bed
+        def hs_target_path = params.exons_bed   ?: hs_bait_path
+        ch_hs_bait   = hs_bait_path   ? channel.value(file(hs_bait_path,   checkIfExists:true)) : channel.value([])
+        ch_hs_target = hs_target_path ? channel.value(file(hs_target_path, checkIfExists:true)) : channel.value([])
+
+
+        BAM_QC_WGS(
+            ch_bam_qc.wgs,
+            ch_fasta,
+            ch_fai,
+            ch_dict,
+            ch_intervals,
+            qc_regions_1,
+            qc_regions_2,
+            ch_interval_list,
+            ch_hs_bait,
+            ch_hs_target,
+            ch_svd_in,
+            'WGS'
+        )
+
+        BAM_QC_TARGET(
+            ch_bam_qc.targeted,
+            ch_fasta,
+            ch_fai,
+            ch_dict,
+            ch_intervals,
+            qc_regions_1,
+            qc_regions_2,
+            ch_interval_list,
+            ch_hs_bait,
+            ch_hs_target,
+            ch_svd_in,
+            'TARGETED'
+        )
+
+        ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_WGS.out.reports)
+        ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_TARGET.out.reports)
+
+        ch_versions = ch_versions.mix(BAM_QC_WGS.out.versions)
+        ch_versions = ch_versions.mix(BAM_QC_TARGET.out.versions)
+
+        /*
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            VCF QUALITY CONTROL
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        */
+
+        VCF_QC (
+            ch_samplesheet_parsed.vcf,
+            ch_fasta,
+            ch_intervals,
+            ch_targets,
+            ch_exons
+        )
+
+        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_metrics)
+        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_stats)
+
+    } else {
+        // DRAGEN mode skips BAM_MERGE; feed somalier the BAM/CRAM straight from
+        // the samplesheet. Trim meta to the same fields BAM_MERGE keeps on its
+        // GroupKey target so meta.n_lanes is absent — otherwise the per-family
+        // groupTuple inside CRAM_SOMALIER emits each sample early (count=1) and
+        // fails the per-family join.
+        ch_cram_crai_source = ch_samplesheet_parsed.aln
+            .map { meta, cram, crai ->
+                [ meta.subMap('id', 'participant', 'sample', 'familyId', 'sex', 'sequencingType', 'status', 'relationship_to_proband', 'affected_status'), cram, crai ]
+            }
     }
-    .groupTuple()
 
-    BAM_MERGE(bam_to_merge, ch_fasta, ch_fai)
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        PEDIGREE ANALYSIS - SOMALIER
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
 
-    ch_versions = ch_versions.mix(BAM_MERGE.out.versions)
-
-    //
-    // ----- ALIGNMENT QC -----
-    //
-    // separate qc for targeted seq vs wgs
-    ch_bam_qc = BAM_MERGE.out.bam_bai
-        .map { groupKey, bam, bai ->
-        [groupKey.target, bam, bai]
-        }
-        .branch { meta, bam, bai ->
-            wgs: meta.sequencingType == 'WGS'
-            targeted: meta.sequencingType != 'WGS'
-        }
-
-    // HsMetrics needs bait + target intervals. Resolution order:
-    //   bait  : params.targets_bed > params.regions_bed > [] (no HsMetrics input)
-    //   target: params.exons_bed   > bait
-    def hs_bait_path   = params.targets_bed ?: params.regions_bed
-    def hs_target_path = params.exons_bed   ?: hs_bait_path
-    ch_hs_bait   = hs_bait_path   ? channel.value(file(hs_bait_path,   checkIfExists:true)) : channel.value([])
-    ch_hs_target = hs_target_path ? channel.value(file(hs_target_path, checkIfExists:true)) : channel.value([])
-
-    BAM_QC_WGS(
-        ch_bam_qc.wgs,
-        ch_fasta,
-        ch_fai,
-        ch_dict,
-        ch_intervals,
-        qc_regions_1,
-        qc_regions_2,
-        ch_interval_list,
-        ch_hs_bait,
-        ch_hs_target,
-        ch_svd_in,
-        'WGS'
-    )
-
-    BAM_QC_TARGET(
-        ch_bam_qc.targeted,
-        ch_fasta,
-        ch_fai,
-        ch_dict,
-        ch_intervals,
-        qc_regions_1,
-        qc_regions_2,
-        ch_interval_list,
-        ch_hs_bait,
-        ch_hs_target,
-        ch_svd_in,
-        'TARGETED'
-    )
-
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_WGS.out.reports)
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_TARGET.out.reports)
-
-    ch_versions = ch_versions.mix(BAM_QC_WGS.out.versions)
-    ch_versions = ch_versions.mix(BAM_QC_TARGET.out.versions)
-
-    //
-    // ----- CRAM_SOMALIER -----
-    //
-    ch_cram_crai_somalier = BAM_MERGE.out.bam_bai
+    ch_cram_crai_somalier = ch_cram_crai_source
         .map { meta, cram, crai ->
         [meta.sample, meta, cram, crai]
         }
@@ -199,9 +235,6 @@ workflow QUALITYCONTROL {
     // Build pedigree input for somalier.
     //   1. If params.ped_file is set, use it (split per-family when !cohort_mode).
     //   2. Otherwise derive from samplesheet meta (relationship_to_proband, affected_status, sex).
-    //      Missing relationship_to_proband defaults to "Proband" with parents=0, so cohorts of
-    //      solo samples and singletons fall out of the same logic.
-    //
     def pedHeader = ['#family_id','name','paternal_id','maternal_id','sex','phenotype'].join('\t')
 
     if (params.ped_file) {
@@ -222,8 +255,12 @@ workflow QUALITYCONTROL {
                 .map { ped_file -> [ [id: ped_file.baseName], ped_file ] }
         }
     } else {
-        ch_somalier_input_ped = ch_cram_crai_somalier
-            .map { meta, _cram, _crai, _count -> [meta.familyId, meta] }
+        ch_somalier_input_ped = ch_samplesheet
+            .map { meta, _files ->
+                [ meta.sample, meta + [samplename_somalier: meta.sample, sample_idx: 0] ]
+            }
+            .unique { entry -> entry[0] }
+            .map { _sample, meta -> [meta.familyId, meta] }
             .groupTuple()
             .flatMap { familyId, metas ->
                 buildPedRowsForFamily(familyId, metas, !(params.cohort_mode as boolean))
@@ -237,12 +274,23 @@ workflow QUALITYCONTROL {
             .map { ped_file -> [ [id: ped_file.baseName], ped_file ] }
     }
 
+    ch_somalier_input_ped_for_relate = ch_somalier_input_ped
+    if (!params.cohort_mode) {
+        ch_families_with_cram = ch_cram_crai_somalier
+            .map { meta, _cram, _crai, _count -> meta.familyId }
+            .unique()
+        ch_somalier_input_ped_for_relate = ch_somalier_input_ped
+            .map { meta, ped -> [ meta.id, meta, ped ] }
+            .join(ch_families_with_cram.map { fid -> [ fid, true ] })
+            .map { _id, meta, ped, _flag -> [ meta, ped ] }
+    }
+
     CRAM_SOMALIER(
             ch_cram_crai_somalier,
             ch_fasta.map { it -> [ [id:"fasta"], it] },
             ch_fai.map { it -> [ [id:"fai"], it] },
             ch_somalier_sites.map { it -> [ [id:"sites"], it] },
-            ch_somalier_input_ped ?: ch_ped.map { it -> [ [id:"ped"], it ] },
+            ch_somalier_input_ped_for_relate ?: ch_ped.map { it -> [ [id:"ped"], it ] },
             ch_sample_groups,
             'familyId'  // Common identifier to relate samples by (family ID in this case)
         )
@@ -264,20 +312,26 @@ workflow QUALITYCONTROL {
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        VCF QUALITY CONTROL
+        DRAGEN METRICS (alternative to BAM_QC / VCF_QC)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
+    if (params.dragen_metrics_dir) {
+        // Build a sample -> familyId map from the samplesheet so DRAGEN files
+        // pick up the right familyId for per-family report routing.
+        ch_sample_family = ch_samplesheet
+            .map { meta, _files -> [ meta.sample, meta.familyId ] }
+            .unique()
 
-    VCF_QC (
-        ch_samplesheet_parsed.vcf,
-        ch_fasta,
-        ch_intervals,
-        ch_targets,
-        ch_exons
-    )
+        ch_dragen_files = channel.fromPath([
+                "${params.dragen_metrics_dir}/*.csv",
+                "${params.dragen_metrics_dir}/**/*.csv",
+            ], checkIfExists: false)
+            .map { f -> [ f.name.tokenize('.')[0], f ] }   // [sample, file]
+            .combine(ch_sample_family, by: 0)              // [sample, file, familyId]
+            .map { sample, f, familyId -> [ [id: sample, sample: sample, familyId: familyId], f ] }
 
-    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_metrics)
-    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_stats)
+        ch_multiqc_files = ch_multiqc_files.mix(ch_dragen_files)
+    }
 
     // topic_versions = channel.topic('versions')
     topic_versions = channel.topic("versions")

@@ -50,6 +50,7 @@ The pipeline processes FASTQ, BAM/CRAM, and VCF files through the following step
 - [VerifyBamID2](#verifybamid2) — Alignment-level contamination estimation
 - [Somalier](#somalier) — Sample identity and genetic relatedness
 - [VCF QC](#vcf-qc) — Variant-level quality metrics
+- [DRAGEN metrics input](#dragen-metrics-input) — Pre-computed DRAGEN CSVs used in place of BAM_QC / VCF_QC
 - [MultiQC](#multiqc) — Aggregate report summarising all QC results
 - [Pipeline information](#pipeline-information) — Nextflow execution reports
 
@@ -203,6 +204,23 @@ A local module aggregates Mosdepth region and threshold outputs into a per-gene 
 </details>
 
 VCF QC uses [BCFtools](https://samtools.github.io/bcftools/) to compute per-sample variant statistics. Counts are broken down by variant class (SNV, insertion, deletion) and zygosity (het/hom), and the Ts/Tv ratio is extracted from `bcftools stats`.
+
+---
+
+## DRAGEN metrics input
+
+When `--dragen_metrics_dir` is set, BAM_QC and VCF_QC are skipped and the report's alignment / variant metrics are populated from DRAGEN's pre-computed CSVs. The pipeline does not republish these files — they're staged into the MultiQC work directory and surfaced through the MultiQC report and the per-sample JSON sidecars below.
+
+Files are picked up at any depth under `--dragen_metrics_dir` (local path or `s3://` / `gs://` / `az://` URI). Both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` filenames are recognised.
+
+| Filename suffix | Used for |
+|---|---|
+| `*.mapping_metrics.csv` | Alignment metrics + Q30 yield + estimated contamination |
+| `*.wgs_coverage_metrics.csv` | Mean autosome coverage, uniformity (MAD proxy), %15x |
+| `*.vc_metrics.csv` | SNV / insertion / deletion counts, Ti/Tv, het:hom ratios |
+| `*.ploidy_estimation_metrics.csv` | XX / XY ploidy → predicted-sex fallback for `sex_check` when somalier did not run for that sample |
+
+Somalier still runs against any BAM/CRAM provided in the samplesheet for pedigree validation. Samples without BAM/CRAM (e.g. GVCF-only with DRAGEN metrics) still appear in the per-family report with their `pedigree_sex` from the samplesheet-derived PED, and pick up `sex_check` from the DRAGEN ploidy estimate.
 
 ---
 

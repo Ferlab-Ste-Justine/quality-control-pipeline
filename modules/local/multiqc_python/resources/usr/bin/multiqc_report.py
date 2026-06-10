@@ -327,6 +327,90 @@ def parse_vcf_metrics(files, samples):
             setattr(s, attr, _as_float(j.get(src)))
 
 
+def _read_dragen_csv(path):
+    """Return {section: {metric: (value_str, pct_str_or_None)}} for a DRAGEN CSV.
+
+    DRAGEN metric CSVs have rows: `SECTION,subgroup,metric,value[,pct]`. We
+    ignore the subgroup column and key by (section, metric). When a metric is
+    repeated under different subgroups (e.g. per read-group) the SUMMARY row
+    (subgroup empty) wins -- which matches the GA4GH per-sample view.
+    """
+    out = defaultdict(dict)
+    with open(path) as fh:
+        for line in fh:
+            parts = line.rstrip("\n").split(",")
+            if len(parts) < 4:
+                continue
+            section, subgroup, metric = parts[0], parts[1], parts[2]
+            value = parts[3]
+            pct = parts[4] if len(parts) >= 5 else None
+            if subgroup == "" or section not in out or metric not in out[section]:
+                out[section][metric] = (value, pct)
+    return out
+
+
+def parse_dragen_csv_files(files, samples):
+    """Populate SampleMetrics from DRAGEN per-sample CSVs.
+
+    Recognised filenames (under any directory):
+      *.mapping_metrics.csv           -> alignment metrics + Q30 + contamination
+      *.wgs_coverage_metrics.csv      -> coverage + uniformity (proxy for MAD)
+      *.vc_metrics.csv                -> variant calling counts and ratios
+      *.ploidy_estimation_metrics.csv -> XX/XY -> somalier_sex fallback
+
+    Sample names are taken from the filename prefix (everything before the
+    first `.`), which matches DRAGEN's `<sample>.final.<metric>.csv` convention.
+    """
+    for path in files:
+        name = os.path.basename(path)
+        sample = name.split(".", 1)[0]
+        s = samples.setdefault(sample, SampleMetrics())
+        data = _read_dragen_csv(path)
+        if name.endswith(".mapping_metrics.csv"):
+            row = data.get("MAPPING/ALIGNING SUMMARY", {})
+            s.total_reads               = _as_float(row.get("Total input reads", (None,))[0])
+            s.mapped_reads              = _as_float(row.get("Mapped reads", (None,))[0])
+            s.duplicate_reads           = _as_float(row.get("Number of duplicate marked reads", (None,))[0])
+            s.pct_reads_mapped          = _as_float((row.get("Mapped reads", (None, None)) + (None,))[1])
+            s.pct_reads_properly_paired = _as_float((row.get("Properly paired reads", (None, None)) + (None,))[1])
+            s.mean_insert_size          = _as_float(row.get("Insert length: mean", (None,))[0])
+            s.insert_size_std_deviation = _as_float(row.get("Insert length: standard deviation", (None,))[0])
+            s.yield_bp_q30              = _as_int(row.get("Q30 bases", (None,))[0])
+            s.cross_contamination_rate  = _as_float(row.get("Estimated sample contamination", (None,))[0])
+        elif name.endswith(".wgs_coverage_metrics.csv"):
+            row = data.get("COVERAGE SUMMARY", {})
+            s.mean_autosome_coverage = _as_float(row.get("Average autosomal coverage over genome", (None,))[0])
+            s.pct_autosomes_15x      = _as_float((row.get("PCT of genome with coverage [  15x: inf)", (None, None)) + (None,))[1]
+                                                 or row.get("PCT of genome with coverage [  15x: inf)", (None,))[0])
+            # DRAGEN has no MAD coverage; use the "Uniformity of coverage" proxy.
+            s.mad_autosome_coverage  = _as_float(row.get("Uniformity of coverage (PCT > 0.2*mean) over genome", (None,))[0])
+        elif name.endswith(".vc_metrics.csv"):
+            row = data.get("VARIANT CALLER POSTFILTER", {})
+            s.count_snvs       = _as_int(row.get("SNPs", (None,))[0])
+            ins_hom = _as_int(row.get("Insertions (Hom)", (None,))[0]) or 0
+            ins_het = _as_int(row.get("Insertions (Het)", (None,))[0]) or 0
+            del_hom = _as_int(row.get("Deletions (Hom)", (None,))[0]) or 0
+            del_het = _as_int(row.get("Deletions (Het)", (None,))[0]) or 0
+            s.count_insertions = ins_hom + ins_het
+            s.count_deletions  = del_hom + del_het
+            het = _as_float(row.get("Heterozygous", (None,))[0])
+            hom = _as_float(row.get("Homozygous", (None,))[0])
+            s.ratio_heterozygous_homozygous_snv = (het / hom) if (het is not None and hom) else None
+            s.ratio_transitions_transversions_snv = _as_float(row.get("Ti/Tv ratio", (None,))[0])
+            s.ratio_insertion_deletion = (s.count_insertions / s.count_deletions) if s.count_deletions else None
+        elif name.endswith(".ploidy_estimation_metrics.csv"):
+            row = data.get("PLOIDY ESTIMATION", {})
+            ploidy = row.get("Ploidy estimation", (None,))[0]
+            if ploidy in ("XX", "XY") and not s.somalier_sex:
+                # Use DRAGEN's ploidy as the somalier_sex fallback so sex_check
+                # has a value when somalier didn't run (no BAM provided).
+                s.somalier_sex = "female" if ploidy == "XX" else "male"
+                # Refresh sex_check using PED's pedigree_sex (set by parse_ped).
+                ped = _SEX_NORM.get(str(s.pedigree_sex).lower()) if s.pedigree_sex else None
+                som = _SEX_NORM.get(s.somalier_sex)
+                s.sex_check = "na" if (ped is None or som is None) else ("pass" if ped == som else "fail")
+
+
 def parse_gene_coverage_files(files):
     """Parse the coverage_by_gene TSVs (from COVERAGE_BY_GENE module).
 
@@ -531,7 +615,7 @@ def add_general_status_section(module, samples, thresholds, pedigree_pass):
         "aln_quality":         {"title": "Aln Quality",         "description": f"% mapped ≥ {thresholds['pct_reads_mapped']} and % properly paired ≥ {thresholds['pct_reads_properly_paired']}", "scale": "pass-fail"},
         "coverage":            {"title": "Coverage",            "description": f"Mean autosome coverage ≥ {thresholds['mean_autosome_coverage']}X",                                             "scale": "pass-fail"},
         "contamination":       {"title": "Contamination",       "description": f"FREEMIX ≤ {thresholds['cross_contamination_rate']}",                                                          "scale": "pass-fail"},
-        "sex_check":           {"title": "Sex Check",           "description": "Somalier-predicted sex matches PED-recorded sex",                                                                "scale": "pass-fail"},
+        "sex_check":           {"title": "Sex Check",           "description": "Inferred sex matches PED-recorded sex",                                                                "scale": "pass-fail"},
         "pedigree_validation": {
             "title": "Pedigree Validation",
             "description": "Aggregated across all somalier pair comparisons for the sample (any fail -> fail; any warn -> warn; otherwise pass).",
@@ -738,7 +822,7 @@ def write_per_sample_json(samples, json_dir, pedigree_pass):
             "pedigree": {
                 "family_id":              s.family_id,
                 "pedigree_sex":           s.pedigree_sex,
-                "somalier_predicted_sex": s.somalier_sex,
+                "inferred_sex": s.somalier_sex,
                 "sex_check":              s.sex_check,
                 "pedigree_validation":    pedigree_pass.get(sample, "na"),
             },
@@ -814,11 +898,15 @@ def main():
     parse_verifybamid(samples)
     pairs = parse_somalier(samples, thresholds)
 
-    # 5) Pipeline-specific custom files (VCF metrics, per-gene coverage)
+    # 5) Pipeline-specific custom files (VCF metrics, per-gene coverage, DRAGEN)
     vcf_files = [f for f in args.files if f.endswith(("_vcf_metrics.json", ".vcf_metrics.json"))]
     parse_vcf_metrics(vcf_files, samples)
     gene_files = [f for f in args.files if "coverage_by_gene" in f and f.endswith((".tsv", ".csv"))]
     gene_rows = parse_gene_coverage_files(gene_files)
+    dragen_files = [f for f in args.files if f.endswith(
+        (".mapping_metrics.csv", ".wgs_coverage_metrics.csv",
+         ".vc_metrics.csv", ".ploidy_estimation_metrics.csv"))]
+    parse_dragen_csv_files(dragen_files, samples)
 
     # 6) Per-sample pass/fail summary (sex_check is precomputed in parse_somalier)
     pedigree_pass = pedigree_validation_by_sample(pairs)

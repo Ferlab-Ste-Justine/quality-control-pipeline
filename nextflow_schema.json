@@ -194,6 +194,12 @@
             "description": "YAML file overriding QC pass/fail thresholds used by the MultiQC report. Defaults to assets/qc_thresholds.yml.",
             "help_text": "Supply a YAML with any of: pct_reads_mapped, pct_properly_paired, mean_autosome_coverage, cross_contamination. Missing keys fall back to the bundled defaults."
         },
+        "dragen_metrics_dir": {
+            "type": "string",
+            "format": "directory-path",
+            "description": "Path to a directory of DRAGEN per-sample metric files. When set, BAM_QC and VCF_QC are skipped and the report is populated from DRAGEN's pre-computed CSVs.",
+            "help_text": "Expected layout: <dir>/<sample>/<sample>.final.{mapping_metrics,wgs_coverage_metrics,vc_metrics,ploidy_estimation_metrics}.csv. Somalier still runs on any BAM/CRAM provided in the samplesheet for pedigree validation."
+        },
         "regions_bed": {
             "type": "string"
         },
