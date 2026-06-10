@@ -11,7 +11,7 @@
 
 ## Introduction
 
-**Ferlab-Ste-Justine/quality-control-pipeline** is a Nextflow (DSL2) bioinformatics pipeline for comprehensive quality control of genomic sequencing data. It accepts FASTQ reads, BAM/CRAM alignments, and VCF variant files — running a full suite of QC tools across each data type — and aggregates all results into a single MultiQC HTML report. It is designed to handle multi-sample cohorts with mixed sequencing strategies (WGS, WES, targeted panels) and supports pedigree-based sample identity checks.
+**Ferlab-Ste-Justine/quality-control-pipeline** is a Nextflow (DSL2) bioinformatics pipeline for comprehensive quality control of genomic sequencing data. It accepts FASTQ reads, BAM/CRAM alignments, and VCF variant files — running a full suite of QC tools across each data type — and aggregates all results into a single MultiQC HTML report. It can also ingest pre-computed DRAGEN per-sample metrics in place of recomputing them. It is designed to handle multi-sample cohorts with mixed sequencing strategies (WGS, WES, targeted panels) and supports pedigree-based sample identity checks.
 
 ### Pipeline steps
 
@@ -22,6 +22,8 @@
 5. **Sample identity & relatedness** — genetic relatedness checking, per-family or cohort-wide ([Somalier](https://github.com/brentp/somalier))
 6. **VCF QC** — variant counts by type and zygosity, Ts/Tv ratio ([BCFtools](https://samtools.github.io/bcftools/))
 7. **Report aggregation** — all QC results consolidated into a single interactive report ([MultiQC](http://multiqc.info))
+
+Alignment and variant metrics can alternatively be sourced from pre-computed DRAGEN metrics CSVs via `--dragen_metrics_dir`.
 
 ## Usage
 

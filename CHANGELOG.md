@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#36](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/36) Added test profile
 [#38](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/38) Added new samplesheet fields: `relationship_to_proband` and `affected_status` and feature to generate pedigree file from samplesheet.
 [#39](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/39) Added `cohort_mode`. This will allow the reports to be one per family (or sample if a solo), or per cohort/batch.
+[#41](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/41) Added `--dragen_metrics_dir`: when set, BAM_QC and VCF_QC are skipped and the report's alignment / variant metrics come from DRAGEN's pre-computed CSVs. Somalier still runs against any BAM/CRAM provided in the samplesheet for pedigree validation.
 
 ### `Changed`
 [#40](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/40) Refactoring QC report to support family vs cohort reports and fix some parsing errors.

@@ -32,14 +32,14 @@ run_modules:
   - somalier
   - mosdepth
   - verifybamid
+  - dragen
 
 top_modules:
   - "custom_content"
+
 remove_sections:
-  # - 'somalier-relatedness'
   - 'somalier-relatedness-heatmap'
   - 'somalier-hetcheck'
-  # - 'somalier-sexcheck'
   - 'samtools-percent-mapped'
   - 'mosdepth-xy-coverage'
   - 'general_stats'                 # Built-in general stats section — replaced by our custom "General Status".
@@ -56,16 +56,21 @@ extra_fn_clean_exts:
   - "_fastqc"
   - ".stats"
   - ".metrics"
+  # DRAGEN per-sample metric files: <sample>.final.<metric_type>.csv
+  - ".final.mapping_metrics"
+  - ".final.wgs_coverage_metrics"
+  - ".final.vc_metrics"
+  - ".final.ploidy_estimation_metrics"
+  - ".final"
+  - type: regex
+    pattern: "_L[0-9]{3}"
 
-# Picard CollectWgsMetrics writes the *input* BAM path inside the metrics file, and
-# bcftools stats writes the *input* VCF filename in the `ID` line. MultiQC would otherwise
-# show names like "NA19238.subset.chr20XY" or "NA21118.chr20_20000000-21000000.hard-filtered"
-# while samtools/verifybamid/somalier show clean "NA19238". Forcing filename-based sample
-# naming, plus `extra_fn_clean_exts` above, lines everything up on the bare sample id.
+
 use_filename_as_sample_name:
   - picard
   - verifybamid
   - bcftools
+  - dragen
 
 preserve_module_raw_data: true
 disable_version_detection: true

@@ -13,3 +13,4 @@ data-test*
 .nf-test.log
 .nf-test/
 .devcontainer*
+results**

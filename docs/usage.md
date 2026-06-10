@@ -152,6 +152,38 @@ Up to two custom BED region sets can be provided for per-region coverage analysi
 | `--targets_bed` | BED file of target regions for filtering VCF QC statistics. |
 | `--exons_bed` | BED file of exon regions, passed to `bcftools stats`. |
 
+### DRAGEN metrics input
+
+When samples have already been processed by DRAGEN, the pipeline can build the report from DRAGEN's per-sample metric CSVs instead of recomputing them with BAM_QC / VCF_QC.
+
+| Parameter | Description |
+|---|---|
+| `--dragen_metrics_dir` | Directory containing DRAGEN per-sample metric CSVs. When set, BAM_QC and VCF_QC are skipped. Somalier still runs against any BAM/CRAM in the samplesheet for pedigree validation. |
+
+The directory is globbed at any depth for these filenames (both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` are recognised):
+
+| Filename suffix | Used for |
+|---|---|
+| `*.mapping_metrics.csv` | Alignment metrics + Q30 yield + estimated contamination |
+| `*.wgs_coverage_metrics.csv` | Mean autosome coverage, uniformity (MAD proxy), %15x |
+| `*.vc_metrics.csv` | SNV / insertion / deletion counts, Ti/Tv, het:hom ratios |
+| `*.ploidy_estimation_metrics.csv` | XX / XY ploidy → predicted-sex fallback for `sex_check` when somalier didn't run for that sample |
+
+`--dragen_metrics_dir` accepts local paths and remote URIs (`s3://`, `gs://`, `az://`) provided the appropriate Nextflow plugin/credentials are configured. Files whose sample prefix doesn't match a row in the samplesheet are silently ignored.
+
+Example — DRAGEN-only run with a small mixed samplesheet (some BAM for somalier, the rest GVCF-only):
+
+```bash
+nextflow run Ferlab-Ste-Justine/quality-control-pipeline \
+   -profile docker \
+   --input samplesheet.csv \
+   --outdir ./results \
+   --fasta /path/to/GRCh38.fa \
+   --fai /path/to/GRCh38.fa.fai \
+   --somalier_sites /path/to/sites.hg38.vcf.gz \
+   --dragen_metrics_dir s3://my-bucket/dragen-outputs/
+```
+
 ### Pipeline behaviour
 
 | Parameter | Description |
