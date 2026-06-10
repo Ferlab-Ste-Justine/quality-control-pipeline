@@ -411,51 +411,68 @@ def parse_dragen_csv_files(files, samples):
                 s.sex_check = "na" if (ped is None or som is None) else ("pass" if ped == som else "fail")
 
 
+def _read_gene_coverage_tsv(path, sample, wanted):
+    rows = []
+    try:
+        with open(path) as fh:
+            header = None
+            for line in fh:
+                if not line.strip():
+                    continue
+                if line.startswith("#"):
+                    if header is None:
+                        header = line.lstrip("#").rstrip("\n").split("\t")
+                    continue
+                if header is None:
+                    log.warning(f"{path}: data line before header, skipping: {line.rstrip()!r}")
+                    continue
+                fields = line.rstrip("\n").split("\t")
+                if len(fields) != len(header):
+                    log.warning(f"{path}: column count mismatch, skipping line")
+                    continue
+                record = dict(zip(header, fields))
+                if not wanted.issubset(record):
+                    log.warning(f"{path}: expected columns missing ({wanted - set(record)}), skipping file")
+                    return []
+                try:
+                    rows.append({
+                        "sample": sample,
+                        "gene": record["gene"],
+                        "average_coverage": float(record["average_coverage"]),
+                        "coverage15": float(record["coverage15"]),
+                        "coverage30": float(record["coverage30"]),
+                        "coverage100": float(record["coverage100"]),
+                    })
+                except ValueError as e:
+                    log.warning(f"Could not parse line in {path}: {line.rstrip()!r} - {e}")
+    except Exception as e:
+        log.warning(f"Could not read gene-coverage file {path}: {e}")
+    return rows
+
+
 def parse_gene_coverage_files(files):
-    """Parse the coverage_by_gene TSVs (from COVERAGE_BY_GENE module).
+    """Parse the coverage_by_gene TSVs (from COVERAGE_BY_GENE / DRAGEN_COVERAGE_BY_GENE).
 
     Header columns: gene, size, totalcvg, count, average_coverage,
     coverage5, coverage15, coverage20, coverage30, coverage50, coverage100, ...
+
+    When a sample has TSVs from multiple coverage regions (region 1 + region 2),
+    use only the first one that has gene rows — sorted by filename so the
+    `_1` / `region-1` variant wins, with `_2` / `region-2` as fallback when
+    region 1 had no gene-annotated intervals.
     """
+    by_sample = defaultdict(list)
+    for path in sorted(files):
+        by_sample[_sample_name_from_filename(path)].append(path)
+
     rows = []
     wanted = {"gene", "average_coverage", "coverage15", "coverage30", "coverage100"}
-    for path in files:
-        sample = _sample_name_from_filename(path)
-        try:
-            with open(path) as fh:
-                header = None
-                for line in fh:
-                    if not line.strip():
-                        continue
-                    if line.startswith("#"):
-                        # First # line is the header, e.g. "#gene\tsize\t..."
-                        if header is None:
-                            header = line.lstrip("#").rstrip("\n").split("\t")
-                        continue
-                    if header is None:
-                        log.warning(f"{path}: data line before header, skipping: {line.rstrip()!r}")
-                        continue
-                    fields = line.rstrip("\n").split("\t")
-                    if len(fields) != len(header):
-                        log.warning(f"{path}: column count mismatch, skipping line")
-                        continue
-                    record = dict(zip(header, fields))
-                    if not wanted.issubset(record):
-                        log.warning(f"{path}: expected columns missing ({wanted - set(record)}), skipping file")
-                        break
-                    try:
-                        rows.append({
-                            "sample": sample,
-                            "gene": record["gene"],
-                            "average_coverage": float(record["average_coverage"]),
-                            "coverage15": float(record["coverage15"]),
-                            "coverage30": float(record["coverage30"]),
-                            "coverage100": float(record["coverage100"]),
-                        })
-                    except ValueError as e:
-                        log.warning(f"Could not parse line in {path}: {line.rstrip()!r} - {e}")
-        except Exception as e:
-            log.warning(f"Could not read gene-coverage file {path}: {e}")
+    for sample, paths in by_sample.items():
+        for path in paths:
+            file_rows = _read_gene_coverage_tsv(path, sample, wanted)
+            if file_rows:
+                rows.extend(file_rows)
+                break
     return rows
 
 
@@ -711,12 +728,16 @@ def add_gene_coverage_section(module, rows):
         ("coverage100",      "% ≥100X"),
     ]
     keys = [k for k, _ in headers]
+    # Threshold columns are stored as proportions (0-1) in the per-gene TSV;
+    # the table header reads as %, so scale by 100 when rendering.
+    pct_keys = {"coverage15", "coverage30", "coverage100"}
 
-    def fmt(v):
+    def fmt(key, v):
         if v is None or v == "":
             return ""
         try:
-            return f"{float(v):,.2f}"
+            f = float(v) * 100 if key in pct_keys else float(v)
+            return f"{f:,.2f}"
         except (ValueError, TypeError):
             return str(v)
 
@@ -740,7 +761,7 @@ def add_gene_coverage_section(module, rows):
         tbody_rows = []
         for rec in by_sample[sample]:
             tbody_rows.append(
-                "<tr>" + "".join(f"<td>{fmt(rec.get(k))}</td>" if k != 'gene' else f"<td>{rec.get('gene','')}</td>" for k in keys) + "</tr>"
+                "<tr>" + "".join(f"<td>{fmt(k, rec.get(k))}</td>" if k != 'gene' else f"<td>{rec.get('gene','')}</td>" for k in keys) + "</tr>"
             )
         pane_html.append(
             f'<div class="tab-pane fade{active}" id="gc-pane-{sample}" role="tabpanel">'

@@ -82,7 +82,7 @@ The pipeline processes FASTQ, BAM/CRAM, and VCF files through the following step
   - `output_all.txt`: All pairwise sample comparisons with correlation scores.
   - `output_matched.txt`: Sample pairs determined to be matched (same individual).
   - `corr_matrix.txt`: Pairwise correlation matrix across all samples.
-  - `output.pdf` *(optional)*: Heatmap visualisation of the correlation matrix.
+  - `output.pdf` _(optional)_: Heatmap visualisation of the correlation matrix.
 
 </details>
 
@@ -99,7 +99,7 @@ The pipeline processes FASTQ, BAM/CRAM, and VCF files through the following step
 
 - `reports/QC/{sample.id}/`
   - `*.stats`: Comprehensive alignment statistics (flagstat, base quality, insert size, etc.) from `samtools stats`.
-  - `*.txt` *(samples)*: Sample names extracted from the BAM/CRAM read group headers.
+  - `*.txt` _(samples)_: Sample names extracted from the BAM/CRAM read group headers.
 
 </details>
 
@@ -113,7 +113,7 @@ The pipeline processes FASTQ, BAM/CRAM, and VCF files through the following step
 <summary>Output files</summary>
 
 - `reports/QC/{sample.id}/`
-  - `*.wgs_metrics`: WGS coverage metrics including mean coverage, PCT_EXC_* exclusion fractions, and median insert size. Only produced for WGS samples.
+  - `*.wgs_metrics`: WGS coverage metrics including mean coverage, PCT*EXC*\* exclusion fractions, and median insert size. Only produced for WGS samples.
 
 </details>
 
@@ -126,10 +126,10 @@ The pipeline processes FASTQ, BAM/CRAM, and VCF files through the following step
 
 - `reports/QC/{sample.id}/`
   - `*.mosdepth.global.dist.txt`: Cumulative coverage distribution across the genome.
-  - `*.mosdepth.region.dist.txt` *(if regions BED provided)*: Coverage distribution per region.
+  - `*.mosdepth.region.dist.txt` _(if regions BED provided)_: Coverage distribution per region.
   - `*.mosdepth.summary.txt`: Mean coverage per chromosome and total.
-  - `*.regions.bed.gz` *(QC coverage regions)*: Per-interval mean coverage for defined QC regions.
-  - `*.thresholds.bed.gz` *(QC coverage regions)*: Fraction of bases at coverage thresholds (5x, 15x, 20x, 30x, 50x, 100x, 200x, 300x, 400x, 500x, 1000x).
+  - `*.regions.bed.gz` _(QC coverage regions)_: Per-interval mean coverage for defined QC regions.
+  - `*.thresholds.bed.gz` _(QC coverage regions)_: Fraction of bases at coverage thresholds (5x, 15x, 20x, 30x, 50x, 100x, 200x, 300x, 400x, 500x, 1000x).
 
 </details>
 
@@ -213,12 +213,13 @@ When `--dragen_metrics_dir` is set, BAM_QC and VCF_QC are skipped and the report
 
 Files are picked up at any depth under `--dragen_metrics_dir` (local path or `s3://` / `gs://` / `az://` URI). Both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` filenames are recognised.
 
-| Filename suffix | Used for |
-|---|---|
-| `*.mapping_metrics.csv` | Alignment metrics + Q30 yield + estimated contamination |
-| `*.wgs_coverage_metrics.csv` | Mean autosome coverage, uniformity (MAD proxy), %15x |
-| `*.vc_metrics.csv` | SNV / insertion / deletion counts, Ti/Tv, het:hom ratios |
-| `*.ploidy_estimation_metrics.csv` | XX / XY ploidy → predicted-sex fallback for `sex_check` when somalier did not run for that sample |
+| Filename suffix                              | Used for                                                                                                                                                                                                                                                           |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `*.mapping_metrics.csv`                      | Alignment metrics + Q30 yield + estimated contamination                                                                                                                                                                                                            |
+| `*.wgs_coverage_metrics.csv`                 | Mean autosome coverage, uniformity (MAD proxy), %15x                                                                                                                                                                                                               |
+| `*.vc_metrics.csv`                           | SNV / insertion / deletion counts, Ti/Tv, het:hom ratios                                                                                                                                                                                                           |
+| `*.ploidy_estimation_metrics.csv`            | XX / XY ploidy → predicted-sex fallback for `sex_check` when somalier did not run for that sample                                                                                                                                                                  |
+| `*_cov_report.bed` + `*_read_cov_report.bed` | Paired per region (`qc-coverage-region-[1,2,3]`); the `DRAGEN_COVERAGE_BY_GENE` module aggregates them into a `*.coverage_by_gene.tsv`. The per-gene report tab uses region 1 by default and falls back to region 2 when region 1 has no gene-annotated intervals. |
 
 Somalier still runs against any BAM/CRAM provided in the samplesheet for pedigree validation. Samples without BAM/CRAM (e.g. GVCF-only with DRAGEN metrics) still appear in the per-family report with their `pedigree_sex` from the samplesheet-derived PED, and pick up `sex_check` from the DRAGEN ploidy estimate.
 
