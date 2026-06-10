@@ -16,6 +16,7 @@ include { VCF_QC                 } from '../subworkflows/local/vcf_qc/main'
 include { BAM_MERGE              } from '../subworkflows/local/bam_merge'
 include { CRAM_SOMALIER          } from '../subworkflows/local/cram_somalier'
 include { GATK4_BEDTOINTERVALLIST } from '../modules/nf-core/gatk4/bedtointervallist/main'
+include { DRAGEN_COVERAGE_BY_GENE } from '../modules/local/dragen_coverage_by_gene/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -331,6 +332,41 @@ workflow QUALITYCONTROL {
             .map { sample, f, familyId -> [ [id: sample, sample: sample, familyId: familyId], f ] }
 
         ch_multiqc_files = ch_multiqc_files.mix(ch_dragen_files)
+
+        // DRAGEN per-region per-interval coverage → per-gene coverage TSV.
+        ch_dragen_cov = channel.fromPath([
+                "${params.dragen_metrics_dir}/*_cov_report.bed",
+                "${params.dragen_metrics_dir}/**/*_cov_report.bed",
+            ], checkIfExists: false)
+            .filter { f -> !f.name.endsWith('_read_cov_report.bed') }
+            .map { f ->
+                def parts = f.name.tokenize('.')
+                def sample = parts[0]
+                def region = parts[1].replaceFirst(/_cov_report$/, '')
+                [ "${sample}|${region}".toString(), sample, region, f ]
+            }
+
+        ch_dragen_read_cov = channel.fromPath([
+                "${params.dragen_metrics_dir}/*_read_cov_report.bed",
+                "${params.dragen_metrics_dir}/**/*_read_cov_report.bed",
+            ], checkIfExists: false)
+            .map { f ->
+                def parts = f.name.tokenize('.')
+                def sample = parts[0]
+                def region = parts[1].replaceFirst(/_read_cov_report$/, '')
+                [ "${sample}|${region}".toString(), f ]
+            }
+
+        ch_dragen_gene_input = ch_dragen_cov
+            .join(ch_dragen_read_cov)
+            .map { _key, sample, region, cov, read_cov -> [ sample, region, cov, read_cov ] }
+            .combine(ch_sample_family, by: 0)
+            .map { sample, region, cov, read_cov, familyId ->
+                [ [id: sample, sample: sample, region: region, familyId: familyId], cov, read_cov ]
+            }
+
+        DRAGEN_COVERAGE_BY_GENE(ch_dragen_gene_input)
+        ch_multiqc_files = ch_multiqc_files.mix(DRAGEN_COVERAGE_BY_GENE.out.report)
     }
 
     // topic_versions = channel.topic('versions')

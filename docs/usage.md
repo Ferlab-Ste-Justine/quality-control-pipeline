@@ -14,19 +14,19 @@ Prepare a CSV samplesheet with one row per file (or per sequencing run for multi
 
 ### Column reference
 
-| Column | Required | Description |
-|---|---|---|
-| `participant` | Yes | Participant/individual identifier. Used to group samples from the same person across sequencing types. |
-| `sample` | Yes | Sample identifier. Used as the output directory name (`reports/QC/{sample}`). Must be unique per participant + sequencing type combination. |
-| `fileType` | Yes | Type of input file. One of: `FASTQ`, `BAM`, `CRAM`, `VCF`, `GVCF` (case-insensitive). |
-| `file1` | Yes | Path to the primary file: FASTQ R1, BAM, CRAM, or VCF/GVCF. |
-| `file2` | No | Path to the secondary file: FASTQ R2, BAI index, CRAI index, or VCF TBI/CSI index. |
-| `familyId` | No | Family identifier. Required when running per-family (`--cohort_mode false`) or with `--ped_file`. |
-| `experimentalStrategy` | No | Sequencing strategy. One of: `WGS`, `WXS`, `TARS`, `RNAS`, `ATACS`, `BIS`, `TMS`, `CHIPS`. Defaults to `WGS`. Controls which QC modules run (e.g. Picard WGS metrics only run for `WGS`). |
-| `sex` | No | Sample sex. One of: `Female`, `Male`, `Other`, `NA`. Defaults to `NA`. |
-| `status` | No | Sample status. `0` = normal, `1` = tumor. Defaults to `0`. |
-| `lane` | No | Lane or run identifier. When multiple rows share the same `participant`, `sample`, and `experimentalStrategy`, they are merged before QC. |
-| `runId` | No | Run identifier. Used together with `lane` to uniquely identify a sequencing run. |
+| Column                 | Required | Description                                                                                                                                                                               |
+| ---------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `participant`          | Yes      | Participant/individual identifier. Used to group samples from the same person across sequencing types.                                                                                    |
+| `sample`               | Yes      | Sample identifier. Used as the output directory name (`reports/QC/{sample}`). Must be unique per participant + sequencing type combination.                                               |
+| `fileType`             | Yes      | Type of input file. One of: `FASTQ`, `BAM`, `CRAM`, `VCF`, `GVCF` (case-insensitive).                                                                                                     |
+| `file1`                | Yes      | Path to the primary file: FASTQ R1, BAM, CRAM, or VCF/GVCF.                                                                                                                               |
+| `file2`                | No       | Path to the secondary file: FASTQ R2, BAI index, CRAI index, or VCF TBI/CSI index.                                                                                                        |
+| `familyId`             | No       | Family identifier. Required when running per-family (`--cohort_mode false`) or with `--ped_file`.                                                                                         |
+| `experimentalStrategy` | No       | Sequencing strategy. One of: `WGS`, `WXS`, `TARS`, `RNAS`, `ATACS`, `BIS`, `TMS`, `CHIPS`. Defaults to `WGS`. Controls which QC modules run (e.g. Picard WGS metrics only run for `WGS`). |
+| `sex`                  | No       | Sample sex. One of: `Female`, `Male`, `Other`, `NA`. Defaults to `NA`.                                                                                                                    |
+| `status`               | No       | Sample status. `0` = normal, `1` = tumor. Defaults to `0`.                                                                                                                                |
+| `lane`                 | No       | Lane or run identifier. When multiple rows share the same `participant`, `sample`, and `experimentalStrategy`, they are merged before QC.                                                 |
+| `runId`                | No       | Run identifier. Used together with `lane` to uniquely identify a sequencing run.                                                                                                          |
 
 ### Example samplesheet
 
@@ -99,75 +99,76 @@ ngscheckmate_snp_pt: /path/to/SNP_GRCh38_hg38_wChr.bed
 
 ### Input / output
 
-| Parameter | Description |
-|---|---|
-| `--input` | Path to the input samplesheet CSV. |
-| `--outdir` | Directory where results will be saved. Use absolute paths for cloud storage. |
-| `--multiqc_title` | Title string printed in the MultiQC report header. |
+| Parameter         | Description                                                                  |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `--input`         | Path to the input samplesheet CSV.                                           |
+| `--outdir`        | Directory where results will be saved. Use absolute paths for cloud storage. |
+| `--multiqc_title` | Title string printed in the MultiQC report header.                           |
 
 ### Reference files
 
-| Parameter | Description |
-|---|---|
-| `--fasta` | Path to the reference genome FASTA file. Required for alignment QC and Somalier. |
-| `--fai` | Path to the FASTA index (`.fai`). |
-| `--fasta_dict` | Path to the sequence dictionary (`.dict`). Required for Picard. |
+| Parameter       | Description                                                                         |
+| --------------- | ----------------------------------------------------------------------------------- |
+| `--fasta`       | Path to the reference genome FASTA file. Required for alignment QC and Somalier.    |
+| `--fai`         | Path to the FASTA index (`.fai`).                                                   |
+| `--fasta_dict`  | Path to the sequence dictionary (`.dict`). Required for Picard.                     |
 | `--regions_bed` | BED file of capture or analysis regions. Used by GATK BedToIntervalList and Picard. |
 
 ### Sample identity & relatedness (Somalier)
 
-| Parameter | Description |
-|---|---|
-| `--somalier_sites` | VCF of known variant sites used by Somalier for fingerprinting. |
-| `--ped_file` | Pedigree file (PED format) describing family relationships. |
-| `--cohort_mode` | Boolean. When `true` the pipeline runs as a single cohort: one Somalier relate across all samples, one MultiQC report. When `false` (default), samples are grouped by `familyId` — Somalier runs once per family and one MultiQC report is produced per family. |
+| Parameter          | Description                                                                                                                                                                                                                                                     |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--somalier_sites` | VCF of known variant sites used by Somalier for fingerprinting.                                                                                                                                                                                                 |
+| `--ped_file`       | Pedigree file (PED format) describing family relationships.                                                                                                                                                                                                     |
+| `--cohort_mode`    | Boolean. When `true` the pipeline runs as a single cohort: one Somalier relate across all samples, one MultiQC report. When `false` (default), samples are grouped by `familyId` — Somalier runs once per family and one MultiQC report is produced per family. |
 
 ### Contamination (VerifyBamID2)
 
-| Parameter | Description |
-|---|---|
+| Parameter                  | Description                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------- |
 | `--verifybamid_svd_prefix` | File path prefix for VerifyBamID2 SVD reference files (`.UD`, `.mu`, `.bed`). |
 
 ### Sample identity (ngsCheckMate)
 
-| Parameter | Description |
-|---|---|
+| Parameter               | Description                                                        |
+| ----------------------- | ------------------------------------------------------------------ |
 | `--ngscheckmate_snp_pt` | SNP panel BED file for ngsCheckMate FASTQ-level identity checking. |
 
 ### Coverage QC regions
 
 Up to two custom BED region sets can be provided for per-region coverage analysis (e.g. a gene panel BED and a clinically relevant regions BED):
 
-| Parameter | Description |
-|---|---|
-| `--qc_coverage_region_1` | BED file for the first QC coverage region set. |
-| `--region_1_name` | Label for the first region set, used in output file names. Defaults to `qc_regions_1`. |
-| `--qc_coverage_region_2` | BED file for the second QC coverage region set. |
-| `--region_2_name` | Label for the second region set. Defaults to `qc_regions_2`. |
+| Parameter                | Description                                                                            |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| `--qc_coverage_region_1` | BED file for the first QC coverage region set.                                         |
+| `--region_1_name`        | Label for the first region set, used in output file names. Defaults to `qc_regions_1`. |
+| `--qc_coverage_region_2` | BED file for the second QC coverage region set.                                        |
+| `--region_2_name`        | Label for the second region set. Defaults to `qc_regions_2`.                           |
 
 ### VCF QC
 
-| Parameter | Description |
-|---|---|
+| Parameter       | Description                                                 |
+| --------------- | ----------------------------------------------------------- |
 | `--targets_bed` | BED file of target regions for filtering VCF QC statistics. |
-| `--exons_bed` | BED file of exon regions, passed to `bcftools stats`. |
+| `--exons_bed`   | BED file of exon regions, passed to `bcftools stats`.       |
 
 ### DRAGEN metrics input
 
 When samples have already been processed by DRAGEN, the pipeline can build the report from DRAGEN's per-sample metric CSVs instead of recomputing them with BAM_QC / VCF_QC.
 
-| Parameter | Description |
-|---|---|
+| Parameter              | Description                                                                                                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--dragen_metrics_dir` | Directory containing DRAGEN per-sample metric CSVs. When set, BAM_QC and VCF_QC are skipped. Somalier still runs against any BAM/CRAM in the samplesheet for pedigree validation. |
 
 The directory is globbed at any depth for these filenames (both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` are recognised):
 
-| Filename suffix | Used for |
-|---|---|
-| `*.mapping_metrics.csv` | Alignment metrics + Q30 yield + estimated contamination |
-| `*.wgs_coverage_metrics.csv` | Mean autosome coverage, uniformity (MAD proxy), %15x |
-| `*.vc_metrics.csv` | SNV / insertion / deletion counts, Ti/Tv, het:hom ratios |
-| `*.ploidy_estimation_metrics.csv` | XX / XY ploidy → predicted-sex fallback for `sex_check` when somalier didn't run for that sample |
+| Filename suffix                              | Used for                                                                                                                                                                                                                                                           |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `*.mapping_metrics.csv`                      | Alignment metrics + Q30 yield + estimated contamination                                                                                                                                                                                                            |
+| `*.wgs_coverage_metrics.csv`                 | Mean autosome coverage, uniformity (MAD proxy), %15x                                                                                                                                                                                                               |
+| `*.vc_metrics.csv`                           | SNV / insertion / deletion counts, Ti/Tv, het:hom ratios                                                                                                                                                                                                           |
+| `*.ploidy_estimation_metrics.csv`            | XX / XY ploidy → predicted-sex fallback for `sex_check` when somalier didn't run for that sample                                                                                                                                                                   |
+| `*_cov_report.bed` + `*_read_cov_report.bed` | Paired per region (`qc-coverage-region-[1,2,3]`); the `DRAGEN_COVERAGE_BY_GENE` module aggregates them into a `*.coverage_by_gene.tsv`. The per-gene report tab uses region 1 by default and falls back to region 2 when region 1 has no gene-annotated intervals. |
 
 `--dragen_metrics_dir` accepts local paths and remote URIs (`s3://`, `gs://`, `az://`) provided the appropriate Nextflow plugin/credentials are configured. Files whose sample prefix doesn't match a row in the samplesheet are silently ignored.
 
@@ -186,9 +187,9 @@ nextflow run Ferlab-Ste-Justine/quality-control-pipeline \
 
 ### Pipeline behaviour
 
-| Parameter | Description |
-|---|---|
-| `--skip_merge` | Skip BAM/CRAM merging even when a sample has multiple lanes. Default: `true`. |
+| Parameter         | Description                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `--skip_merge`    | Skip BAM/CRAM merging even when a sample has multiple lanes. Default: `true`.                                    |
 | `--skip_reheader` | Skip reheadering BAM/CRAM files when the read group sample name does not match the samplesheet. Default: `true`. |
 
 ## Core Nextflow arguments
