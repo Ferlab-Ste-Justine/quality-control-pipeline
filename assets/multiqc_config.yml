@@ -26,7 +26,6 @@ export_plots: false
 run_modules:
   - custom_content
   - fastqc
-  - fastp
   - picard
   - samtools
   - bcftools
@@ -36,18 +35,37 @@ run_modules:
 
 top_modules:
   - "custom_content"
-
 remove_sections:
-  - 'somalier-relatedness'
+  # - 'somalier-relatedness'
   - 'somalier-relatedness-heatmap'
   - 'somalier-hetcheck'
-  - 'somalier-sexcheck'
+  # - 'somalier-sexcheck'
   - 'samtools-percent-mapped'
   - 'mosdepth-xy-coverage'
+  - 'general_stats'                 # Built-in general stats section — replaced by our custom "General Status".
+  - 'general_stats_table'           # belt-and-braces: the table inside that section
 
+extra_fn_clean_exts:
+  - ".CollectWgsMetrics.coverage_metrics"
+  - ".CollectHsMetrics.coverage_metrics"
+  - ".QualityYieldMetrics"
+  - ".selfSM"
+  - ".bcftools_stats"
+  - ".somalier"
+  - ".vcf_metrics"
+  - "_fastqc"
+  - ".stats"
+  - ".metrics"
+
+# Picard CollectWgsMetrics writes the *input* BAM path inside the metrics file, and
+# bcftools stats writes the *input* VCF filename in the `ID` line. MultiQC would otherwise
+# show names like "NA19238.subset.chr20XY" or "NA21118.chr20_20000000-21000000.hard-filtered"
+# while samtools/verifybamid/somalier show clean "NA19238". Forcing filename-based sample
+# naming, plus `extra_fn_clean_exts` above, lines everything up on the bare sample id.
 use_filename_as_sample_name:
   - picard
   - verifybamid
+  - bcftools
 
 preserve_module_raw_data: true
 disable_version_detection: true

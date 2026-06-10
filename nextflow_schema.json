@@ -188,6 +188,12 @@
             "description": "Treat all samples as one cohort. When false, group samples by familyId: somalier runs per-family and one MultiQC report is generated per family.",
             "help_text": "In cohort mode (default) the pipeline produces a single MultiQC report covering all samples and somalier runs once across the whole cohort. Disable for per-family runs (one MultiQC report per family, somalier runs once per family)."
         },
+        "qc_thresholds": {
+            "type": "string",
+            "format": "file-path",
+            "description": "YAML file overriding QC pass/fail thresholds used by the MultiQC report. Defaults to assets/qc_thresholds.yml.",
+            "help_text": "Supply a YAML with any of: pct_reads_mapped, pct_properly_paired, mean_autosome_coverage, cross_contamination. Missing keys fall back to the bundled defaults."
+        },
         "regions_bed": {
             "type": "string"
         },
