@@ -1,0 +1,85 @@
+{
+    "-profile test_dragen": {
+        "content": [
+            11,
+            {
+                "DRAGEN_COVERAGE_BY_GENE": {
+                    "dragen_coverage_by_gene.py": "dragen_coverage_by_gene.py 1.0.0"
+                },
+                "SOMALIER_EXTRACT": {
+                    "somalier": "0.2.19"
+                },
+                "SOMALIER_RELATE": {
+                    "somalier": "0.2.19"
+                }
+            },
+            [
+                "multiqc",
+                "multiqc/CEU",
+                "multiqc/CEU/CEU_multiqc_report.html",
+                "multiqc/CEU/CEU_multiqc_report_data.zip",
+                "multiqc/CEU/qc_json",
+                "multiqc/CEU/qc_json/NA21118.metrics.json",
+                "multiqc/SAS",
+                "multiqc/SAS/SAS_multiqc_report.html",
+                "multiqc/SAS/SAS_multiqc_report_data.zip",
+                "multiqc/SAS/qc_json",
+                "multiqc/SAS/qc_json/NA21119.metrics.json",
+                "multiqc/YRI",
+                "multiqc/YRI/YRI_multiqc_report.html",
+                "multiqc/YRI/YRI_multiqc_report_data.zip",
+                "multiqc/YRI/qc_json",
+                "multiqc/YRI/qc_json/NA19238.metrics.json",
+                "multiqc/YRI/qc_json/NA19239.metrics.json",
+                "multiqc/YRI/qc_json/NA19240.metrics.json",
+                "pipeline_info",
+                "pipeline_info/quality-control-pipeline_software_mqc_versions.yml",
+                "reports",
+                "reports/QC",
+                "reports/QC/NA19238",
+                "reports/QC/NA19238/NA19238.somalier",
+                "reports/QC/NA19239",
+                "reports/QC/NA19239/NA19239.somalier",
+                "reports/QC/NA19240",
+                "reports/QC/NA19240/NA19240.somalier",
+                "reports/QC/NA21118",
+                "reports/QC/NA21118/NA21118.qc-coverage-region-2.coverage_by_gene.tsv",
+                "reports/QC/NA21118/NA21118.somalier",
+                "reports/pedigree",
+                "reports/pedigree/CEU",
+                "reports/pedigree/CEU/CEU.somalier.html",
+                "reports/pedigree/CEU/CEU.somalier.pairs.tsv",
+                "reports/pedigree/CEU/CEU.somalier.samples.tsv",
+                "reports/pedigree/YRI",
+                "reports/pedigree/YRI/YRI.somalier.groups.tsv",
+                "reports/pedigree/YRI/YRI.somalier.html",
+                "reports/pedigree/YRI/YRI.somalier.pairs.tsv",
+                "reports/pedigree/YRI/YRI.somalier.samples.tsv"
+            ],
+            [
+                "NA21118.metrics.json:md5,7bab04bfc7291ffc1ebc89679d50b393",
+                "NA21119.metrics.json:md5,6f36d8087a58d4e2ce4a803b9fcbebda",
+                "NA19238.metrics.json:md5,e2949e413b249155484a0576c905004f",
+                "NA19239.metrics.json:md5,ec096468d68ea2b7b1cf2908ad79fe46",
+                "NA19240.metrics.json:md5,efd35dda03af70b7de8c6e25d5ef8b9b",
+                "NA19238.somalier:md5,eda83d91e74e3148ee5284eb07d940b4",
+                "NA19239.somalier:md5,2a898b285d4e6bcdfe2f8024c7f6f8ec",
+                "NA19240.somalier:md5,cc68d6b161b5bf7a5f749fadc89ac740",
+                "NA21118.qc-coverage-region-2.coverage_by_gene.tsv:md5,ce53ff2f52652c9df037340bff9e992c",
+                "NA21118.somalier:md5,146095c053af5bc2749f5e782368f403",
+                "CEU.somalier.html:md5,cf438b48c0dfd72abf62b78f9ddb9643",
+                "CEU.somalier.pairs.tsv:md5,4a0988fc3c0fe5cfd5dd205fe6755595",
+                "CEU.somalier.samples.tsv:md5,0b2a38a30372ebd3e6febecd31825c3b",
+                "YRI.somalier.groups.tsv:md5,2172341560ca9a0b63407a3084d4cbf9",
+                "YRI.somalier.html:md5,4272a8ea0b396b1ff25effa19ae24e0e",
+                "YRI.somalier.pairs.tsv:md5,07e01caba84aa9c2ed77783262911b10",
+                "YRI.somalier.samples.tsv:md5,757c0ce579eca991680a872e78b221e9"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "24.10.5"
+        },
+        "timestamp": "2026-06-11T14:48:24.121117"
+    }
+}

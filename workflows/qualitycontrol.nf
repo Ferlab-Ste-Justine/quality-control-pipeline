@@ -79,7 +79,7 @@ workflow QUALITYCONTROL {
         // If fastq files are provided, run FastQC, SeqFu, and ngsCheckMate
         FASTQ_QC ( ch_samplesheet_parsed.fastq, ncm_snp_pt.map { it -> [ [id:"fastq_checkmate"], it] } )
         ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports)
-        ch_versions = ch_versions.mix(FASTQ_QC.out.versions.first())
+        ch_versions = ch_versions.mix(FASTQ_QC.out.versions)
 
         /*
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

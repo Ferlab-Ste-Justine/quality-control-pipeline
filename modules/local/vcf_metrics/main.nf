@@ -7,7 +7,6 @@ process VCF_METRICS {
 
     output:
     tuple val(meta), path("*.vcf_metrics.json"), emit: json
-    tuple val("${task.process}"), val('cat'), eval("cat --version | head -n 1 | cut -f4 -d' '"), topic: versions, emit: versions
 
     when:
     task.ext.when == null || task.ext.when

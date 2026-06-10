@@ -14,7 +14,10 @@
 */
 
 // Enable Nextflow preview features
-nextflow.preview.topic = true
+def version_25_04 = new nextflow.util.VersionNumber('25.04.0')
+if (nextflow.version < version_25_04) {
+    nextflow.preview.topic = true
+}
 
 include { QUALITYCONTROL  } from './workflows/qualitycontrol'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
