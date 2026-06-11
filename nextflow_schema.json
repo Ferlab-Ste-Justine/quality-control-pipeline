@@ -170,9 +170,6 @@
         "publish_all": {
             "type": "boolean"
         },
-        "intervalsFile": {
-            "type": "string"
-        },
         "fai": {
             "type": "string"
         },
@@ -201,13 +198,24 @@
             "help_text": "Expected layout: <dir>/<sample>/<sample>.final.{mapping_metrics,wgs_coverage_metrics,vc_metrics,ploidy_estimation_metrics}.csv. Somalier still runs on any BAM/CRAM provided in the samplesheet for pedigree validation."
         },
         "regions_bed": {
-            "type": "string"
+            "type": "string",
+            "format": "file-path",
+            "description": "Path to bed file with regions to limit QC. Defaults to autosomes non gap regions."
         },
         "exons_bed":{
-            "type": "string"
+            "type": "string",
+            "format": "file-path",
+            "description": "Optional path to bed file containing exon regions. Used to compute tstv stats."
         },
         "targets_bed":{
-            "type": "string"
+            "type": "string",
+            "format": "file-path",
+            "description": "Path to bed file of targeted sequencing targets regions. Used to compute Hybrid Selection metrics and variant stats. Applies to all targeted sequence (!=WGS) data."
+        },
+        "baits_bed":{
+            "type": "string",
+            "format": "file-path",
+            "description": "Path to bed file of targeted sequencing bait regions. Used to compute Hybrid Selection metrics. Applies to all targeted sequence (!=WGS) data."
         },
         "verifybamid_svd_prefix": {
             "type": "string"

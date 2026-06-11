@@ -11,8 +11,9 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_qual
 include { buildPedRowsForFamily  } from '../subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
 include { FASTQ_QC               } from '../subworkflows/local/fastq_qc/main'
 include { BAM_QC as BAM_QC_WGS   } from '../subworkflows/local/bam_qc/main'
-include { BAM_QC as BAM_QC_TARGET   } from '../subworkflows/local/bam_qc/main'
-include { VCF_QC                 } from '../subworkflows/local/vcf_qc/main'
+include { BAM_QC as BAM_QC_TARGET  } from '../subworkflows/local/bam_qc/main'
+include { VCF_QC as VCF_QC_WGS   } from '../subworkflows/local/vcf_qc/main'
+include { VCF_QC as VCF_QC_TARGET  } from '../subworkflows/local/vcf_qc/main'
 include { BAM_MERGE              } from '../subworkflows/local/bam_merge'
 include { CRAM_SOMALIER          } from '../subworkflows/local/cram_somalier'
 include { GATK4_BEDTOINTERVALLIST } from '../modules/nf-core/gatk4/bedtointervallist/main'
@@ -41,10 +42,11 @@ workflow QUALITYCONTROL {
     ch_fai   = params.fai ? channel.value(file(params.fai, checkIfExists:true)) : channel.value([])
     ch_dict   = params.fasta_dict ? channel.value(file(params.fasta_dict, checkIfExists:true)) : channel.value([])
     ch_intervals = params.regions_bed ? channel.value(file(params.regions_bed, checkIfExists: true)) : channel.value([])
+    ch_exons = params.exons_bed ? channel.value(file(params.exons_bed, checkIfExists:true)) : channel.value([])
     qc_regions_1 = params.qc_coverage_region_1 ? channel.value(file(params.qc_coverage_region_1, checkIfExists:true)) : channel.value([])
     qc_regions_2 = params.qc_coverage_region_2 ? channel.value(file(params.qc_coverage_region_2, checkIfExists:true)) : channel.value([])
     ch_targets = params.targets_bed ? channel.value(file(params.targets_bed, checkIfExists:true)) : channel.value([])
-    ch_exons = params.exons_bed ? channel.value(file(params.exons_bed, checkIfExists:true)) : channel.value([])
+    ch_baits = params.baits_bed ? channel.value(file(params.baits_bed, checkIfExists:true)) : channel.value([])
 
     // somalier sites VCF
     ch_somalier_sites = params.somalier_sites ? channel.value(file(params.somalier_sites, checkIfExists:true)) : channel.value([])
@@ -75,7 +77,7 @@ workflow QUALITYCONTROL {
         */
 
         // If fastq files are provided, run FastQC, SeqFu, and ngsCheckMate
-        FASTQ_QC ( ch_samplesheet_parsed.fastq, ncm_snp_pt.map { it -> [ [id:"snp_pt"], it] } )
+        FASTQ_QC ( ch_samplesheet_parsed.fastq, ncm_snp_pt.map { it -> [ [id:"fastq_checkmate"], it] } )
         ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports)
         ch_versions = ch_versions.mix(FASTQ_QC.out.versions.first())
 
@@ -121,15 +123,6 @@ workflow QUALITYCONTROL {
                 targeted: meta.sequencingType != 'WGS'
             }
 
-        // HsMetrics needs bait + target intervals. Resolution order:
-        //   bait  : params.targets_bed > params.regions_bed > [] (no HsMetrics input)
-        //   target: params.exons_bed   > bait
-        def hs_bait_path   = params.targets_bed ?: params.regions_bed
-        def hs_target_path = params.exons_bed   ?: hs_bait_path
-        ch_hs_bait   = hs_bait_path   ? channel.value(file(hs_bait_path,   checkIfExists:true)) : channel.value([])
-        ch_hs_target = hs_target_path ? channel.value(file(hs_target_path, checkIfExists:true)) : channel.value([])
-
-
         BAM_QC_WGS(
             ch_bam_qc.wgs,
             ch_fasta,
@@ -139,8 +132,8 @@ workflow QUALITYCONTROL {
             qc_regions_1,
             qc_regions_2,
             ch_interval_list,
-            ch_hs_bait,
-            ch_hs_target,
+            [],
+            [],
             ch_svd_in,
             'WGS'
         )
@@ -154,8 +147,8 @@ workflow QUALITYCONTROL {
             qc_regions_1,
             qc_regions_2,
             ch_interval_list,
-            ch_hs_bait,
-            ch_hs_target,
+            ch_baits,
+            ch_targets,
             ch_svd_in,
             'TARGETED'
         )
@@ -172,16 +165,34 @@ workflow QUALITYCONTROL {
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         */
 
-        VCF_QC (
-            ch_samplesheet_parsed.vcf,
+        // separate qc for targeted seq vs wgs
+        ch_vcf_qc = ch_samplesheet_parsed.vcf
+            .branch { meta, vcf, tbi ->
+                wgs: meta.sequencingType == 'WGS'
+                targeted: meta.sequencingType != 'WGS'
+            }
+
+        VCF_QC_WGS (
+            ch_vcf_qc.wgs,
+            ch_fasta,
+            ch_intervals,
+            channel.value([]),
+            ch_exons
+        )
+
+        VCF_QC_TARGET (
+            ch_vcf_qc.targeted,
             ch_fasta,
             ch_intervals,
             ch_targets,
             ch_exons
         )
 
-        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_metrics)
-        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC.out.vcf_stats)
+        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_WGS.out.vcf_metrics)
+        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_TARGET.out.vcf_metrics)
+
+        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_WGS.out.vcf_stats)
+        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_TARGET.out.vcf_stats)
 
     } else {
         // DRAGEN mode skips BAM_MERGE; feed somalier the BAM/CRAM straight from
