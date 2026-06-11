@@ -29,8 +29,6 @@ process COVERAGE_BY_GENE {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         aggregate_mosdepth_by_gene.py: \$(aggregate_mosdepth_by_gene.py --version)
-        python: \$(python3 --version | sed 's/Python //g')
-        pandas: \$(python3 -c "import pandas; print(pandas.__version__)")
     END_VERSIONS
     """
 
@@ -42,8 +40,6 @@ process COVERAGE_BY_GENE {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         aggregate_mosdepth_by_gene.py: \$(aggregate_mosdepth_by_gene.py --version)
-        python: \$(python3 --version | sed 's/Python //g')
-        pandas: \$(python3 -c "import pandas; print(pandas.__version__)")
     END_VERSIONS
     """
 }

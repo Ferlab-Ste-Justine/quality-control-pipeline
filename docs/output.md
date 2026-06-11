@@ -113,7 +113,7 @@ The pipeline processes FASTQ, BAM/CRAM, and VCF files through the following step
 <summary>Output files</summary>
 
 - `reports/QC/{sample.id}/`
-  - `*.wgs_metrics`: WGS coverage metrics including mean coverage, PCT*EXC*\* exclusion fractions, and median insert size. Only produced for WGS samples.
+  - `*.wgs_metrics`: WGS coverage metrics including mean coverage, PCT_EXC\* exclusion fractions, and median insert size. Only produced for WGS samples.
 
 </details>
 
