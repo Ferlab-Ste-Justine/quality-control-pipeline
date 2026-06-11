@@ -20,7 +20,7 @@
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
+                    "help_text": "You will need to create a samplesheet with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with a header row. Required columns are `participant`, `sample`, `fileType` and `file1`; see the usage documentation for the full column reference.",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
@@ -165,19 +165,29 @@
     ],
     "properties": {
         "ped_file": {
-            "type": "string"
+            "type": "string",
+            "format": "file-path",
+            "description": "Pedigree file (PED format) describing family relationships. When omitted, a pedigree is derived from the samplesheet (familyId, sex, relationship_to_proband, affected_status).",
+            "help_text": "Used by Somalier to validate sample identity and relatedness against expected family structure."
         },
         "publish_all": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Publish all intermediate files to the output directory in addition to the QC reports."
         },
         "fai": {
-            "type": "string"
+            "type": "string",
+            "format": "file-path",
+            "description": "Path to the reference FASTA index (`.fai`)."
         },
         "fasta_dict": {
-            "type": "string"
+            "type": "string",
+            "format": "file-path",
+            "description": "Path to the reference sequence dictionary (`.dict`). Required by Picard metric collection."
         },
         "somalier_sites": {
-            "type": "string"
+            "type": "string",
+            "format": "file-path",
+            "description": "VCF of known polymorphic sites used by Somalier for genotype fingerprinting."
         },
         "cohort_mode": {
             "type": "boolean",
@@ -189,13 +199,13 @@
             "type": "string",
             "format": "file-path",
             "description": "YAML file overriding QC pass/fail thresholds used by the MultiQC report. Defaults to assets/qc_thresholds.yml.",
-            "help_text": "Supply a YAML with any of: pct_reads_mapped, pct_properly_paired, mean_autosome_coverage, cross_contamination. Missing keys fall back to the bundled defaults."
+            "help_text": "Supply a YAML with any subset of: pct_reads_mapped, pct_reads_properly_paired, mean_autosome_coverage, cross_contamination_rate, pedigree_unrelated_pass_max, pedigree_unrelated_warn_max, pedigree_related_pass_min, pedigree_related_pass_max. Missing keys fall back to the bundled defaults in assets/qc_thresholds.yml."
         },
         "dragen_metrics_dir": {
             "type": "string",
             "format": "directory-path",
             "description": "Path to a directory of DRAGEN per-sample metric files. When set, BAM_QC and VCF_QC are skipped and the report is populated from DRAGEN's pre-computed CSVs.",
-            "help_text": "Expected layout: <dir>/<sample>/<sample>.final.{mapping_metrics,wgs_coverage_metrics,vc_metrics,ploidy_estimation_metrics}.csv. Somalier still runs on any BAM/CRAM provided in the samplesheet for pedigree validation."
+            "help_text": "Files are globbed at any depth under the directory; both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` are recognised for mapping_metrics, wgs_coverage_metrics, vc_metrics and ploidy_estimation_metrics. Local paths and remote URIs (s3://, gs://, az://) are supported. Somalier still runs on any BAM/CRAM provided in the samplesheet for pedigree validation."
         },
         "regions_bed": {
             "type": "string",
@@ -218,7 +228,8 @@
             "description": "Path to bed file of targeted sequencing bait regions. Used to compute Hybrid Selection metrics. Applies to all targeted sequence (!=WGS) data."
         },
         "verifybamid_svd_prefix": {
-            "type": "string"
+            "type": "string",
+            "description": "File path prefix for the VerifyBamID2 SVD reference set. The pipeline appends `.UD`, `.mu` and `.bed` to locate the three reference files used for contamination estimation."
         },
         "skip_reheader": {
             "type": "boolean",
@@ -226,27 +237,34 @@
             "description": "Skip reheadering of BAM/CRAM files when read group sample name does not match the sample name in the samplesheet/ped file.",
             "help_text": "By default, if the read group sample name in a BAM/CRAM file does not match the sample name in the samplesheet/ped file, the pipeline will reheader the BAM/CRAM file to match. Use this option to skip this step and use the BAM/CRAM file as-is."
         },
-        "dbsnp": {
-            "type": "string"
-        },
         "ngscheckmate_snp_pt": {
-            "type": "string"
+            "type": "string",
+            "format": "file-path",
+            "description": "SNP panel (BED/PT) file used by ngsCheckMate for FASTQ-level sample identity checking."
         },
         "skip_merge": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "Skip merging of multi-run BAM/CRAM files even when a sample spans multiple lanes/runs.",
+            "help_text": "When false, BAM/CRAM rows that share participant, sample and experimentalStrategy are merged with samtools merge before alignment QC."
         },
         "qc_coverage_region_1": {
-            "type": "string"
+            "type": "string",
+            "format": "file-path",
+            "description": "BED file defining the first QC coverage region set for per-region / per-gene coverage analysis."
         },
         "region_1_name": {
-            "type": "string"
+            "type": "string",
+            "description": "Label for the first QC coverage region set, used in output file names. Defaults to `qc_regions_1`."
         },
         "qc_coverage_region_2": {
-            "type": "string"
+            "type": "string",
+            "format": "file-path",
+            "description": "BED file defining the second QC coverage region set for per-region / per-gene coverage analysis."
         },
         "region_2_name": {
-            "type": "string"
+            "type": "string",
+            "description": "Label for the second QC coverage region set, used in output file names. Defaults to `qc_regions_2`."
         }
     }
 }

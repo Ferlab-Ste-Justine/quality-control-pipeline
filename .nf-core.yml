@@ -1,55 +1,55 @@
 lint:
   pipeline_name_conventions: false
   files_exist:
-    - .github/.dockstore.yml
-    - .github/workflows/branch.yml
-    - conf/igenomes.config
-    - LICENSE
-    - assets/email_template.html
-    - assets/sendmail_template.txt
-    - assets/email_template.txt
-    - CODE_OF_CONDUCT.md
-    - assets/nf-core-quality-control-pipeline_logo_light.png
-    - docs/images/nf-core-quality-control-pipeline_logo_light.png
-    - docs/images/nf-core-quality-control-pipeline_logo_dark.png
-    - .github/ISSUE_TEMPLATE/config.yml
-    - .github/workflows/awstest.yml
-    - .github/workflows/awsfulltest.yml
-    - .github/.dockstore.yml
-    - .github/workflows/branch.yml
+  - .github/.dockstore.yml
+  - .github/workflows/branch.yml
+  - conf/igenomes.config
+  - LICENSE
+  - assets/email_template.html
+  - assets/sendmail_template.txt
+  - assets/email_template.txt
+  - CODE_OF_CONDUCT.md
+  - assets/nf-core-quality-control-pipeline_logo_light.png
+  - docs/images/nf-core-quality-control-pipeline_logo_light.png
+  - docs/images/nf-core-quality-control-pipeline_logo_dark.png
+  - .github/ISSUE_TEMPLATE/config.yml
+  - .github/workflows/awstest.yml
+  - .github/workflows/awsfulltest.yml
+  - .github/.dockstore.yml
+  - .github/workflows/branch.yml
   files_unchanged:
-    - .github/.dockstore.yml
-    - .github/workflows/branch.yml
-    - .github/CONTRIBUTING.md
-    - LICENSE
-    - .prettierignore
-    - CODE_OF_CONDUCT.md
-    - assets/nf-core-quality-control-pipeline_logo_light.png
-    - docs/images/nf-core-quality-control-pipeline_logo_light.png
-    - docs/images/nf-core-quality-control-pipeline_logo_dark.png
-    - .github/ISSUE_TEMPLATE/bug_report.yml
-    - .github/CONTRIBUTING.md
-    - .github/PULL_REQUEST_TEMPLATE.md
-    - assets/email_template.html
-    - assets/sendmail_template.txt
-    - assets/email_template.txt
-    - docs/README.md
-  include_configs: False
+  - .github/.dockstore.yml
+  - .github/workflows/branch.yml
+  - .github/CONTRIBUTING.md
+  - LICENSE
+  - .prettierignore
+  - CODE_OF_CONDUCT.md
+  - assets/nf-core-quality-control-pipeline_logo_light.png
+  - docs/images/nf-core-quality-control-pipeline_logo_light.png
+  - docs/images/nf-core-quality-control-pipeline_logo_dark.png
+  - .github/ISSUE_TEMPLATE/bug_report.yml
+  - .github/CONTRIBUTING.md
+  - .github/PULL_REQUEST_TEMPLATE.md
+  - assets/email_template.html
+  - assets/sendmail_template.txt
+  - assets/email_template.txt
+  - docs/README.md
+  include_configs: false
   multiqc_config:
-    - report_comment
+  - report_comment
   nextflow_config:
-    - process.cpus
-    - process.memory
-    - process.time
-    - custom_config
-    - params.custom_config_version
-    - params.custom_config_base
-    - manifest.name
-    - manifest.homePage
-    - validation.help.beforeText
-    - validation.help.afterText
-    - validation.summary.beforeText
-    - validation.summary.afterText
+  - process.cpus
+  - process.memory
+  - process.time
+  - custom_config
+  - params.custom_config_version
+  - params.custom_config_base
+  - manifest.name
+  - manifest.homePage
+  - validation.help.beforeText
+  - validation.help.afterText
+  - validation.summary.beforeText
+  - validation.summary.afterText
 nf_core_version: 3.3.2
 repository_type: pipeline
 template:
@@ -61,12 +61,12 @@ template:
   org: Ferlab-Ste-Justine
   outdir: .
   skip_features:
-    - nf_core_configs
-    - gitpod
-    - codespaces
-    - license
-    - email
-    - adaptivecard
-    - slackreport
-    - seqera_platform
-  version: 1.0.0dev
+  - nf_core_configs
+  - gitpod
+  - codespaces
+  - license
+  - email
+  - adaptivecard
+  - slackreport
+  - seqera_platform
+  version: 2.0.0
