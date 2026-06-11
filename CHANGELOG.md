@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Changed`
 
 [#40](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/40) Refactoring QC report to support family vs cohort reports and fix some parsing errors.
+[#44](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/44) Updated targeted sequencing stream to take baits and targets.
 
 ### `Deprecated`
 
