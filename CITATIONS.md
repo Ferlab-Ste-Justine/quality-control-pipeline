@@ -38,7 +38,7 @@
 - [Somalier](https://pubmed.ncbi.nlm.nih.gov/32664994/)
 > Pedersen BS, Bhetariya PJ, Brown J, Kravitz SN, Marth G, Jensen RL, Bronner MP, Underhill HR, Quinlan AR. Somalier: rapid relatedness estimation for cancer and germline studies using efficient genome sketches. Genome Med. 2020 Jul 14;12(1):62. doi: 10.1186/s13073-020-00761-2. PMID: 32664994; PMCID: PMC7362544.
 
-- [VerifyBamID2](https://pubmed.ncbi.nlm.nih.gov/31879693/https://pmc.ncbi.nlm.nih.gov/articles/PMC7050530/)
+- [VerifyBamID2](https://pubmed.ncbi.nlm.nih.gov/31980570/)
 > Zhang F, Flickinger M, Taliun SAG, InPSYght Psychiatric Genetics Consortium, Abecasis GR, Scott LJ, McCaroll SA, Pato CN, Boehnke M, Kang HM. Ancestry-agnostic estimation of DNA contamination from whole-genome sequencing data. Genome Res. 2020 Feb;30(2):185-194. doi: 10.1101/gr.246934.118. PubMed PMID: 31980570.
 
 
