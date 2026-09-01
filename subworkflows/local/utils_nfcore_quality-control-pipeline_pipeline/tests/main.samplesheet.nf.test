@@ -1,0 +1,288 @@
+nextflow_function {
+
+    name "Test schema_input.json accepts integer and float IDs"
+    script "../main.nf"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "utils_nfcore_quality-control-pipeline_pipeline"
+
+    //
+    // samplesheetToList against assets/schema_input.json
+    //
+    test("samplesheetToList: integer participant/sample/familyId validate and are usable as meta") {
+        function "samplesheetToList"
+        when {
+            function {
+                """
+                def dataDir = "${projectDir}/subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline/tests/data"
+                def samplesheet = File.createTempFile("samplesheet_integer_ids", ".json")
+                samplesheet.deleteOnExit()
+                samplesheet.text = groovy.json.JsonOutput.toJson([[
+                    participant: 1001,
+                    sample: 2002,
+                    familyId: 3003,
+                    fileType: "FASTQ",
+                    file1: "\${dataDir}/int_ids_R1.fastq.gz",
+                    file2: "\${dataDir}/int_ids_R2.fastq.gz"
+                ]])
+
+                input[0] = samplesheet.path
+                input[1] = "${projectDir}/assets/schema_input.json"
+                """
+            }
+        }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result.size() == 1 },
+            { assert function.result[0][0].participant == 1001 },
+            { assert function.result[0][0].id == 2002 },
+            { assert function.result[0][0].sample == 2002 },
+            { assert function.result[0][0].familyId == 3003 }
+        ) }
+    }
+
+    test("samplesheetToList: float participant validates and preserves exact decimal digits") {
+        function "samplesheetToList"
+        when {
+            function {
+                """
+                def dataDir = "${projectDir}/subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline/tests/data"
+                def samplesheet = File.createTempFile("samplesheet_float_ids", ".json")
+                samplesheet.deleteOnExit()
+                samplesheet.text = groovy.json.JsonOutput.toJson([[
+                    participant: 1001.01,
+                    sample: 2002,
+                    familyId: 3003,
+                    fileType: "FASTQ",
+                    file1: "\${dataDir}/int_ids_R1.fastq.gz",
+                    file2: "\${dataDir}/int_ids_R2.fastq.gz"
+                ]])
+
+                input[0] = samplesheet.path
+                input[1] = "${projectDir}/assets/schema_input.json"
+                """
+            }
+        }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result.size() == 1 },
+            { assert function.result[0][0].participant.toString() == '1001.01' },
+            { assert function.result[0][0].id == 2002 },
+            { assert function.result[0][0].sample == 2002 },
+            { assert function.result[0][0].familyId == 3003 }
+        ) }
+    }
+
+    test("samplesheetToList: float sample/familyId are rejected (number widening dropped for these two fields)") {
+        function "samplesheetToList"
+        when {
+            function {
+                """
+                def dataDir = "${projectDir}/subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline/tests/data"
+                def samplesheet = File.createTempFile("samplesheet_float_sample_familyid", ".json")
+                samplesheet.deleteOnExit()
+                samplesheet.text = groovy.json.JsonOutput.toJson([[
+                    participant: 1001,
+                    sample: 2002.10,
+                    familyId: 3003.00,
+                    fileType: "FASTQ",
+                    file1: "\${dataDir}/int_ids_R1.fastq.gz",
+                    file2: "\${dataDir}/int_ids_R2.fastq.gz"
+                ]])
+
+                input[0] = samplesheet.path
+                input[1] = "${projectDir}/assets/schema_input.json"
+                """
+            }
+        }
+        then {
+            assert !function.success
+        }
+    }
+
+    test("samplesheetToList: sample containing whitespace still rejected") {
+        function "samplesheetToList"
+        when {
+            function {
+                """
+                def dataDir = "${projectDir}/subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline/tests/data"
+                def samplesheet = File.createTempFile("samplesheet_bad_sample", ".json")
+                samplesheet.deleteOnExit()
+                samplesheet.text = groovy.json.JsonOutput.toJson([[
+                    participant: 1001,
+                    sample: "sample with spaces",
+                    familyId: 3003,
+                    fileType: "FASTQ",
+                    file1: "\${dataDir}/int_ids_R1.fastq.gz",
+                    file2: "\${dataDir}/int_ids_R2.fastq.gz"
+                ]])
+
+                input[0] = samplesheet.path
+                input[1] = "${projectDir}/assets/schema_input.json"
+                """
+            }
+        }
+        then {
+            assert !function.success
+        }
+    }
+
+    //
+    // checkParticipantNotCorrupted  (input, parsedRows)
+    //
+    // parsedRows is built by hand here rather than via a real samplesheetToList()
+    // call, to directly control the "post-parsing" meta.participant value for
+    // each scenario (simulating what nf-schema's real, buggy coercion produces)
+    // independent of nf-schema's own behavior. The real end-to-end pairing of
+    // schema + this check was verified manually against the actual bug report.
+    //
+    test("checkParticipantNotCorrupted: leading-zero decimal participant is detected as silently corrupted") {
+        function "checkParticipantNotCorrupted"
+        when {
+            function {
+                """
+                def samplesheet = File.createTempFile("samplesheet_participant_corrupted", ".csv")
+                samplesheet.deleteOnExit()
+                samplesheet.text = "participant,sample,familyId,fileType,file1,file2\\n002.1,S1,F1,FASTQ,x,y"
+
+                // simulates nf-schema silently normalising "002.1" to 2.1
+                def parsedRows = [ [ [ participant: new BigDecimal("2.1") ], "x", "y" ] ]
+
+                input[0] = samplesheet.path
+                input[1] = parsedRows
+                """
+            }
+        }
+        then {
+            assert !function.success
+        }
+    }
+
+    test("checkParticipantNotCorrupted: safe participant values (string, integer, leading-zero integer, non-leading-zero float) pass") {
+        function "checkParticipantNotCorrupted"
+        when {
+            function {
+                """
+                def samplesheet = File.createTempFile("samplesheet_participant_safe", ".csv")
+                samplesheet.deleteOnExit()
+                samplesheet.text = [
+                    "participant,sample,familyId,fileType,file1,file2",
+                    "P001,S1,F1,FASTQ,x,y",
+                    "1001,S2,F2,FASTQ,x,y",
+                    "1001.1,S3,F3,FASTQ,x,y",
+                    "007,S4,F4,FASTQ,x,y"
+                ].join('\\n')
+
+                def parsedRows = [
+                    [ [ participant: "P001" ], "x", "y" ],
+                    [ [ participant: 1001 ], "x", "y" ],
+                    [ [ participant: new BigDecimal("1001.1") ], "x", "y" ],
+                    [ [ participant: "007" ], "x", "y" ],
+                ]
+
+                input[0] = samplesheet.path
+                input[1] = parsedRows
+                """
+            }
+        }
+        then {
+            assert function.success
+        }
+    }
+
+    test("checkParticipantNotCorrupted: non-CSV/TSV samplesheets are skipped (no-op)") {
+        function "checkParticipantNotCorrupted"
+        when {
+            function {
+                """
+                def samplesheet = File.createTempFile("samplesheet_participant", ".json")
+                samplesheet.deleteOnExit()
+                samplesheet.text = "not read by this function for non-csv/tsv inputs"
+
+                // would be flagged as corrupted if this were a .csv/.tsv file
+                def parsedRows = [ [ [ participant: new BigDecimal("2.1") ], "x", "y" ] ]
+
+                input[0] = samplesheet.path
+                input[1] = parsedRows
+                """
+            }
+        }
+        then {
+            assert function.success
+        }
+    }
+
+    //
+    // checkSingleAlignmentFileType  (parsedRows)
+    //
+    test("checkSingleAlignmentFileType: same sample with both BAM and CRAM is rejected") {
+        function "checkSingleAlignmentFileType"
+        when {
+            function {
+                """
+                input[0] = [
+                    [ [ sample: 'sampleA', fileType: 'CRAM' ], 'x', 'y' ],
+                    [ [ sample: 'sampleA', fileType: 'BAM' ], 'x', 'y' ],
+                ]
+                """
+            }
+        }
+        then {
+            assert !function.success
+        }
+    }
+
+    test("checkSingleAlignmentFileType: different samples using different formats is fine") {
+        function "checkSingleAlignmentFileType"
+        when {
+            function {
+                """
+                input[0] = [
+                    [ [ sample: 'sampleA', fileType: 'CRAM' ], 'x', 'y' ],
+                    [ [ sample: 'sampleB', fileType: 'BAM' ], 'x', 'y' ],
+                ]
+                """
+            }
+        }
+        then {
+            assert function.success
+        }
+    }
+
+    test("checkSingleAlignmentFileType: same sample with multiple CRAM lanes (same format) passes") {
+        function "checkSingleAlignmentFileType"
+        when {
+            function {
+                """
+                input[0] = [
+                    [ [ sample: 'sampleA', fileType: 'CRAM' ], 'x', 'y' ],
+                    [ [ sample: 'sampleA', fileType: 'CRAM' ], 'x', 'y' ],
+                    [ [ sample: 'sampleA', fileType: 'FASTQ' ], 'x', 'y' ],
+                    [ [ sample: 'sampleA', fileType: 'VCF' ], 'x', 'y' ],
+                ]
+                """
+            }
+        }
+        then {
+            assert function.success
+        }
+    }
+
+    test("checkSingleAlignmentFileType: no alignment rows at all passes") {
+        function "checkSingleAlignmentFileType"
+        when {
+            function {
+                """
+                input[0] = [
+                    [ [ sample: 'sampleA', fileType: 'FASTQ' ], 'x', 'y' ],
+                    [ [ sample: 'sampleA', fileType: 'VCF' ], 'x', 'y' ],
+                    [ [ sample: 'sampleA', fileType: 'GVCF' ], 'x', 'y' ],
+                ]
+                """
+            }
+        }
+        then {
+            assert function.success
+        }
+    }
+}

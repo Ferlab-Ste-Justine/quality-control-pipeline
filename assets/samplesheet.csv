@@ -1,5 +1,6 @@
-participant,sample,sex,familyId,lane,fastq_1,fastq_2,cram,crai,bam,bai,gvcf
-P001,S001,female,f1,L001,../data-test/test1/sample1_R1.fastq.gz,../data-test/test1/sample1_R2.fastq.gz,,,,
-P001,S001,female,f1,L002,../data-test/test1/sample1_lane2_R1.fastq.gz,../data-test/test1/sample1_lane2_R2.fastq.gz,,,,
-P002,S002,male,f2,,,,,,../data-test/test1/sample2.bam,../data-test/test1/sample2.bam.bai,
-P003,S003,female,f3,,,,,,../data-test/test1/sample3.bam,../data-test/test1/sample3.bam.bai,../data-test/test1/sample3.gvcf.gz
+participant,sample,sex,familyId,lane,fileType,file1,file2
+P001,S001,Female,f1,L001,FASTQ,data-test/test1/sample1_R1.fastq.gz,data-test/test1/sample1_R2.fastq.gz
+P001,S001,Female,f1,L002,FASTQ,data-test/test1/sample1_lane2_R1.fastq.gz,data-test/test1/sample1_lane2_R2.fastq.gz
+P002,S002,Male,f2,,BAM,data-test/test1/sample2.bam,data-test/test1/sample2.bam.bai
+P003,S003,Female,f3,,BAM,data-test/test1/sample3.bam,data-test/test1/sample3.bam.bai
+P003,S003,Female,f3,,GVCF,data-test/test1/sample3.gvcf.gz,
