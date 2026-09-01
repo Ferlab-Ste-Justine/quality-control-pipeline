@@ -1,0 +1,85 @@
+nextflow_workflow {
+
+    name "Test workflow PED_MULTIQC_JOIN"
+    script "../main.nf"
+    workflow "PED_MULTIQC_JOIN"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "ped_multiqc_join"
+
+    test("family present on both sides gets its ped attached") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of(
+                    [ [ id: 'f1' ], ['fileA.txt'] ],
+                )
+                input[1] = Channel.of(
+                    [ 'f1', file('/dev/null') ],
+                )
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.multiqc_input_with_ped.size() == 1 },
+                { assert workflow.out.multiqc_input_with_ped[0][0] == [ id: 'f1' ] },
+                { assert workflow.out.multiqc_input_with_ped[0][1] == ['fileA.txt'] },
+                { assert workflow.out.multiqc_input_with_ped[0][2] == '/dev/null' }
+            )
+        }
+    }
+
+    test("ped-only family (no matching samplesheet family) is dropped, not crashed on") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of(
+                    [ [ id: 'f1' ], ['fileA.txt'] ],
+                )
+                input[1] = Channel.of(
+                    [ 'f1', file('/dev/null') ],
+                    [ 'CEU', file('/dev/null') ],
+                )
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.multiqc_input_with_ped.size() == 1 },
+                { assert workflow.out.multiqc_input_with_ped[0][0] == [ id: 'f1' ] }
+            )
+        }
+    }
+
+    test("samplesheet family with no ped entry falls back to an empty ped list") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of(
+                    [ [ id: 'f1' ], ['fileA.txt'] ],
+                    [ [ id: 'f2' ], ['fileB.txt'] ],
+                )
+                input[1] = Channel.of(
+                    [ 'f1', file('/dev/null') ],
+                )
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.multiqc_input_with_ped.size() == 2 },
+                { assert workflow.out.multiqc_input_with_ped.find { it[0].id == 'f2' }[2] == [] }
+            )
+        }
+    }
+}
