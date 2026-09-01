@@ -1,0 +1,57 @@
+nextflow_workflow {
+
+    name "Test workflow SAMPLE_FAMILY_MAP"
+    script "../main.nf"
+    workflow "SAMPLE_FAMILY_MAP"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "sample_family_map"
+
+    test("numeric sample ID is stringified so it can join against a filename-parsed String") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of(
+                    [ [ sample: 2002, familyId: 'FAM1' ], [] ],
+                    [ [ sample: 'ABC', familyId: 'FAM2' ], [] ],
+                )
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.sample_family.size() == 2 },
+                { assert workflow.out.sample_family.contains(['2002', 'FAM1']) },
+                { assert workflow.out.sample_family.contains(['ABC', 'FAM2']) },
+                // the emitted key must be a String, not the original Integer,
+                // otherwise combine(by:0) against a filename-parsed sample name fails
+                { assert workflow.out.sample_family.find { it[1] == 'FAM1' }[0] instanceof String }
+            )
+        }
+    }
+
+    test("duplicate rows for the same sample are collapsed") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of(
+                    [ [ sample: 2002, familyId: 'FAM1' ], [] ],
+                    [ [ sample: 2002, familyId: 'FAM1' ], [] ],
+                )
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.sample_family.size() == 1 },
+                { assert workflow.out.sample_family[0] == ['2002', 'FAM1'] }
+            )
+        }
+    }
+}
