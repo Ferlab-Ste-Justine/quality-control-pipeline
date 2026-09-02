@@ -78,7 +78,7 @@ workflow PIPELINE_INITIALISATION {
         .fromList(parsedSamplesheet)
         .map { meta, file1, file2 ->
             def fileType = inferFileTypeFromExtension(file1, meta.fileType)
-            [ meta + [ participant_sample: "${meta.participant}_${meta.sample}", fileType: fileType ], [file1, file2] ]
+            [ meta + [ participant_sample: "${idToString(meta.participant)}_${meta.sample}", fileType: fileType ], [file1, file2] ]
         }
         .tap { ch_participant_sample } // save raw input channel
         .map { meta, files -> [meta.participant, meta.sequencingType, meta, files] }
@@ -198,6 +198,16 @@ def findIndex(fileType, dataFile) {
 }
 
 //
+// Stringify a possibly-numeric ID (participant may be a BigDecimal) without
+// ever producing scientific notation. BigDecimal.toString() switches to
+// scientific notation for values very close to zero (adjusted exponent
+// < -6, e.g. 0.0000001 -> "1E-7"); toPlainString() never does.
+//
+def idToString(value) {
+    return value instanceof BigDecimal ? value.toPlainString() : value.toString()
+}
+
+//
 // Guard against a silent nf-schema parsing quirk: because the schema allows
 // participant to be numeric, a value with a leading zero right before a
 // decimal point (e.g. "001.1") is misread as a number and silently
@@ -219,8 +229,8 @@ def checkParticipantNotCorrupted(input, parsedRows) {
     parsedRows.eachWithIndex { entry, i ->
         def meta = entry[0]
         def raw = rawRows[i]?.participant
-        if (raw != null && raw != meta.participant.toString()) {
-            error("participant value '${raw}' in the samplesheet was silently altered to '${meta.participant}' during validation (a leading zero immediately before a decimal point is misread as a number and normalised). Please rename this ID to include a non-numeric character, e.g. a letter prefix.")
+        if (raw != null && raw != idToString(meta.participant)) {
+            error("participant value '${raw}' in the samplesheet was silently altered to '${idToString(meta.participant)}' during validation (a leading zero immediately before a decimal point is misread as a number and normalised). Please rename this ID to include a non-numeric character, e.g. a letter prefix.")
         }
     }
 }
