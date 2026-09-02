@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#46] Fixed a pipeline crash — and, separately, silently dropped pedigree data — when a `--ped_file` family had no matching samples in the samplesheet; now fails fast with a clear error instead.
 [#46] Fixed the bundled example `assets/samplesheet.csv`, which used an outdated column format that no longer matched the current schema.
 [#46] Fixed a flaky nf-test snapshot comparison caused by FastQC embedding the current date in its HTML report.
+[#46] Fixed a false-positive validation error (and a mangled BAM/CRAM reheader sample name) for a decimal `participant` ID with a magnitude small enough that `BigDecimal.toString()` renders it in scientific notation.
 
 ## v2.0.0 - [11/06/2026]
 
