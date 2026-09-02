@@ -5,6 +5,6 @@ multiqc/*multiqc_report.html
 multiqc/**multiqc_report_data**
 pipeline_info/*.{html,json,txt,yml}
 reports/QC/**/*.{CollectWgsMetrics.coverage_metrics,CollectHsMetrics.coverage_metrics,QualityYieldMetrics.metrics}
-reports/QC/**/*_fastqc.zip
+reports/QC/**/*_fastqc.{zip,html}
 reports/pedigree/*.{html,tsv}
 reports/**/*.{pdf,csi}

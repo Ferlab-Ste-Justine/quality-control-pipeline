@@ -8,19 +8,19 @@
         "type": "object",
         "properties": {
             "participant": {
-                "type": "string",
+                "type": ["string", "integer", "number"],
                 "pattern": "^\\S+$",
                 "errorMessage": "participant ID must be provided and cannot contain spaces",
                 "meta": ["participant"]
             },
             "sample": {
-                "type": "string",
+                "type": ["string", "integer"],
                 "pattern": "^\\S+$",
                 "errorMessage": "Sample ID must be provided and cannot contain spaces",
                 "meta": ["id","sample"]
             },
             "familyId": {
-                "type": "string",
+                "type": ["string", "integer"],
                 "pattern": "^\\S+$",
                 "errorMessage": "familyId must be provided and cannot contain spaces",
                 "meta": ["familyId"]

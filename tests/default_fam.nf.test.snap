@@ -245,8 +245,6 @@
                 "NA19239.stats:md5,9ebda71e5d1c72d2e2ba87fc5f0d1de9",
                 "NA19239.thresholds.bed.gz:md5,efc40571c5534aa3eb8a8c135e164aba",
                 "NA19239.vaf:md5,a9320c9622b314cd41f72accfd528a0e",
-                "NA19239_1_fastqc.html:md5,b153e0c7237796d0a09bb7d0707f13ca",
-                "NA19239_2_fastqc.html:md5,a1368727cfbd562c6baca4bb36892d3d",
                 "NA19240.Ancestry:md5,4eec49707496c52326c437a34632a7cf",
                 "NA19240.log:md5,0ef2839610692545c18f1662ceec8a37",
                 "NA19240.mosdepth.global.dist.txt:md5,7af398e9638943b066458390b5d39d79",
@@ -264,8 +262,6 @@
                 "NA19240.stats:md5,499efef3e7cbdf37e3595e150eee51fd",
                 "NA19240.thresholds.bed.gz:md5,5946eb06b20fd496dbd13300029f4b84",
                 "NA19240.vaf:md5,436bd461639990ffbc169c79055c3360",
-                "NA19240_1_fastqc.html:md5,c3722da30b9ae9dd04c9982ae491f543",
-                "NA19240_2_fastqc.html:md5,6a4dce7c8c9f585e2b3debe059e956dc",
                 "NA21118.Ancestry:md5,a02e46648769fbc103856d4a50c11c3b",
                 "NA21118.log:md5,54ef63a9482ee12ba02269595be1b802",
                 "NA21118.mosdepth.global.dist.txt:md5,8f165a99c50558e6d7a4e0309865ccd4",
@@ -294,10 +290,10 @@
                 "YRI.somalier.samples.tsv:md5,757c0ce579eca991680a872e78b221e9"
             ]
         ],
+        "timestamp": "2026-08-31T20:40:05.262992168",
         "meta": {
-            "nf-test": "0.9.3",
+            "nf-test": "0.9.5",
             "nextflow": "24.10.5"
-        },
-        "timestamp": "2026-06-11T15:45:13.362184"
+        }
     }
 }

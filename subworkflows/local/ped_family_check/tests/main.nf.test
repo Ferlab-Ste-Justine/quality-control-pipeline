@@ -1,0 +1,55 @@
+nextflow_workflow {
+
+    name "Test workflow PED_FAMILY_CHECK"
+    script "../main.nf"
+    workflow "PED_FAMILY_CHECK"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "ped_family_check"
+
+    test("ped families all present in the samplesheet: no error") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of(
+                    [ [ id: 'f1' ], file('/dev/null') ],
+                    [ [ id: 'f2' ], file('/dev/null') ],
+                )
+                input[1] = Channel.of(
+                    [ [ familyId: 'f1' ], [] ],
+                    [ [ familyId: 'f2' ], [] ],
+                )
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+        }
+    }
+
+    test("ped family absent from the samplesheet: fails fast with a clear message") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of(
+                    [ [ id: 'f1' ], file('/dev/null') ],
+                    [ [ id: 'CEU' ], file('/dev/null') ],
+                )
+                input[1] = Channel.of(
+                    [ [ familyId: 'f1' ], [] ],
+                )
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert !workflow.success },
+                { assert workflow.stdout.join('\n').contains('Family ID(s) [CEU] found in the pedigree but absent from the samplesheet') }
+            )
+        }
+    }
+}

@@ -15,6 +15,9 @@ include { BAM_QC as BAM_QC_TARGET  } from '../subworkflows/local/bam_qc/main'
 include { VCF_QC as VCF_QC_WGS   } from '../subworkflows/local/vcf_qc/main'
 include { VCF_QC as VCF_QC_TARGET  } from '../subworkflows/local/vcf_qc/main'
 include { BAM_MERGE              } from '../subworkflows/local/bam_merge'
+include { SAMPLE_FAMILY_MAP      } from '../subworkflows/local/sample_family_map'
+include { PED_FAMILY_CHECK       } from '../subworkflows/local/ped_family_check'
+include { PED_MULTIQC_JOIN       } from '../subworkflows/local/ped_multiqc_join'
 include { CRAM_SOMALIER          } from '../subworkflows/local/cram_somalier'
 include { GATK4_BEDTOINTERVALLIST } from '../modules/nf-core/gatk4/bedtointervallist/main'
 include { DRAGEN_COVERAGE_BY_GENE } from '../modules/local/dragen_coverage_by_gene/main'
@@ -291,6 +294,9 @@ workflow QUALITYCONTROL {
         ch_families_with_cram = ch_cram_crai_somalier
             .map { meta, _cram, _crai, _count -> meta.familyId }
             .unique()
+
+        PED_FAMILY_CHECK(ch_somalier_input_ped, ch_samplesheet)
+
         ch_somalier_input_ped_for_relate = ch_somalier_input_ped
             .map { meta, ped -> [ meta.id, meta, ped ] }
             .join(ch_families_with_cram.map { fid -> [ fid, true ] })
@@ -330,9 +336,8 @@ workflow QUALITYCONTROL {
     if (params.dragen_metrics_dir) {
         // Build a sample -> familyId map from the samplesheet so DRAGEN files
         // pick up the right familyId for per-family report routing.
-        ch_sample_family = ch_samplesheet
-            .map { meta, _files -> [ meta.sample, meta.familyId ] }
-            .unique()
+        SAMPLE_FAMILY_MAP(ch_samplesheet)
+        ch_sample_family = SAMPLE_FAMILY_MAP.out.sample_family
 
         ch_dragen_files = channel.fromPath([
                 "${params.dragen_metrics_dir}/*.csv",
@@ -472,10 +477,8 @@ workflow QUALITYCONTROL {
         def id = params.cohort_mode ? 'Cohort' : ped_meta.id
         [ id, ped ]
     }
-    ch_multiqc_input_with_ped = ch_multiqc_input
-        .map { meta, files -> [ meta.id, meta, files ] }
-        .join(ch_ped_by_id, remainder: true)
-        .map { _id, meta, files, ped -> [ meta, files, ped ?: [] ] }
+    PED_MULTIQC_JOIN(ch_multiqc_input, ch_ped_by_id)
+    ch_multiqc_input_with_ped = PED_MULTIQC_JOIN.out.multiqc_input_with_ped
 
     // Use the user-supplied thresholds when params.qc_thresholds is set; otherwise
     // fall back to the bundled defaults in assets/qc_thresholds.yml.

@@ -70,11 +70,15 @@ workflow PIPELINE_INITIALISATION {
     // Create channel from input file provided through params.input
     //
 
+    def parsedSamplesheet = samplesheetToList(input, "${projectDir}/assets/schema_input.json")
+    checkParticipantNotCorrupted(input, parsedSamplesheet)
+    checkSingleAlignmentFileType(parsedSamplesheet)
+
     ch_samplesheet = channel
-        .fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
+        .fromList(parsedSamplesheet)
         .map { meta, file1, file2 ->
             def fileType = inferFileTypeFromExtension(file1, meta.fileType)
-            [ meta + [ participant_sample: "${meta.participant}_${meta.sample}", fileType: fileType ], [file1, file2] ]
+            [ meta + [ participant_sample: "${idToString(meta.participant)}_${meta.sample}", fileType: fileType ], [file1, file2] ]
         }
         .tap { ch_participant_sample } // save raw input channel
         .map { meta, files -> [meta.participant, meta.sequencingType, meta, files] }
@@ -191,6 +195,67 @@ def findIndex(fileType, dataFile) {
         return []
     }
     return file(index)
+}
+
+//
+// Stringify a possibly-numeric ID (participant may be a BigDecimal) without
+// ever producing scientific notation. BigDecimal.toString() switches to
+// scientific notation for values very close to zero (adjusted exponent
+// < -6, e.g. 0.0000001 -> "1E-7"); toPlainString() never does.
+//
+def idToString(value) {
+    return value instanceof BigDecimal ? value.toPlainString() : value.toString()
+}
+
+//
+// Guard against a silent nf-schema parsing quirk: because the schema allows
+// participant to be numeric, a value with a leading zero right before a
+// decimal point (e.g. "001.1") is misread as a number and silently
+// normalised to "1.1", losing the leading zero, with no validation error.
+// splitCsv() (unlike samplesheetToList()) preserves raw cell text untouched,
+// so re-parsing the raw file independently and comparing row-for-row catches
+// the corruption that the schema itself can no longer see by validation time
+// — the original text is already gone once nf-schema has parsed it.
+// Only applies to CSV/TSV samplesheets.
+//
+def checkParticipantNotCorrupted(input, parsedRows) {
+    def inputFile = file(input)
+    def ext = inputFile.name.tokenize('.').last().toLowerCase()
+    if (!(ext in ['csv', 'tsv'])) {
+        return
+    }
+    def rawRows = inputFile.splitCsv(header: true, sep: ext == 'tsv' ? '\t' : ',')
+
+    parsedRows.eachWithIndex { entry, i ->
+        def meta = entry[0]
+        def raw = rawRows[i]?.participant
+        if (raw != null && raw != idToString(meta.participant)) {
+            error("participant value '${raw}' in the samplesheet was silently altered to '${idToString(meta.participant)}' during validation (a leading zero immediately before a decimal point is misread as a number and normalised). Please rename this ID to include a non-numeric character, e.g. a letter prefix.")
+        }
+    }
+}
+
+//
+// Mixing BAM and CRAM alignment inputs for the same sample is not supported
+// (different samples may still use different formats). BAM_MERGE groups
+// alignment rows as "lanes" by a key that includes sample but not fileType,
+// so a sample provided as both BAM and CRAM is treated as two independent
+// alignment inputs and runs the full alignment QC pipeline twice, producing
+// identically-named output files (meta.id doesn't distinguish BAM from CRAM)
+// that silently collide much later, at MULTIQC_PYTHON. Fail fast instead,
+// with a clear message.
+//
+def checkSingleAlignmentFileType(parsedRows) {
+    def conflictingSamples = parsedRows
+        .findAll { entry -> entry[0].fileType in ['BAM', 'CRAM'] }
+        .groupBy { entry -> entry[0].sample }
+        .collectEntries { sample, entries -> [ sample, entries.collect { it[0].fileType }.unique() ] }
+        .findAll { _sample, fileTypes -> fileTypes.size() > 1 }
+
+    if (conflictingSamples) {
+        def details = conflictingSamples.collect { sample, fileTypes -> "${sample} (${fileTypes.join(', ')})" }.join('; ')
+        error("The following sample(s) provide both BAM and CRAM alignment inputs, which is not supported: ${details}. Please use a single alignment file format per sample.")
+    }
 }
 
 //
