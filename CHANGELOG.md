@@ -7,16 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
-[#46] Reject a sample that provides both `BAM` and `CRAM` alignment inputs in the same run, with a clear error instead of a downstream MultiQC file-collision crash.
- 
+[#46](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/46) Reject a sample that provides both `BAM` and `CRAM` alignment inputs in the same run, with a clear error instead of a downstream MultiQC file-collision crash.
+
 ### `Fixed`
 
-[#46] Accept integer sample IDs, and (for `participant`) decimal-number IDs, in the input samplesheet schema, without silently corrupting IDs with a leading zero before a decimal point.
-[#46] Fixed a DRAGEN-mode crash when a sample's numeric ID didn't type-match the sample name parsed from DRAGEN metric filenames.
-[#46] Fixed a pipeline crash — and, separately, silently dropped pedigree data — when a `--ped_file` family had no matching samples in the samplesheet; now fails fast with a clear error instead.
-[#46] Fixed the bundled example `assets/samplesheet.csv`, which used an outdated column format that no longer matched the current schema.
-[#46] Fixed a flaky nf-test snapshot comparison caused by FastQC embedding the current date in its HTML report.
-[#46] Fixed a false-positive validation error (and a mangled BAM/CRAM reheader sample name) for a decimal `participant` ID with a magnitude small enough that `BigDecimal.toString()` renders it in scientific notation.
+[#46](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/46) Accept integer sample IDs, and (for `participant`) decimal-number IDs, in the input samplesheet schema, without silently corrupting IDs with a leading zero before a decimal point.
+[#46](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/46) Fixed a DRAGEN-mode crash when a sample's numeric ID didn't type-match the sample name parsed from DRAGEN metric filenames.
+[#46](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/46) Fixed a pipeline crash — and, separately, silently dropped pedigree data — when a `--ped_file` family had no matching samples in the samplesheet; now fails fast with a clear error instead.
+[#46](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/46) Fixed the bundled example `assets/samplesheet.csv`, which used an outdated column format that no longer matched the current schema.
+[#46](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/46) Fixed a flaky nf-test snapshot comparison caused by FastQC embedding the current date in its HTML report.
+[#46](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/46) Fixed a false-positive validation error (and a mangled BAM/CRAM reheader sample name) for a decimal `participant` ID with a magnitude small enough that `BigDecimal.toString()` renders it in scientific notation.
+
+### `Changed`
+
+[#47](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/47) Updated documentation related to dragen-metrics mode and usage
 
 ## v2.0.0 - [11/06/2026]
 

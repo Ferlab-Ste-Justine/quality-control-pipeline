@@ -118,11 +118,11 @@ ngscheckmate_snp_pt: /path/to/SNP_GRCh38_hg38_wChr.bed
 
 ### Sample identity & relatedness (Somalier)
 
-| Parameter          | Description                                                                                                                                                                                                                                                     |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--somalier_sites` | VCF of known variant sites used by Somalier for fingerprinting.                                                                                                                                                                                                 |
-| `--ped_file`       | Pedigree file (PED format) describing family relationships. Optional — when omitted, a pedigree is generated automatically from the samplesheet (`familyId`, `sex`, `relationship_to_proband`, `affected_status`).                                               |
-| `--cohort_mode`    | Boolean. When `true` the pipeline runs as a single cohort: one Somalier relate across all samples, one MultiQC report. When `false` (default), samples are grouped by `familyId` — Somalier runs once per family and one MultiQC report is produced per family. |
+| Parameter          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--somalier_sites` | VCF of known variant sites used by Somalier for fingerprinting. Refer to the [brentp/somalier github release page](https://github.com/brentp/somalier/releases#release-v0.2.19). The release corresponding to the container version (v0.2.19) is provided, however a more recent version may also be used. Choose the reference that maps your sample's genome build and ensure samples within the same `SOMALIER_RELATE` run uses the somalier reference |
+| `--ped_file`       | Pedigree file (PED format) describing family relationships. Optional — when omitted, a pedigree is generated automatically from the samplesheet (`familyId`, `sex`, `relationship_to_proband`, `affected_status`).                                                                                                                                                                                                                                        |
+| `--cohort_mode`    | Boolean. When `true` the pipeline runs as a single cohort: one Somalier relate across all samples, one MultiQC report. When `false` (default), samples are grouped by `familyId` — Somalier runs once per family and one MultiQC report is produced per family.                                                                                                                                                                                           |
 
 ### Contamination (VerifyBamID2)
 
@@ -158,19 +158,19 @@ Up to two custom BED region sets can be provided for per-region coverage analysi
 
 When samples have already been processed by DRAGEN, the pipeline can build the report from DRAGEN's per-sample metric CSVs instead of recomputing them with BAM_QC / VCF_QC.
 
-| Parameter              | Description                                                                                                                                                                       |
+| Parameter              | Description
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--dragen_metrics_dir` | Directory containing DRAGEN per-sample metric CSVs. When set, BAM_QC and VCF_QC are skipped. Somalier still runs against any BAM/CRAM in the samplesheet for pedigree validation. |
 
-The directory is globbed at any depth for these filenames (both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` are recognised):
+The directory is globbed at any depth for these filenames (both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` are recognised, therefore ensure the file prefix corresponds to the sample ID):
 
-| Filename suffix                              | Used for                                                                                                                                                                                                                                                           |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `*.mapping_metrics.csv`                      | Alignment metrics + Q30 yield + estimated contamination                                                                                                                                                                                                            |
-| `*.wgs_coverage_metrics.csv`                 | Mean autosome coverage, uniformity (MAD proxy), %15x                                                                                                                                                                                                               |
-| `*.vc_metrics.csv`                           | SNV / insertion / deletion counts, Ti/Tv, het:hom ratios                                                                                                                                                                                                           |
-| `*.ploidy_estimation_metrics.csv`            | XX / XY ploidy → predicted-sex fallback for `sex_check` when somalier didn't run for that sample                                                                                                                                                                   |
-| `*_cov_report.bed` + `*_read_cov_report.bed` | Paired per region (`qc-coverage-region-[1,2,3]`); the `DRAGEN_COVERAGE_BY_GENE` module aggregates them into a `*.coverage_by_gene.tsv`. The per-gene report tab uses region 1 by default and falls back to region 2 when region 1 has no gene-annotated intervals. |
+| Filename suffix                              | Skips                               | Used for                                                                                                                                                                                                                                                           |
+| -------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `*.mapping_metrics.csv`                      | FASTQ_QC, BAM_MERGE, BAM_QC, VCF_QC | `MULTIQC_PYTHON`: Alignment metrics + Q30 yield + estimated contamination                                                                                                                                                                                                            |
+| `*.wgs_coverage_metrics.csv`                 | FASTQ_QC, BAM_MERGE, BAM_QC, VCF_QC | `MULTIQC_PYTHON`: Mean autosome coverage, uniformity (MAD proxy), %15x                                                                                                                                                                                                               |
+| `*.vc_metrics.csv`                           | FASTQ_QC, BAM_MERGE, BAM_QC, VCF_QC | `MULTIQC_PYTHON`: SNV / insertion / deletion counts, Ti/Tv, het:hom ratios                                                                                                                                                                                                           |
+| `*.ploidy_estimation_metrics.csv`            |                                     | `CRAM_SOMALIER` (optional): XX / XY ploidy → predicted-sex fallback for `sex_check` when somalier didn't run for that sample                                                                                                                                                                   |
+| `*_cov_report.bed` + `*_read_cov_report.bed` |                                     | `DRAGEN_COVERAGE_BY_GENE` (optional): Paired per region (`qc-coverage-region-[1,2,3]`); the `DRAGEN_COVERAGE_BY_GENE` module aggregates them into a `*.coverage_by_gene.tsv`. The per-gene report tab uses region 1 by default and falls back to region 2 when region 1 has no gene-annotated intervals. |
 
 `--dragen_metrics_dir` accepts local paths and remote URIs (`s3://`, `gs://`, `az://`) provided the appropriate Nextflow plugin/credentials are configured. Files whose sample prefix doesn't match a row in the samplesheet are silently ignored.
 
@@ -186,6 +186,76 @@ nextflow run Ferlab-Ste-Justine/quality-control-pipeline \
    --somalier_sites /path/to/sites.hg38.vcf.gz \
    --dragen_metrics_dir s3://my-bucket/dragen-outputs/
 ```
+
+The following organization for the DRAGEN directory `s3://my-bucket/dragen-outputs/` are valid:
+
+<details> <summary>DRAGEN directory organized by samples</summary>
+
+```bash
+my-bucket/dragen-outputs/
+├── S001/
+│   ├── S001(\.final)?.mapping_metrics.csv
+│   ├── S001(\.final)?.wgs_coverage_metrics.csv
+│   ├── S001(\.final)?.vc_metrics.csv
+│   ├── S001(\.final)?.ploidy_estimation_metrics.csv
+│   ├── S001_cov_report.bed
+│   └── S001_read_cov_report.bed
+├── S002/
+│   ├── S002(\.final)?.mapping_metrics.csv
+│   ├── S002(\.final)?.wgs_coverage_metrics.csv
+│   ├── S002(\.final)?.vc_metrics.csv
+│   ├── S002(\.final)?.ploidy_estimation_metrics.csv
+│   ├── S002_cov_report.bed
+│   └── S002_read_cov_report.bed
+└── S003/
+    ├── S003(\.final)?.mapping_metrics.csv
+    ├── S003(\.final)?.wgs_coverage_metrics.csv
+    ├── S003(\.final)?.vc_metrics.csv
+    ├── S003(\.final)?.ploidy_estimation_metrics.csv
+    ├── S003_cov_report.bed
+    └── S003_read_cov_report.bed
+```
+
+</details>
+
+<details> <summary>DRAGEN directory organized by runs</summary>
+
+```bash
+my-bucket/dragen_outputs/
+├── Run001/
+│   ├── S001/
+│   │   ├── S001(\.final)?.mapping_metrics.csv
+│   │   ├── S001(\.final)?.wgs_coverage_metrics.csv
+│   │   ├── S001(\.final)?.vc_metrics.csv
+│   │   ├── S001(\.final)?.ploidy_estimation_metrics.csv
+│   │   ├── S001_cov_report.bed
+│   │   └── S001_read_cov_report.bed
+│   └── S002/
+│       ├── S002(\.final)?.mapping_metrics.csv
+│       ├── S002(\.final)?.wgs_coverage_metrics.csv
+│       ├── S002(\.final)?.vc_metrics.csv
+│       ├── S002(\.final)?.ploidy_estimation_metrics.csv
+│       ├── S002_cov_report.bed
+│       └── S002_read_cov_report.bed
+└── Run002/
+    ├── S003/
+    │   ├── S003(\.final)?.mapping_metrics.csv
+    │   ├── S003(\.final)?.wgs_coverage_metrics.csv
+    │   ├── S003(\.final)?.vc_metrics.csv
+    │   ├── S003(\.final)?.ploidy_estimation_metrics.csv
+    │   ├── S003_cov_report.bed
+    │   └── S003_read_cov_report.bed
+    └── S004/
+        ├── S004(\.final)?.mapping_metrics.csv
+        ├── S004(\.final)?.wgs_coverage_metrics.csv
+        ├── S004(\.final)?.vc_metrics.csv
+        ├── S004(\.final)?.ploidy_estimation_metrics.csv
+        ├── S004_cov_report.bed
+        └── S004_read_cov_report.bed
+```
+
+</details>
+
 
 ### Pipeline behaviour
 

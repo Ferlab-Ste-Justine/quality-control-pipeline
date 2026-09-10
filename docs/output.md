@@ -231,8 +231,11 @@ Somalier still runs against any BAM/CRAM provided in the samplesheet for pedigre
 <summary>Output files</summary>
 
 - `multiqc/`
-  - `multiqc_report.html`: Standalone HTML report summarising QC results from all tools and samples.
-  - `multiqc_data/`: Directory of parsed, tab-delimited statistics from each tool.
+  - `Cohort_multiqc_report.html`: Standalone HTML report summarising QC results from all tools and samples. Includes BAM QC and VCF QC outputs extracted from DRAGEN metrics if `--dragen_metrics_dir` was provided.
+  - `Cohort_multiqc_report_data.zip`: Archive of parsed, tab-delimited statistics from each tool.
+  - `<familyId>/<familyId>_mutliqc_report.html`: Optionally organize multiqc reports by family if `cohort_mode = false`.
+  - `<familyId>/<familyId>_multiqc_report_data.zip`: Optionally organize report data by family if `cohort_mode = false`.
+  - `qc_json/<sample>.metrics.json`: Directory of statistics for each tool organized in one JSON file per sample.
 
 </details>
 
