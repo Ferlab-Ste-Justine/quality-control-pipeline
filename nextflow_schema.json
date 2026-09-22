@@ -33,6 +33,10 @@
                     "type": "string",
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature"
+                },
+                "publish_all": {
+                    "type": "boolean",
+                    "description": "Publish all intermediate files to the output directory in addition to the QC reports."
                 }
             }
         },
@@ -58,6 +62,24 @@
                     "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
                     "fa_icon": "far fa-file-code"
                 },
+                "fai": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to the reference FASTA index (`.fai`).",
+                    "fa_icon": "far fa-file-code"
+                },
+                "fasta_dict": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to the reference sequence dictionary (`.dict`). Required by Picard metric collection.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "regions_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to bed file with regions to limit QC. Defaults to autosomes non gap regions.",
+                    "fa_icon": "far fa-file-code"
+                },
                 "igenomes_ignore": {
                     "type": "boolean",
                     "description": "Do not load the iGenomes reference config.",
@@ -72,6 +94,161 @@
                     "fa_icon": "fas fa-ban",
                     "hidden": true,
                     "default": "s3://ngi-igenomes/igenomes/"
+                }
+            }
+        },
+        "somalier_options": {
+            "title": "Sample identity & relatedness (Somalier)",
+            "type": "object",
+            "fa_icon": "fas fa-people-arrows",
+            "description": "Options controlling pedigree-based sample identity and relatedness checking.",
+            "properties": {
+                "somalier_sites": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "VCF of known polymorphic sites used by Somalier for genotype fingerprinting.",
+                    "fa_icon": "fas fa-map-marker-alt"
+                },
+                "ped_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Pedigree file (PED format) describing family relationships. When omitted, a pedigree is derived from the samplesheet (familyId, sex, relationship_to_proband, affected_status).",
+                    "help_text": "Used by Somalier to validate sample identity and relatedness against expected family structure.",
+                    "fa_icon": "fas fa-sitemap"
+                },
+                "cohort_mode": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Treat all samples as one cohort. When false, group samples by familyId: somalier runs per-family and one MultiQC report is generated per family.",
+                    "help_text": "In cohort mode (default) the pipeline produces a single MultiQC report covering all samples and somalier runs once across the whole cohort. Disable for per-family runs (one MultiQC report per family, somalier runs once per family).",
+                    "fa_icon": "fas fa-users"
+                }
+            }
+        },
+        "verifybamid_options": {
+            "title": "Contamination (VerifyBamID2)",
+            "type": "object",
+            "fa_icon": "fas fa-vial",
+            "description": "Options for DNA contamination estimation from aligned reads.",
+            "properties": {
+                "verifybamid_svd_prefix": {
+                    "type": "string",
+                    "description": "File path prefix for the VerifyBamID2 SVD reference set. The pipeline appends `.UD`, `.mu` and `.bed` to locate the three reference files used for contamination estimation.",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
+        "ngscheckmate_options": {
+            "title": "Sample identity (ngsCheckMate)",
+            "type": "object",
+            "fa_icon": "fas fa-fingerprint",
+            "description": "Options for FASTQ-level sample identity and cross-contamination checking.",
+            "properties": {
+                "ngscheckmate_snp_pt": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "SNP panel (BED/PT) file used by ngsCheckMate for FASTQ-level sample identity checking.",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
+        "coverage_qc_region_options": {
+            "title": "Coverage QC regions",
+            "type": "object",
+            "fa_icon": "fas fa-ruler-combined",
+            "description": "Up to two custom BED region sets for per-region / per-gene coverage analysis.",
+            "properties": {
+                "qc_coverage_region_1": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "BED file defining the first QC coverage region set for per-region / per-gene coverage analysis.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "region_1_name": {
+                    "type": "string",
+                    "description": "Label for the first QC coverage region set, used in output file names. Defaults to `qc_regions_1`.",
+                    "fa_icon": "fas fa-tag"
+                },
+                "qc_coverage_region_2": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "BED file defining the second QC coverage region set for per-region / per-gene coverage analysis.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "region_2_name": {
+                    "type": "string",
+                    "description": "Label for the second QC coverage region set, used in output file names. Defaults to `qc_regions_2`.",
+                    "fa_icon": "fas fa-tag"
+                }
+            }
+        },
+        "vcf_and_targeted_region_options": {
+            "title": "VCF QC & targeted-sequencing regions",
+            "type": "object",
+            "fa_icon": "fas fa-bullseye",
+            "description": "BED region files used to restrict variant-level QC and, for targeted/WXS samples, alignment Hybrid Selection metrics.",
+            "properties": {
+                "targets_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to bed file of targeted sequencing targets regions. Used to compute Hybrid Selection metrics and variant stats. Applies to all targeted sequence (!=WGS) data.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "baits_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to bed file of targeted sequencing bait regions. Used to compute Hybrid Selection metrics. Applies to all targeted sequence (!=WGS) data.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "exons_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Optional path to bed file containing exon regions. Used to compute tstv stats.",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
+        "dragen_options": {
+            "title": "DRAGEN metrics input",
+            "type": "object",
+            "fa_icon": "fas fa-microchip",
+            "description": "Options for ingesting pre-computed DRAGEN per-sample metrics in place of recomputing them.",
+            "properties": {
+                "dragen_metrics_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Path to a directory of DRAGEN per-sample metric files. When set, BAM_QC and VCF_QC are skipped and the report is populated from DRAGEN's pre-computed CSVs.",
+                    "help_text": "Files are globbed at any depth under the directory; both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` are recognised for mapping_metrics, wgs_coverage_metrics, vc_metrics and ploidy_estimation_metrics. Local paths and remote URIs (s3://, gs://, az://) are supported. Somalier still runs on any BAM/CRAM provided in the samplesheet for pedigree validation.",
+                    "fa_icon": "fas fa-folder-open"
+                }
+            }
+        },
+        "pipeline_behaviour_options": {
+            "title": "Pipeline behaviour",
+            "type": "object",
+            "fa_icon": "fas fa-sliders-h",
+            "description": "Options controlling how the pipeline processes samples and reports results.",
+            "properties": {
+                "skip_merge": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Skip merging of multi-run BAM/CRAM files even when a sample spans multiple lanes/runs.",
+                    "help_text": "When false, BAM/CRAM rows that share participant, sample and experimentalStrategy are merged with samtools merge before alignment QC.",
+                    "fa_icon": "fas fa-object-group"
+                },
+                "skip_reheader": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Skip reheadering of BAM/CRAM files when read group sample name does not match the sample name in the samplesheet/ped file.",
+                    "help_text": "By default, if the read group sample name in a BAM/CRAM file does not match the sample name in the samplesheet/ped file, the pipeline will reheader the BAM/CRAM file to match. Use this option to skip this step and use the BAM/CRAM file as-is.",
+                    "fa_icon": "fas fa-heading"
+                },
+                "qc_thresholds": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "YAML file overriding QC pass/fail thresholds used by the MultiQC report. Defaults to assets/qc_thresholds.yml.",
+                    "help_text": "Supply a YAML with any subset of: pct_reads_mapped, pct_reads_properly_paired, mean_autosome_coverage, cross_contamination_rate, pedigree_unrelated_pass_max, pedigree_unrelated_warn_max, pedigree_related_pass_min, pedigree_related_pass_max. Missing keys fall back to the bundled defaults in assets/qc_thresholds.yml.",
+                    "fa_icon": "fas fa-check-double"
                 }
             }
         },
@@ -160,111 +337,28 @@
             "$ref": "#/$defs/reference_genome_options"
         },
         {
+            "$ref": "#/$defs/somalier_options"
+        },
+        {
+            "$ref": "#/$defs/verifybamid_options"
+        },
+        {
+            "$ref": "#/$defs/ngscheckmate_options"
+        },
+        {
+            "$ref": "#/$defs/coverage_qc_region_options"
+        },
+        {
+            "$ref": "#/$defs/vcf_and_targeted_region_options"
+        },
+        {
+            "$ref": "#/$defs/dragen_options"
+        },
+        {
+            "$ref": "#/$defs/pipeline_behaviour_options"
+        },
+        {
             "$ref": "#/$defs/generic_options"
         }
-    ],
-    "properties": {
-        "ped_file": {
-            "type": "string",
-            "format": "file-path",
-            "description": "Pedigree file (PED format) describing family relationships. When omitted, a pedigree is derived from the samplesheet (familyId, sex, relationship_to_proband, affected_status).",
-            "help_text": "Used by Somalier to validate sample identity and relatedness against expected family structure."
-        },
-        "publish_all": {
-            "type": "boolean",
-            "description": "Publish all intermediate files to the output directory in addition to the QC reports."
-        },
-        "fai": {
-            "type": "string",
-            "format": "file-path",
-            "description": "Path to the reference FASTA index (`.fai`)."
-        },
-        "fasta_dict": {
-            "type": "string",
-            "format": "file-path",
-            "description": "Path to the reference sequence dictionary (`.dict`). Required by Picard metric collection."
-        },
-        "somalier_sites": {
-            "type": "string",
-            "format": "file-path",
-            "description": "VCF of known polymorphic sites used by Somalier for genotype fingerprinting."
-        },
-        "cohort_mode": {
-            "type": "boolean",
-            "default": false,
-            "description": "Treat all samples as one cohort. When false, group samples by familyId: somalier runs per-family and one MultiQC report is generated per family.",
-            "help_text": "In cohort mode (default) the pipeline produces a single MultiQC report covering all samples and somalier runs once across the whole cohort. Disable for per-family runs (one MultiQC report per family, somalier runs once per family)."
-        },
-        "qc_thresholds": {
-            "type": "string",
-            "format": "file-path",
-            "description": "YAML file overriding QC pass/fail thresholds used by the MultiQC report. Defaults to assets/qc_thresholds.yml.",
-            "help_text": "Supply a YAML with any subset of: pct_reads_mapped, pct_reads_properly_paired, mean_autosome_coverage, cross_contamination_rate, pedigree_unrelated_pass_max, pedigree_unrelated_warn_max, pedigree_related_pass_min, pedigree_related_pass_max. Missing keys fall back to the bundled defaults in assets/qc_thresholds.yml."
-        },
-        "dragen_metrics_dir": {
-            "type": "string",
-            "format": "directory-path",
-            "description": "Path to a directory of DRAGEN per-sample metric files. When set, BAM_QC and VCF_QC are skipped and the report is populated from DRAGEN's pre-computed CSVs.",
-            "help_text": "Files are globbed at any depth under the directory; both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` are recognised for mapping_metrics, wgs_coverage_metrics, vc_metrics and ploidy_estimation_metrics. Local paths and remote URIs (s3://, gs://, az://) are supported. Somalier still runs on any BAM/CRAM provided in the samplesheet for pedigree validation."
-        },
-        "regions_bed": {
-            "type": "string",
-            "format": "file-path",
-            "description": "Path to bed file with regions to limit QC. Defaults to autosomes non gap regions."
-        },
-        "exons_bed":{
-            "type": "string",
-            "format": "file-path",
-            "description": "Optional path to bed file containing exon regions. Used to compute tstv stats."
-        },
-        "targets_bed":{
-            "type": "string",
-            "format": "file-path",
-            "description": "Path to bed file of targeted sequencing targets regions. Used to compute Hybrid Selection metrics and variant stats. Applies to all targeted sequence (!=WGS) data."
-        },
-        "baits_bed":{
-            "type": "string",
-            "format": "file-path",
-            "description": "Path to bed file of targeted sequencing bait regions. Used to compute Hybrid Selection metrics. Applies to all targeted sequence (!=WGS) data."
-        },
-        "verifybamid_svd_prefix": {
-            "type": "string",
-            "description": "File path prefix for the VerifyBamID2 SVD reference set. The pipeline appends `.UD`, `.mu` and `.bed` to locate the three reference files used for contamination estimation."
-        },
-        "skip_reheader": {
-            "type": "boolean",
-            "default": true,
-            "description": "Skip reheadering of BAM/CRAM files when read group sample name does not match the sample name in the samplesheet/ped file.",
-            "help_text": "By default, if the read group sample name in a BAM/CRAM file does not match the sample name in the samplesheet/ped file, the pipeline will reheader the BAM/CRAM file to match. Use this option to skip this step and use the BAM/CRAM file as-is."
-        },
-        "ngscheckmate_snp_pt": {
-            "type": "string",
-            "format": "file-path",
-            "description": "SNP panel (BED/PT) file used by ngsCheckMate for FASTQ-level sample identity checking."
-        },
-        "skip_merge": {
-            "type": "boolean",
-            "default": true,
-            "description": "Skip merging of multi-run BAM/CRAM files even when a sample spans multiple lanes/runs.",
-            "help_text": "When false, BAM/CRAM rows that share participant, sample and experimentalStrategy are merged with samtools merge before alignment QC."
-        },
-        "qc_coverage_region_1": {
-            "type": "string",
-            "format": "file-path",
-            "description": "BED file defining the first QC coverage region set for per-region / per-gene coverage analysis."
-        },
-        "region_1_name": {
-            "type": "string",
-            "description": "Label for the first QC coverage region set, used in output file names. Defaults to `qc_regions_1`."
-        },
-        "qc_coverage_region_2": {
-            "type": "string",
-            "format": "file-path",
-            "description": "BED file defining the second QC coverage region set for per-region / per-gene coverage analysis."
-        },
-        "region_2_name": {
-            "type": "string",
-            "description": "Label for the second QC coverage region set, used in output file names. Defaults to `qc_regions_2`."
-        }
-    }
+    ]
 }

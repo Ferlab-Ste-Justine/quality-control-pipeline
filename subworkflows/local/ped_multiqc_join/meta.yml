@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "ped_multiqc_join"
+description: Attaches the per-family (or cohort-wide) ped file to the matching per-family MultiQC input, tolerating families present on only one side (e.g. a ped family with no samplesheet samples is dropped rather than crashing the join).
+keywords:
+  - multiqc
+  - pedigree
+  - join
+components: []
+input:
+  - ch_multiqc_input:
+      type: file
+      description: |
+        Per-family (or cohort-wide) collected MultiQC input files, keyed by familyId (or 'Cohort')
+        Structure: [ val(meta), path(files) ]
+  - ch_ped_by_id:
+      type: file
+      description: |
+        Ped file(s) keyed by the same id used by ch_multiqc_input
+        Structure: [ val(id), path(ped) ]
+      pattern: "*.ped"
+output:
+  - multiqc_input_with_ped:
+      type: file
+      description: |
+        MultiQC input files with the matching ped file attached (or an empty list if none matched)
+        Structure: [ val(meta), path(files), path(ped) ]
+      pattern: "*.ped"
+authors:
+  - "@georgette-femerling"
+maintainers:
+  - "@georgette-femerling"

@@ -1,30 +1,32 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
 name: "bam_qc"
-description: QC of BAM/CRAM files including depth of coverage, mapping quality, GC content, and contamination estimates.
+description: Alignment QC for BAM/CRAM files -- coverage (WGS or targeted), sequencing depth, quality-yield, per-gene coverage, and contamination estimation.
 keywords:
   - qc
   - quality control
-  - quality check
   - bam
-  - depth
-  - contamination
   - cram
+  - coverage
+  - contamination
 components:
+  - samtools/stats
+  - picard/collectwgsmetrics
+  - picard/collecthsmetrics
+  - picard/collectqualityyieldmetrics
+  - verifybamid/verifybamid2
   - mosdepth
-  - qualimap_bamqc
-  - qualimap_bamqccram
-  - verifybamid_verifybamid2
+  - qc_coverage_regions
 input:
   - ch_bam_bai:
       type: file
       description: |
-        The input channel containing the BAM/CRAM/SAM files and their indexes (BAI/CRAI)
+        The input channel containing the BAM/CRAM files and their indexes (BAI/CRAI)
         Structure: [ val(meta), path(bam/cram), path(bai/crai) ]
-      pattern: "*.{bam/cram/sam},*.{bai/crai}"
+      pattern: "*.{bam,cram}"
   - ch_fasta:
       type: file
       description: |
-        The input channel containing the reference genome FASTA file and its index (FAI) and dictionary (DICT)
+        The input channel containing the reference genome FASTA file
         Structure: [ path(fasta) ]
       pattern: "*.fa*"
   - ch_fai:
@@ -33,25 +35,66 @@ input:
         The input channel containing the reference genome FASTA index file (FAI)
         Structure: [ path(fai) ]
       pattern: "*.fai"
+  - ch_dict:
+      type: file
+      description: |
+        Optional. The input channel containing the reference sequence dictionary, needed by
+        PICARD_COLLECTHSMETRICS to build an interval list from BED files.
+        Structure: [ path(dict) ]
+      pattern: "*.dict"
   - ch_intervals:
       type: file
       description: |
-        The input channel containing the reference genome intervals file (BED)
+        Optional. BED file of regions passed to Mosdepth for region-level coverage.
         Structure: [ path(bed) ]
       pattern: "*.bed"
+  - qc_regions_1:
+      type: file
+      description: |
+        Optional. First custom BED region set for per-gene coverage summaries (QC_COVERAGE_REGIONS_R1).
+        Structure: [ path(bed) ]
+      pattern: "*.bed"
+  - qc_regions_2:
+      type: file
+      description: |
+        Optional. Second custom BED region set for per-gene coverage summaries (QC_COVERAGE_REGIONS_R2).
+        Structure: [ path(bed) ]
+      pattern: "*.bed"
+  - ch_intervals_list:
+      type: file
+      description: |
+        Optional. Picard interval_list used by PICARD_COLLECTWGSMETRICS.
+        Structure: [ path(interval_list) ]
+      pattern: "*.interval_list"
+  - ch_bait_intervals:
+      type: file
+      description: |
+        Optional (targeted/WXS only). Bait regions (BED or interval_list) for PICARD_COLLECTHSMETRICS.
+        Structure: [ path(bed_or_interval_list) ]
+      pattern: "*.{bed,interval_list}"
+  - ch_target_intervals:
+      type: file
+      description: |
+        Optional (targeted/WXS only). Target regions (BED or interval_list) for PICARD_COLLECTHSMETRICS.
+        Structure: [ path(bed_or_interval_list) ]
+      pattern: "*.{bed,interval_list}"
   - ch_svd_in:
       type: file
       description: |
-        The input channel containing the SVD files for VerifyBamID2
+        SVD reference files for VerifyBamID2.
         Structure: [ path(svd_ud), path(svd_mu), path(svd_bed) ]
-      pattern: "*.UD,*.MU,*.bed"
+      pattern: "*.{UD,mu,bed}"
+  - val_seq_type:
+      type: string
+      description: |
+        'WGS' runs PICARD_COLLECTWGSMETRICS; any other value runs PICARD_COLLECTHSMETRICS instead.
 output:
   - reports:
       type: file
       description: |
-        The output channel containing the QC reports
-        Structure: [ path(report1), path(report2), ... ]
-      pattern: "*.{html,txt,pdf}"
+        The output channel containing all QC reports produced by this subworkflow
+        Structure: [ val(meta), path(report) ]
+      pattern: "*.{txt,metrics,selfSM,tsv}"
   - versions:
       type: file
       description: |

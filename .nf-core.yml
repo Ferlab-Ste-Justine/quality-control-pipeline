@@ -17,6 +17,8 @@ lint:
   - .github/workflows/awsfulltest.yml
   - .github/.dockstore.yml
   - .github/workflows/branch.yml
+  - docs/CONTRIBUTING.md # Kept at .github/CONTRIBUTING.md instead, matching the fleet's other pipelines.
+  - .github/workflows/pr-comment.yml # Not used by this pipeline's CI.
   files_unchanged:
   - .github/.dockstore.yml
   - .github/workflows/branch.yml
@@ -34,9 +36,13 @@ lint:
   - assets/sendmail_template.txt
   - assets/email_template.txt
   - docs/README.md
-  include_configs: false
+  - .github/workflows/linting.yml # Newer template moved pre-commit -> prek; deferred as a fleet-wide decision across all 3 pipelines, not made per-repo.
+  included_configs: false # Points at nf-core/configs' pipeline/<name>.config, which only exists for published nf-core pipelines -- this repo isn't one.
+  readme:
+  - nfcore_template_badge # Not a published nf-core pipeline, so this badge doesn't apply.
   multiqc_config:
   - report_comment
+  - export_plots # Deliberately kept `false` (predates this ticket, do not flip). Note: nf-core/tools 4.1.0's export_plots check isn't actually gated by this ignore list (a tool limitation, unlike report_comment below) -- it will keep showing as a lint failure regardless; this entry just documents intent for future readers.
   nextflow_config:
   - process.cpus
   - process.memory
@@ -50,7 +56,7 @@ lint:
   - validation.help.afterText
   - validation.summary.beforeText
   - validation.summary.afterText
-nf_core_version: 3.3.2
+nf_core_version: 4.1.0
 repository_type: pipeline
 template:
   author: Georgette Femerling

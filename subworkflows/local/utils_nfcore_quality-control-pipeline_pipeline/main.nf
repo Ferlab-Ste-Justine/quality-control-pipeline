@@ -384,13 +384,19 @@ def genomeExistsError() {
 // Generate methods description for MultiQC
 //
 def toolCitationText() {
-    // TODO nf-core: Optionally add in-text citation tools to this list.
-    // Can use ternary operators to dynamically construct based conditions, e.g. params["run_xyz"] ? "Tool (Foo et al. 2023)" : "",
-    // Uncomment function in methodsDescriptionText to render in MultiQC report
+    // Mirrors CITATIONS.md's "Pipeline tools" section -- every tool this pipeline actually runs.
     def citation_text = [
             "Tools used in the workflow included:",
+            "BCFtools (Li 2011),",
             "FastQC (Andrews 2010),",
-            "MultiQC (Ewels et al. 2016)",
+            "GATK4 (McKenna et al. 2010),",
+            "Mosdepth (Pedersen & Quinlan 2018),",
+            "MultiQC (Ewels et al. 2016),",
+            "ngsCheckMate (Lee et al. 2017),",
+            "Picard (Broad Institute),",
+            "Samtools (Li et al. 2009),",
+            "Somalier (Pedersen et al. 2020),",
+            "and VerifyBamID2 (Zhang et al. 2020)",
             "."
         ].join(' ').trim()
 
@@ -398,12 +404,18 @@ def toolCitationText() {
 }
 
 def toolBibliographyText() {
-    // TODO nf-core: Optionally add bibliographic entries to this list.
-    // Can use ternary operators to dynamically construct based conditions, e.g. params["run_xyz"] ? "<li>Author (2023) Pub name, Journal, DOI</li>" : "",
-    // Uncomment function in methodsDescriptionText to render in MultiQC report
+    // Mirrors CITATIONS.md's "Pipeline tools" section -- every tool this pipeline actually runs.
     def reference_text = [
+            "<li>Li H. (2011) A statistical framework for SNP calling, mutation discovery, association mapping and population genetical parameter estimation from sequencing data. Bioinformatics, 27(21), 2987-93. doi: 10.1093/bioinformatics/btr509.</li>",
             "<li>Andrews S, (2010) FastQC, URL: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/).</li>",
-            "<li>Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics , 32(19), 3047–3048. doi: /10.1093/bioinformatics/btw354</li>"
+            "<li>McKenna A, Hanna M, Banks E, et al. (2010) The Genome Analysis Toolkit: A MapReduce framework for analyzing next-generation DNA sequencing data. Genome Res, 20(9), 1297-303. doi: 10.1101/gr.107524.110.</li>",
+            "<li>Pedersen BS, Quinlan AR. (2018) Mosdepth: quick coverage calculation for genomes and exomes. Bioinformatics, 34(5), 867-868. doi: 10.1093/bioinformatics/btx699.</li>",
+            "<li>Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics , 32(19), 3047–3048. doi: /10.1093/bioinformatics/btw354</li>",
+            "<li>Lee S, Zhao L, Rojas C, et al. (2017) NGSCheckMate: software for validating sample identity in next-generation sequencing studies within and across data types. Nucleic Acids Res, 45(11), e103. doi: 10.1093/nar/gkx193.</li>",
+            "<li>Broad Institute. Picard toolkit. Broad Institute, GitHub repository. https://broadinstitute.github.io/picard/</li>",
+            "<li>Li H, Handsaker B, Wysoker A, et al. (2009) The Sequence Alignment/Map format and SAMtools. Bioinformatics, 25(16), 2078-9. doi: 10.1093/bioinformatics/btp352.</li>",
+            "<li>Pedersen BS, Bhetariya PJ, Brown J, et al. (2020) Somalier: rapid relatedness estimation for cancer and germline studies using efficient genome sketches. Genome Med, 12(1), 62. doi: 10.1186/s13073-020-00761-2.</li>",
+            "<li>Zhang F, Flickinger M, Taliun SAG, et al. (2020) Ancestry-agnostic estimation of DNA contamination from whole-genome sequencing data. Genome Res, 30(2), 185-194. doi: 10.1101/gr.246934.118.</li>"
         ].join(' ').trim()
 
     return reference_text
@@ -430,12 +442,8 @@ def methodsDescriptionText(mqc_methods_yaml) {
     meta["nodoi_text"] = meta.manifest_map.doi ? "" : "<li>If available, make sure to update the text to include the Zenodo DOI of version of the pipeline used. </li>"
 
     // Tool references
-    meta["tool_citations"] = ""
-    meta["tool_bibliography"] = ""
-
-    // TODO nf-core: Only uncomment below if logic in toolCitationText/toolBibliographyText has been filled!
-    // meta["tool_citations"] = toolCitationText().replaceAll(", \\.", ".").replaceAll("\\. \\.", ".").replaceAll(", \\.", ".")
-    // meta["tool_bibliography"] = toolBibliographyText()
+    meta["tool_citations"] = toolCitationText().replaceAll(", \\.", ".").replaceAll("\\. \\.", ".").replaceAll(", \\.", ".")
+    meta["tool_bibliography"] = toolBibliographyText()
 
 
     def methods_text = mqc_methods_yaml.text

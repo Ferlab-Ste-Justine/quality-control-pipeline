@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "ped_family_check"
+description: Fails the pipeline fast, with a clear message, when a family referenced in the ped file has no matching samples in the samplesheet. Left unchecked, such a family either crashes deep inside MULTIQC_PYTHON or silently drops that family's pedigree data with no warning.
+keywords:
+  - validation
+  - pedigree
+  - fail fast
+components: []
+input:
+  - ch_somalier_input_ped:
+      type: file
+      description: |
+        Per-family (or cohort-wide) ped file(s), keyed by the ped's own family id
+        Structure: [ val(meta), path(ped) ]
+      pattern: "*.ped"
+  - ch_samplesheet:
+      type: file
+      description: |
+        The parsed input samplesheet, used to read the set of familyId values actually present
+        Structure: [ val(meta), path(files) ]
+output:
+  - ch_somalier_input_ped:
+      type: file
+      description: |
+        The input ped channel, passed through unchanged. This subworkflow's effect is the
+        fail-fast validation itself; the emitted channel is identical to the input.
+        Structure: [ val(meta), path(ped) ]
+      pattern: "*.ped"
+authors:
+  - "@georgette-femerling"
+maintainers:
+  - "@georgette-femerling"

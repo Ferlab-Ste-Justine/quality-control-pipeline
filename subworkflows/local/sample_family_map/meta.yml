@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "sample_family_map"
+description: Builds a sample -> familyId map from the samplesheet, keyed by a String sample name. Used to attach familyId to files matched by a sample name parsed from a filename (always a String, e.g. DRAGEN metrics files), so the join works even when meta.sample is an Integer.
+keywords:
+  - dragen
+  - join
+  - familyid
+components: []
+input:
+  - ch_samplesheet:
+      type: file
+      description: |
+        The parsed input samplesheet
+        Structure: [ val(meta), path(files) ]
+output:
+  - sample_family:
+      type: file
+      description: |
+        Sample -> familyId map, deduplicated, with the sample key always stringified
+        Structure: [ val(sample_as_string), val(familyId) ]
+authors:
+  - "@georgette-femerling"
+maintainers:
+  - "@georgette-femerling"
