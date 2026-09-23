@@ -17,7 +17,7 @@
                 "type": ["string", "integer"],
                 "pattern": "^\\S+$",
                 "errorMessage": "Sample ID must be provided and cannot contain spaces",
-                "meta": ["id","sample"]
+                "meta": ["id", "sample"]
             },
             "familyId": {
                 "type": ["string", "integer"],
@@ -29,8 +29,8 @@
                 "type": "string",
                 "errorMessage": "Experimental strategy. Required if files from multiple strategies present in samplesheet. Must be one of: WGS, WXS, TARS, RNAS, ATACS, BIS, TMS, CHIPS. Defaults to WGS if not provided.",
                 "meta": ["sequencingType"],
-                "default":"WGS",
-                "enum": ["WGS","WXS","TARS","RNAS","ATACS","BIS","TMS","CHIPS"]
+                "default": "WGS",
+                "enum": ["WGS", "WXS", "TARS", "RNAS", "ATACS", "BIS", "TMS", "CHIPS"]
             },
             "sex": {
                 "errorMessage": "Sex can be female, male or other. Defaults to NA, if none is supplied.",
@@ -52,7 +52,22 @@
                 "meta": ["relationship_to_proband"],
                 "default": "Proband",
                 "type": "string",
-                "enum": ["Proband", "Mother", "Father", "Brother", "Sister", "Half-brother", "Half-sister", "Identical twin", "Fraternal twin brother", "Fraternal twin sister", "Son", "Daughter", "Other", "Fetus"]
+                "enum": [
+                    "Proband",
+                    "Mother",
+                    "Father",
+                    "Brother",
+                    "Sister",
+                    "Half-brother",
+                    "Half-sister",
+                    "Identical twin",
+                    "Fraternal twin brother",
+                    "Fraternal twin sister",
+                    "Son",
+                    "Daughter",
+                    "Other",
+                    "Fetus"
+                ]
             },
             "affected_status": {
                 "errorMessage": "Affected status. Must be one of: Affected, Unaffected, Unknown. Defaults to Unknown.",
@@ -75,16 +90,16 @@
                 "errorMessage": "File type must be one of: fastq, bam, cram, gvcf. Defaults to fastq, if none is supplied.",
                 "meta": ["fileType"],
                 "type": "string",
-                "enum": ["FASTQ","BAM","CRAM","GVCF","VCF","fastq","bam","cram","gvcf","vcf"]
+                "enum": ["FASTQ", "BAM", "CRAM", "GVCF", "VCF", "fastq", "bam", "cram", "gvcf", "vcf"]
             },
-            "file1":{
+            "file1": {
                 "errorMessage": "File name cannot contain spaces and must have a valid extension according to the fileType provided.",
                 "type": "string",
                 "pattern": "^\\S+\\.(f(ast)?q|cram|bam|g?vcf)(\\.gz)?$",
                 "format": "file-path",
                 "exists": true
             },
-            "file2":{
+            "file2": {
                 "errorMessage": "File name cannot contain spaces and must have a valid extension according to the fileType provided.",
                 "type": "string",
                 "pattern": "^\\S+\\.(f(ast)?q(\\.gz)?|crai|bai|csi|tbi|idx)$",

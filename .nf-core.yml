@@ -1,61 +1,61 @@
 lint:
   pipeline_name_conventions: false
   files_exist:
-  - .github/.dockstore.yml
-  - .github/workflows/branch.yml
-  - conf/igenomes.config
-  - LICENSE
-  - assets/email_template.html
-  - assets/sendmail_template.txt
-  - assets/email_template.txt
-  - CODE_OF_CONDUCT.md
-  - assets/nf-core-quality-control-pipeline_logo_light.png
-  - docs/images/nf-core-quality-control-pipeline_logo_light.png
-  - docs/images/nf-core-quality-control-pipeline_logo_dark.png
-  - .github/ISSUE_TEMPLATE/config.yml
-  - .github/workflows/awstest.yml
-  - .github/workflows/awsfulltest.yml
-  - .github/.dockstore.yml
-  - .github/workflows/branch.yml
-  - docs/CONTRIBUTING.md # Kept at .github/CONTRIBUTING.md instead, matching the fleet's other pipelines.
-  - .github/workflows/pr-comment.yml # Not used by this pipeline's CI.
+    - .github/.dockstore.yml
+    - .github/workflows/branch.yml
+    - conf/igenomes.config
+    - LICENSE
+    - assets/email_template.html
+    - assets/sendmail_template.txt
+    - assets/email_template.txt
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-quality-control-pipeline_logo_light.png
+    - docs/images/nf-core-quality-control-pipeline_logo_light.png
+    - docs/images/nf-core-quality-control-pipeline_logo_dark.png
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/workflows/awstest.yml
+    - .github/workflows/awsfulltest.yml
+    - .github/.dockstore.yml
+    - .github/workflows/branch.yml
+    - docs/CONTRIBUTING.md # Kept at .github/CONTRIBUTING.md instead, matching the fleet's other pipelines.
+    - .github/workflows/pr-comment.yml # Not used by this pipeline's CI.
   files_unchanged:
-  - .github/.dockstore.yml
-  - .github/workflows/branch.yml
-  - .github/CONTRIBUTING.md
-  - LICENSE
-  - .prettierignore
-  - CODE_OF_CONDUCT.md
-  - assets/nf-core-quality-control-pipeline_logo_light.png
-  - docs/images/nf-core-quality-control-pipeline_logo_light.png
-  - docs/images/nf-core-quality-control-pipeline_logo_dark.png
-  - .github/ISSUE_TEMPLATE/bug_report.yml
-  - .github/CONTRIBUTING.md
-  - .github/PULL_REQUEST_TEMPLATE.md
-  - assets/email_template.html
-  - assets/sendmail_template.txt
-  - assets/email_template.txt
-  - docs/README.md
-  - .github/workflows/linting.yml # Newer template moved pre-commit -> prek; deferred as a fleet-wide decision across all 3 pipelines, not made per-repo.
+    - .github/.dockstore.yml
+    - .github/workflows/branch.yml
+    - .github/CONTRIBUTING.md
+    - LICENSE
+    - .prettierignore
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-quality-control-pipeline_logo_light.png
+    - docs/images/nf-core-quality-control-pipeline_logo_light.png
+    - docs/images/nf-core-quality-control-pipeline_logo_dark.png
+    - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/CONTRIBUTING.md
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - assets/email_template.html
+    - assets/sendmail_template.txt
+    - assets/email_template.txt
+    - docs/README.md
+    - .github/workflows/linting.yml # Newer template moved pre-commit -> prek; deferred as a fleet-wide decision across all 3 pipelines, not made per-repo.
   included_configs: false # Points at nf-core/configs' pipeline/<name>.config, which only exists for published nf-core pipelines -- this repo isn't one.
   readme:
-  - nfcore_template_badge # Not a published nf-core pipeline, so this badge doesn't apply.
+    - nfcore_template_badge # Not a published nf-core pipeline, so this badge doesn't apply.
   multiqc_config:
-  - report_comment
-  - export_plots # Deliberately kept `false` (predates this ticket, do not flip). Note: nf-core/tools 4.1.0's export_plots check isn't actually gated by this ignore list (a tool limitation, unlike report_comment below) -- it will keep showing as a lint failure regardless; this entry just documents intent for future readers.
+    - report_comment
+    - export_plots # Deliberately kept `false` (predates this ticket, do not flip). Note: nf-core/tools 4.1.0's export_plots check isn't actually gated by this ignore list (a tool limitation, unlike report_comment below) -- it will keep showing as a lint failure regardless; this entry just documents intent for future readers.
   nextflow_config:
-  - process.cpus
-  - process.memory
-  - process.time
-  - custom_config
-  - params.custom_config_version
-  - params.custom_config_base
-  - manifest.name
-  - manifest.homePage
-  - validation.help.beforeText
-  - validation.help.afterText
-  - validation.summary.beforeText
-  - validation.summary.afterText
+    - process.cpus
+    - process.memory
+    - process.time
+    - custom_config
+    - params.custom_config_version
+    - params.custom_config_base
+    - manifest.name
+    - manifest.homePage
+    - validation.help.beforeText
+    - validation.help.afterText
+    - validation.summary.beforeText
+    - validation.summary.afterText
 nf_core_version: 4.1.0
 repository_type: pipeline
 template:
@@ -67,12 +67,12 @@ template:
   org: Ferlab-Ste-Justine
   outdir: .
   skip_features:
-  - nf_core_configs
-  - gitpod
-  - codespaces
-  - license
-  - email
-  - adaptivecard
-  - slackreport
-  - seqera_platform
+    - nf_core_configs
+    - gitpod
+    - codespaces
+    - license
+    - email
+    - adaptivecard
+    - slackreport
+    - seqera_platform
   version: 2.0.0

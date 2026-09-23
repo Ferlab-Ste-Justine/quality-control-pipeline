@@ -9,7 +9,7 @@ workflow BAM_ID_REPAIR {
 
     take:
     ch_input // channel: [ mandatory ] meta, bam/cram, bai/crai
-    ch_fasta // channel: [ optional ] 
+    ch_fasta // channel: [ optional ]
 
     main:
     ch_versions = Channel.empty()
@@ -27,7 +27,7 @@ workflow BAM_ID_REPAIR {
                 reheader: (sample_name != meta.participant_sample) && params.skip_reheader == false
                 direct: (sample_name == meta.participant_sample) || params.skip_reheader == true
             }
-    
+
     // create input to vcf reheader option --samples
     ch_reheader_input =  branched_bams.reheader
                             .map { meta, bam, _bai, _sample_name ->

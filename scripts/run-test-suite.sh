@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
-# Automated pre-push checks: nf-test suite and nf-core lint. Fail-fast
-# (set -e) so the first broken step stops the script.
-#
-# pre-commit (prettier, trailing-whitespace, end-of-file-fixer) is
-# deliberately NOT included here -- it's already wired into
-# .github/workflows/linting.yml and runs automatically on every PR, so
-# there's no need to duplicate it locally too.
+# Automated pre-push checks: pre-commit hooks, nf-test suite, and nf-core
+# lint. Fail-fast (set -e) so the first broken step stops the script.
 #
 # Note on dependencies: the dry-run and lint steps need nothing but the
 # tools themselves, but the real (non-dry-run) nf-test suite still spins up
@@ -25,19 +20,23 @@ export NXF_FILE_ROOT="$PWD"
 require() {
     command -v "$1" >/dev/null 2>&1 || { echo "ERROR: '$1' not found on PATH." >&2; exit 1; }
 }
+require pre-commit
 require nf-test
 require nf-core
 
 step() { echo; echo "==> $1"; }
 
+step "[1/4] pre-commit (prettier, editorconfig-checker, ...)"
+pre-commit run --all-files
+
 # Remember that running 'nf-test test' essentially discovers and run .nf.test files
-step "[1/3] nf-test dry-run (syntax check only, no execution)"
+step "[2/4] nf-test dry-run (syntax check only, no execution)"
 nf-test test --dryRun
 
-step "[2/3] nf-test full suite (--profile test,docker)"
+step "[3/4] nf-test full suite (--profile test,docker)"
 nf-test test --profile test,docker
 
-step "[3/3] nf-core pipelines lint --release"
+step "[4/4] nf-core pipelines lint --release"
 nf-core pipelines lint --release
 
 echo
