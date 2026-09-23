@@ -21,12 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#46](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/46) Fixed a false-positive validation error (and a mangled BAM/CRAM reheader sample name) for a decimal `participant` ID with a magnitude small enough that `BigDecimal.toString()` renders it in scientific notation.
 [#48](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/48) Fixed a typo in `.nf-core.yml` (`include_configs` → `included_configs`) that had silently disabled that lint check.
 [#48](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/48) Fixed `linting.yml`'s `master`/`main` branch-name check.
+[#48](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/48) Fixed the pre-commit CI job's prettier/editorconfig failures (mostly YAML list-indentation style), and added a `[LICENSE]` exemption to `.editorconfig` instead of reflowing the verbatim Apache License 2.0 text.
+[#48](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/48) Raised the declared `nextflowVersion` floor from `23.10.1` to `24.10.5`: the pipeline's use of topic channels for version collection (see `main.nf`) requires Nextflow >=24.04.0, so `23.10.1` was never actually runnable, just untested until this PR added it to the CI matrix.
 
 ### `Changed`
 
 [#47](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/47) Updated documentation related to dragen-metrics mode and usage
 [#48](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/48) Bumped the pinned `nf-core/tools` lint version to 4.1.0 and resolved the resulting lint failures/warnings, including regrouping `nextflow_schema.json` into `$defs` sections and updating `.prettierrc.yml` to match the current template.
-[#48](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/48) Updated `nextflowVersion` and the README Nextflow badge to match the sibling Post-processing-Pipeline's conventions, and aligned the nf-test CI matrix's pinned Nextflow version accordingly.
+[#48](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/48) Updated the README Nextflow badge and the nf-test CI matrix's pinned Nextflow versions to match the corrected `nextflowVersion` floor.
 
 ## v2.0.0 - [11/06/2026]
 
