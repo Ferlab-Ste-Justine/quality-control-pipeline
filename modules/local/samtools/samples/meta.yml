@@ -28,8 +28,8 @@ input:
         description: BAM/CRAM file to query
         pattern: "*.{bam,cram}"
         ontologies:
-          - edam: "http://edamontology.org/format_25722"
-          - edam: "http://edamontology.org/format_2573"
+          - edam: "http://edamontology.org/format_2572"
+          - edam: "http://edamontology.org/format_3462"
     - idx:
         type: file
         description: Index of the BAM/CRAM file
