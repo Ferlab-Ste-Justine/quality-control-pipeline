@@ -1,0 +1,89 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "cram_somalier"
+description: Extracts genotype-like fingerprints from BAM/CRAM files with Somalier and computes pairwise relatedness against a pedigree, either per-family or cohort-wide. Adapted from nf-core's vcf_extract_relate_somalier to work directly from CRAM/BAM instead of VCF.
+keywords:
+  - somalier
+  - relatedness
+  - sample identity
+  - pedigree
+  - cram
+components:
+  - somalier/extract
+  - somalier/relate
+  - samtools/index
+input:
+  - ch_crams:
+      type: file
+      description: |
+        BAM/CRAM files to fingerprint, with an expected-group-size count used for per-family grouping
+        Structure: [ val(meta), path(cram), path(crai), val(count) ]
+      pattern: "*.{bam,cram}"
+  - ch_fasta:
+      type: file
+      description: |
+        Reference genome FASTA
+        Structure: [ val(meta), path(fasta) ]
+      pattern: "*.fa*"
+  - ch_fasta_fai:
+      type: file
+      description: |
+        Reference genome FASTA index
+        Structure: [ val(meta), path(fai) ]
+      pattern: "*.fai"
+  - ch_somalier_sites:
+      type: file
+      description: |
+        Somalier sites VCF used for fingerprinting
+        Structure: [ path(somalier_sites_vcf) ]
+      pattern: "*.vcf.gz"
+  - ch_peds:
+      type: file
+      description: |
+        Pedigree file(s) describing family relationships, one per family (per-family mode) or one cohort-wide
+        Structure: [ val(meta), path(ped) ]
+      pattern: "*.ped"
+  - ch_sample_groups:
+      type: file
+      description: |
+        Optional. File listing groups of samples belonging to the same participant, reused across every per-family relate.
+        Structure: [ path(txt) ]
+      pattern: "*.txt"
+  - val_common_id:
+      type: string
+      description: |
+        Optional. The meta field to group samples by for relatedness (e.g. 'familyId'). Ignored in cohort mode.
+output:
+  - extract:
+      type: file
+      description: |
+        Somalier extract (fingerprint) file per sample
+        Structure: [ val(meta), path(extract) ]
+      pattern: "*.somalier"
+  - html:
+      type: file
+      description: |
+        Interactive HTML relatedness report, per family or cohort-wide
+        Structure: [ val(meta), path(html) ]
+      pattern: "*.html"
+  - pairs_tsv:
+      type: file
+      description: |
+        Pairwise relatedness metrics (IBS0, IBS2, kinship coefficient)
+        Structure: [ val(meta), path(tsv) ]
+      pattern: "*.pairs.tsv"
+  - samples_tsv:
+      type: file
+      description: |
+        Per-sample summary (het rate, depth, ancestry PCs, sex/ploidy check)
+        Structure: [ val(meta), path(tsv) ]
+      pattern: "*.samples.tsv"
+  - versions:
+      type: file
+      description: |
+        File containing software versions
+        Structure: [ path(versions.yml) ]
+      pattern: "versions.yml"
+authors:
+  - "@georgette-femerling"
+maintainers:
+  - "@georgette-femerling"

@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "vcf_qc"
+description: Variant-level QC for VCF files -- counts variants by type (SNV, insertion, deletion) and zygosity (het/hom), and computes the Ts/Tv ratio via BCFtools.
+keywords:
+  - qc
+  - vcf
+  - bcftools
+  - variant counts
+  - ts/tv
+components:
+  - bcftools/view
+  - bcftools/stats
+  - vcf/metrics
+input:
+  - ch_vcf_tbi:
+      type: file
+      description: |
+        The input channel containing VCF files and their index
+        Structure: [ val(meta), path(vcf), path(tbi) ]
+      pattern: "*.vcf.gz"
+  - ch_fasta:
+      type: file
+      description: |
+        Optional. Reference genome FASTA, passed to bcftools stats.
+        Structure: [ path(fasta) ]
+      pattern: "*.fa*"
+  - ch_intervals:
+      type: file
+      description: |
+        Optional. BED/intervals file used to restrict variant counting.
+        Structure: [ path(bed) ]
+      pattern: "*.bed"
+  - ch_targets:
+      type: file
+      description: |
+        Optional. Target regions BED file, used for the targeted/WXS variant-counting stream.
+        Structure: [ path(bed) ]
+      pattern: "*.bed"
+  - ch_exons:
+      type: file
+      description: |
+        Optional. Exon regions BED file, passed to bcftools stats.
+        Structure: [ path(bed) ]
+      pattern: "*.bed"
+output:
+  - vcf_metrics:
+      type: file
+      description: |
+        Per-sample variant counts (SNV/insertion/deletion, het/hom) and Ts/Tv ratio, as JSON
+        Structure: [ val(meta), val(metrics), path(metrics_file) ]
+      pattern: "*.json"
+  - vcf_stats:
+      type: file
+      description: |
+        Full bcftools stats output
+        Structure: [ val(meta), path(stats) ]
+      pattern: "*.stats"
+authors:
+  - "@georgette-femerling"
+maintainers:
+  - "@georgette-femerling"

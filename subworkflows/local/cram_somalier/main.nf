@@ -47,7 +47,7 @@ workflow CRAM_SOMALIER {
 
     ch_versions = ch_versions.mix(SOMALIER_EXTRACT.out.versions)
 
-     // Prepare input for CRAM Somalier subworkflow
+    // Prepare input for CRAM Somalier subworkflow
 
     if (params.cohort_mode) {
         ch_somalierrelate_input = SOMALIER_EXTRACT.out.extract

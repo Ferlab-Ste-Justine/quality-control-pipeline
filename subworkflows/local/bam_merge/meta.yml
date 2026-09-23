@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "bam_merge"
+description: Merges multiple BAM/CRAM files (e.g. multiple sequencing lanes) for the same sample into a single, indexed file. Samples with only one file are passed through unmerged.
+keywords:
+  - merge
+  - bam
+  - cram
+  - multi-lane
+components:
+  - samtools/merge
+  - samtools/index
+input:
+  - ch_bam:
+      type: file
+      description: |
+        The input channel containing one or more BAM/CRAM files (and indexes) per sample to merge
+        Structure: [ val(meta), [ path(bam/cram) ], [ path(bai/crai) ] ]
+      pattern: "*.{bam,cram}"
+  - fasta:
+      type: file
+      description: |
+        Reference genome FASTA, required when merging CRAM files
+        Structure: [ path(fasta) ]
+      pattern: "*.fa*"
+  - fasta_fai:
+      type: file
+      description: |
+        Reference genome FASTA index, required when merging CRAM files
+        Structure: [ path(fai) ]
+      pattern: "*.fai"
+output:
+  - bam_bai:
+      type: file
+      description: |
+        Merged (or passed-through single-file) BAM/CRAM with its index
+        Structure: [ val(meta), path(bam/cram), path(bai/crai) ]
+      pattern: "*.{bam,cram,bai,crai,csi}"
+  - versions:
+      type: file
+      description: |
+        File containing software versions
+        Structure: [ path(versions.yml) ]
+      pattern: "versions.yml"
+authors:
+  - "@georgette-femerling"
+maintainers:
+  - "@georgette-femerling"

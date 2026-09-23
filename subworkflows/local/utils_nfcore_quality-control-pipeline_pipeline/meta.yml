@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "utils_nfcore_quality-control-pipeline_pipeline"
+description: |
+  Pipeline-specific utility subworkflows and functions for Ferlab-Ste-Justine/quality-control-pipeline.
+  Defines two workflows -- PIPELINE_INITIALISATION (parameter/samplesheet validation, samplesheet
+  parsing into the channel structure used by the rest of the pipeline) and PIPELINE_COMPLETION
+  (completion email/summary) -- plus supporting functions (file-type inference, pedigree-row
+  construction, and samplesheet-corruption/consistency guards).
+keywords:
+  - utility
+  - pipeline
+  - initialise
+  - samplesheet
+  - pedigree
+components:
+  - completionsummary
+  - utils_nextflow_pipeline
+  - utils_nfcore_pipeline
+  - utils_nfschema_plugin
+input:
+  - version:
+      type: boolean
+      description: |
+        [PIPELINE_INITIALISATION] Display version and exit
+  - validate_params:
+      type: boolean
+      description: |
+        [PIPELINE_INITIALISATION] Whether to validate parameters against the schema at runtime
+  - monochrome_logs:
+      type: boolean
+      description: |
+        [PIPELINE_INITIALISATION, PIPELINE_COMPLETION] Do not use coloured log outputs
+  - nextflow_cli_args:
+      type: list
+      description: |
+        [PIPELINE_INITIALISATION] List of positional Nextflow CLI arguments
+  - outdir:
+      type: string
+      description: |
+        [PIPELINE_INITIALISATION, PIPELINE_COMPLETION] The output directory where results are saved
+  - input:
+      type: string
+      description: |
+        [PIPELINE_INITIALISATION] Path to the input samplesheet
+  - multiqc_report:
+      type: file
+      description: |
+        [PIPELINE_COMPLETION] Path to the MultiQC report
+output:
+  - samplesheet:
+      type: file
+      description: |
+        [PIPELINE_INITIALISATION] The parsed and grouped samplesheet channel
+        Structure: [ val(meta), path(files) ]
+  - versions:
+      type: file
+      description: |
+        [PIPELINE_INITIALISATION] File containing software versions
+        Structure: [ path(versions.yml) ]
+      pattern: "versions.yml"
+authors:
+  - "@georgette-femerling"
+maintainers:
+  - "@georgette-femerling"

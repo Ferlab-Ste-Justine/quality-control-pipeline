@@ -1,44 +1,36 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
 name: "fastq_qc"
-## TODO nf-core: Add a description of the subworkflow and list keywords
-description: Sort SAM/BAM/CRAM file
+description: Raw-read QC and sample identity checking for FASTQ inputs -- read quality metrics (FastQC) and cross-sample identity/contamination checking (ngsCheckMate).
 keywords:
-  - sort
-  - bam
-  - sam
-  - cram
-## TODO nf-core: Add a list of the modules and/or subworkflows used in the subworkflow
+  - qc
+  - quality control
+  - fastq
+  - fastqc
+  - ngscheckmate
+  - sample identity
 components:
-  - samtools/sort
-  - samtools/index
-## TODO nf-core: List all of the channels used as input with a description and their structure
+  - fastqc
+  - fastq_ngscheckmate
 input:
-  - ch_bam:
+  - ch_fastq:
       type: file
       description: |
-        The input channel containing the BAM/CRAM/SAM files
-        Structure: [ val(meta), path(bam) ]
-      pattern: "*.{bam/cram/sam}"
-## TODO nf-core: List all of the channels used as output with a descriptions and their structure
+        The input channel containing FASTQ read files
+        Structure: [ val(meta), [ path(fastq1), path(fastq2)? ] ]
+      pattern: "*.{fastq,fq}.gz"
+  - ncm_snp_pt:
+      type: file
+      description: |
+        ngsCheckMate SNP panel file used for identity checking
+        Structure: [ val(meta), path(snp_pt) ]
+      pattern: "*.pt"
 output:
-  - bam:
+  - reports:
       type: file
       description: |
-        Channel containing BAM files
-        Structure: [ val(meta), path(bam) ]
-      pattern: "*.bam"
-  - bai:
-      type: file
-      description: |
-        Channel containing indexed BAM (BAI) files
-        Structure: [ val(meta), path(bai) ]
-      pattern: "*.bai"
-  - csi:
-      type: file
-      description: |
-        Channel containing CSI files
-        Structure: [ val(meta), path(csi) ]
-      pattern: "*.csi"
+        The output channel containing FastQC and ngsCheckMate reports
+        Structure: [ val(meta), path(report) ]
+      pattern: "*.{html,zip,vaf,txt,pdf}"
   - versions:
       type: file
       description: |

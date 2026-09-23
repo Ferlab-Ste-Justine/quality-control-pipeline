@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "bam_id_repair"
+description: Checks whether the internal sample ID read from a BAM/CRAM's read group matches the samplesheet-registered ID, and reheaders (renames) the file when they disagree.
+keywords:
+  - reheader
+  - bam
+  - cram
+  - sample identity
+components:
+  - samtools/samples
+  - samtools/index
+  - samtools/reheader
+input:
+  - ch_input:
+      type: file
+      description: |
+        The input channel containing the BAM/CRAM files and their indexes (BAI/CRAI)
+        Structure: [ val(meta), path(bam/cram), path(bai/crai) ]
+      pattern: "*.{bam,cram}"
+  - ch_fasta:
+      type: file
+      description: |
+        Optional. Reference genome FASTA, needed to read CRAM files.
+        Structure: [ path(fasta) ]
+      pattern: "*.fa*"
+output:
+  - bam_bai:
+      type: file
+      description: |
+        BAM/CRAM files with their index, reheadered when the read-group sample name
+        didn't match the samplesheet (unless --skip_reheader is set), passed through unchanged otherwise.
+        Structure: [ val(meta), path(bam/cram), path(bai/crai) ]
+      pattern: "*.{bam,cram,bai,crai,csi}"
+  - versions:
+      type: file
+      description: |
+        File containing software versions
+        Structure: [ path(versions.yml) ]
+      pattern: "versions.yml"
+authors:
+  - "@georgette-femerling"
+maintainers:
+  - "@georgette-femerling"
