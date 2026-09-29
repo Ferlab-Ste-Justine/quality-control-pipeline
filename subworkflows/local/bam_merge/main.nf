@@ -49,4 +49,3 @@ workflow BAM_MERGE {
     bam_bai      = bam_bai // channel: [ val(meta), bam, bai ] or [ val(meta), cram, crai ]
     versions = ch_versions                     // channel: [ versions.yml ]
 }
-
