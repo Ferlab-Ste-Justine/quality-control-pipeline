@@ -10,6 +10,10 @@ inputs:
   tags:
     description: "Tags to pass as argument for nf-test --tag parameter"
     required: false
+  run_all:
+    description: "If 'true', count every test instead of only those affected since HEAD^"
+    required: false
+    default: "false"
 outputs:
   shard:
     description: "Array of shard numbers"
@@ -21,7 +25,7 @@ runs:
   using: "composite"
   steps:
     - name: Install nf-test
-      uses: nf-core/setup-nf-test@v1
+      uses: nf-core/setup-nf-test@f2db585128ae681918440f6c074dededeceadce1 # v1.3.6
       with:
         version: ${{ env.NFT_VER }}
     - name: Get number of shards
@@ -34,7 +38,7 @@ runs:
           $(if [ -n "${{ inputs.tags }}" ]; then echo "--tag ${{ inputs.tags }}"; fi) \
           --dry-run \
           --ci \
-          --changed-since HEAD^) || {
+          $(if [ "${{ inputs.run_all }}" != "true" ]; then echo "--changed-since HEAD^"; fi)) || {
             echo "nf-test command failed with exit code $?"
             echo "Full output: $nftest_output"
             exit 1
