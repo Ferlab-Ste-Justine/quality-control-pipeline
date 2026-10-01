@@ -73,25 +73,23 @@
                         "git_sha": "df124e87c74d8b40285199f8cc20151f5aa57255",
                         "installed_by": ["modules"]
                     },
-                    "samtools/idxstats": {
-                        "branch": "master",
-                        "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
-                        "installed_by": ["modules"]
-                    },
                     "samtools/index": {
                         "branch": "master",
-                        "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
-                        "installed_by": ["modules"]
+                        "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/samtools/index/samtools-index.diff"
                     },
                     "samtools/merge": {
                         "branch": "master",
-                        "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
-                        "installed_by": ["modules"]
+                        "git_sha": "4e3e10e502ec6ab6b1c4b4fecd923ff1fa287338",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/samtools/merge/samtools-merge.diff"
                     },
                     "samtools/stats": {
                         "branch": "master",
-                        "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
-                        "installed_by": ["modules"]
+                        "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/samtools/stats/samtools-stats.diff"
                     },
                     "somalier/extract": {
                         "branch": "master",

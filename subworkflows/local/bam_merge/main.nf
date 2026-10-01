@@ -24,25 +24,26 @@ workflow BAM_MERGE {
     }
 
     // merge mapped files by samplex
-    SAMTOOLS_MERGE( bam_to_merge_branch.merge,
-                    fasta.map{ it -> [ [ id:'fasta' ], it ] },
-                    fasta_fai.map{ it -> [ [ id:'fasta_fai' ], it ] } )
+    SAMTOOLS_MERGE(
+        bam_to_merge_branch.merge.map { meta, bam -> [ meta, bam, [] ] },
+        fasta.combine(fasta_fai).map { fa, fai -> [ [ id: 'fasta' ], fa, fai, [] ] }
+    )
 
     ch_out_merge = SAMTOOLS_MERGE.out.bam
         .mix(SAMTOOLS_MERGE.out.cram)
 
     SAMTOOLS_INDEX ( ch_out_merge )
 
-    ch_out_index = SAMTOOLS_INDEX.out.bai
-        .mix(SAMTOOLS_INDEX.out.crai)
-        .mix(SAMTOOLS_INDEX.out.csi)
+    ch_out_index = SAMTOOLS_INDEX.out.index
 
     bam_bai = ch_out_merge
         .join(ch_out_index, failOnMismatch:true, failOnDuplicate:true)
         .mix(bam_to_merge_branch.direct)
 
-    ch_versions = ch_versions.mix(SAMTOOLS_MERGE.out.versions.first())
-    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions.first())
+    // SAMTOOLS_MERGE/SAMTOOLS_INDEX now emit versions via the topic channel
+    // (topic: versions) instead of a plain .out.versions -- picked up
+    // automatically by the pipeline-wide channel.topic("versions") collection
+    // in qualitycontrol.nf, not mixed in here.
 
     emit:
 

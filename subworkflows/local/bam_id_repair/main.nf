@@ -40,9 +40,7 @@ workflow BAM_ID_REPAIR {
     // index new reheaded file
     SAMTOOLS_INDEX(SAMTOOLS_REHEADER_SAMPLE.out.bam)
 
-    index_ch = SAMTOOLS_INDEX.out.bai
-        .mix(SAMTOOLS_INDEX.out.crai)
-        .mix(SAMTOOLS_INDEX.out.csi)
+    index_ch = SAMTOOLS_INDEX.out.index
 
     bam_bai = SAMTOOLS_REHEADER_SAMPLE.out.bam
                 .join( index_ch )
@@ -53,7 +51,9 @@ workflow BAM_ID_REPAIR {
     // Gather versions of all tools used
     ch_versions = ch_versions.mix(SAMTOOLS_REHEADER_SAMPLE.out.versions.first())
     ch_versions = ch_versions.mix(SAMTOOLS_SAMPLES.out.versions.first())
-    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions.first())
+    // SAMTOOLS_INDEX now emits versions via the topic channel (topic: versions)
+    // instead of a plain .out.versions -- picked up automatically by the
+    // pipeline-wide channel.topic("versions") collection in qualitycontrol.nf.
 
     emit:
     bam_bai                     // channel: [ val(meta), path(bam/cram), path(bai/crai) ]
