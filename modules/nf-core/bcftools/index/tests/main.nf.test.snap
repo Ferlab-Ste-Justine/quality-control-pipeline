@@ -11,12 +11,13 @@
                     ]
                 ],
                 "1": [
-                    
+                    [
+                        "BCFTOOLS_INDEX",
+                        "bcftools",
+                        "1.23.1"
+                    ]
                 ],
-                "2": [
-                    "versions.yml:md5,b4ea0f633dba7f5992fbf41b518f98e9"
-                ],
-                "csi": [
+                "index": [
                     [
                         {
                             "id": "test"
@@ -24,19 +25,20 @@
                         "test.vcf.gz.csi:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
-                "tbi": [
-                    
-                ],
-                "versions": [
-                    "versions.yml:md5,b4ea0f633dba7f5992fbf41b518f98e9"
+                "versions_bcftools": [
+                    [
+                        "BCFTOOLS_INDEX",
+                        "bcftools",
+                        "1.23.1"
+                    ]
                 ]
             }
         ],
+        "timestamp": "2026-05-28T14:22:45.726551",
         "meta": {
-            "nf-test": "0.8.4",
-            "nextflow": "24.04.2"
-        },
-        "timestamp": "2024-06-03T11:43:09.347303629"
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.2"
+        }
     },
     "sarscov2 - vcf - tbi": {
         "content": [
@@ -48,37 +50,41 @@
                     "test.vcf.gz.tbi"
                 ]
             ],
-            [
-                "versions.yml:md5,b4ea0f633dba7f5992fbf41b518f98e9"
-            ]
+            {
+                "versions_bcftools": [
+                    [
+                        "BCFTOOLS_INDEX",
+                        "bcftools",
+                        "1.23.1"
+                    ]
+                ]
+            }
         ],
+        "timestamp": "2026-03-20T18:02:23.639599735",
         "meta": {
-            "nf-test": "0.8.4",
-            "nextflow": "24.04.2"
-        },
-        "timestamp": "2024-06-03T11:42:46.38669168"
+            "nf-test": "0.9.4",
+            "nextflow": "25.10.2"
+        }
     },
     "sarscov2 - vcf - tbi - stub": {
         "content": [
             {
                 "0": [
-                    
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
                 ],
                 "1": [
                     [
-                        {
-                            "id": "test"
-                        },
-                        "test.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "BCFTOOLS_INDEX",
+                        "bcftools",
+                        "1.23.1"
                     ]
                 ],
-                "2": [
-                    "versions.yml:md5,b4ea0f633dba7f5992fbf41b518f98e9"
-                ],
-                "csi": [
-                    
-                ],
-                "tbi": [
+                "index": [
                     [
                         {
                             "id": "test"
@@ -86,16 +92,20 @@
                         "test.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
-                "versions": [
-                    "versions.yml:md5,b4ea0f633dba7f5992fbf41b518f98e9"
+                "versions_bcftools": [
+                    [
+                        "BCFTOOLS_INDEX",
+                        "bcftools",
+                        "1.23.1"
+                    ]
                 ]
             }
         ],
+        "timestamp": "2026-05-28T14:22:51.792764",
         "meta": {
-            "nf-test": "0.8.4",
-            "nextflow": "24.04.2"
-        },
-        "timestamp": "2024-06-03T11:43:32.494612317"
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.2"
+        }
     },
     "sarscov2 - vcf - csi": {
         "content": [
@@ -107,14 +117,20 @@
                     "test.vcf.gz.csi"
                 ]
             ],
-            [
-                "versions.yml:md5,b4ea0f633dba7f5992fbf41b518f98e9"
-            ]
+            {
+                "versions_bcftools": [
+                    [
+                        "BCFTOOLS_INDEX",
+                        "bcftools",
+                        "1.23.1"
+                    ]
+                ]
+            }
         ],
+        "timestamp": "2026-03-20T18:02:16.523585018",
         "meta": {
-            "nf-test": "0.8.4",
-            "nextflow": "24.04.2"
-        },
-        "timestamp": "2024-06-03T11:42:33.652109509"
+            "nf-test": "0.9.4",
+            "nextflow": "25.10.2"
+        }
     }
 }

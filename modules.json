@@ -7,18 +7,21 @@
                 "nf-core": {
                     "bcftools/index": {
                         "branch": "master",
-                        "git_sha": "f17049e03697726ace7499d2fe342f892594f6f3",
-                        "installed_by": ["modules"]
+                        "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/bcftools/index/bcftools-index.diff"
                     },
                     "bcftools/query": {
                         "branch": "master",
-                        "git_sha": "f17049e03697726ace7499d2fe342f892594f6f3",
-                        "installed_by": ["modules"]
+                        "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/bcftools/query/bcftools-query.diff"
                     },
                     "bcftools/reheader": {
                         "branch": "master",
-                        "git_sha": "f17049e03697726ace7499d2fe342f892594f6f3",
-                        "installed_by": ["modules"]
+                        "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/bcftools/reheader/bcftools-reheader.diff"
                     },
                     "bcftools/stats": {
                         "branch": "master",
