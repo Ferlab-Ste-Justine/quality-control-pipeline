@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#48](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/48) Added `scripts/run-smoke-tests.sh` and `scripts/run-test-suite.sh`, local helper scripts for manual smoke-testing and running the full nf-test + lint suite before pushing.
 [#49](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/49) Added `CLAUDE.md`, giving Claude Code repo context: pipeline flow, DRAGEN-mode gating, the topic-channel version-collection pattern, and known lint debt.
 [#49](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/49) Added `.github/workflows/ci-full-run.yml` (full `-profile test`/`test_dragen` pipeline runs), `.github/workflows/ci-pr-title-lint.yml`, and a `.github/actions/copy-test-data` composite action.
+[#50](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/50) Added `conf/containers_*.config`, the container-manifest files nf-core/tools 4.1.0's new `container_configs` lint check expects; regenerated automatically from module `meta.yml` files going forward.
+
+### `Removed`
+
+[#50](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/50) Removed the `fastp` and `samtools/idxstats` modules: both installed but never invoked anywhere in the pipeline.
 
 ### `Fixed`
 
@@ -26,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#48](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/48) Fixed the pre-commit CI job's prettier/editorconfig failures (mostly YAML list-indentation style), and added a `[LICENSE]` exemption to `.editorconfig` instead of reflowing the verbatim Apache License 2.0 text.
 [#48](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/48) Raised the declared `nextflowVersion` floor from `23.10.1` to `24.10.5`: the pipeline's use of topic channels for version collection (see `main.nf`) requires Nextflow >=24.04.0, so `23.10.1` was never actually runnable, just untested until this PR added it to the CI matrix.
 [#49](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/49) Fixed a stale/typo'd CI reference in `.github/CONTRIBUTING.md` (`.github/workflow/ci.yml` → `.github/workflows/ci-full-run.yml`).
+[#50](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/50) Fixed the remaining `check_local_copy` lint failures (module/subworkflow version drift deferred since #48) by updating `bcftools/{index,query,reheader}`, `samtools/{index,merge,stats}`, `fastqc`, `multiqc`, and `fastq_ngscheckmate` (+ its two child modules) to the newest versions compatible with our declared Nextflow floor, re-pointing containers to biocontainers/depot.galaxyproject.org and recording the substitution via `nf-core modules patch`. `nf-core pipelines lint --release` goes from 14 failures to 1 (the already-documented `multiqc_config: export_plots` nf-core/tools bug).
+[#50](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/50) Fixed two real, pre-existing bugs these module updates surfaced: `bam_merge`'s `SAMTOOLS_MERGE` call was passing `fasta`/`fai` as two separate tuples instead of the one combined tuple every upstream version expects, and `bam_qc`'s `SAMTOOLS_STATS` call wasn't passing `fai` at all despite the module requiring it — both latent since the local module content had silently diverged from its recorded `modules.json` pin long before this PR.
 
 ### `Changed`
 
@@ -34,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#48](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/48) Updated the README Nextflow badge and the nf-test CI matrix's pinned Nextflow versions to match the corrected `nextflowVersion` floor.
 [#49](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/49) Harmonized `.github/` CI conventions with the sibling Post-processing-Pipeline: pinned `nf-core/setup-nextflow` (previously unpinned), replaced `commit_lint.yml` with a PR-title lint (PRs are squash-merged, so the PR title becomes the commit message on `main`), and added `run_all`/disk-cleanup support to `nf-test.yml`. `nf-test.config`'s `nft-utils` plugin deliberately stays at `1.0.0` rather than the sibling's `0.0.3`, which lacks a `removeFromYamlMap` overload this pipeline's tests rely on.
 [#49](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/49) Bumped prettier to 3.6.2 and added `trailing-whitespace`/`end-of-file-fixer` pre-commit hooks, matching the fleet.
+[#50](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/50) `multiqc` deliberately stays at 1.27 rather than upstream's 1.31 — it's driven through a custom script calling MultiQC's Python API directly, so a version bump is a real compatibility risk, not a drive-by container swap. Patched to resolve its lint failure instead of bumping.
+[#50](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/50) `samtools/merge` deliberately stays at 1.23.1 rather than upstream's latest 1.24, which introduces a variable-scoping pattern that fails to compile under our declared Nextflow floor (24.10.5).
 
 ## v2.0.0 - [11/06/2026]
 
