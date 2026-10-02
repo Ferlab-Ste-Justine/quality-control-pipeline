@@ -29,10 +29,12 @@ workflow CRAM_SOMALIER {
         }
 
     SAMTOOLS_INDEX ( ch_input.no_crai )
-    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions.first())
+    // SAMTOOLS_INDEX now emits versions via the topic channel (topic: versions)
+    // instead of a plain .out.versions -- picked up automatically by the
+    // pipeline-wide channel.topic("versions") collection in qualitycontrol.nf.
 
     ch_somalierextract_input = ch_input.no_crai
-        .join(SAMTOOLS_INDEX.out.crai) //.bai
+        .join(SAMTOOLS_INDEX.out.index)
         .mix(ch_input.crai)
         .map { meta, cram, crai ->
             [ meta, cram, crai, meta.samplename_somalier ]

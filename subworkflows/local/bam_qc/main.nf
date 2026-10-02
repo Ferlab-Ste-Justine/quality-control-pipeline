@@ -34,10 +34,12 @@ workflow BAM_QC {
     //
 
     SAMTOOLS_STATS( ch_bam_bai,
-        ch_fasta.map { it -> [ [id:"fasta"], it] }
+        ch_fasta.combine(ch_fai).map { fa, fai -> [ [id:"fasta"], fa, fai ] }
     )
     ch_reports = ch_reports.mix(SAMTOOLS_STATS.out.stats)
-    ch_versions = ch_versions.mix(SAMTOOLS_STATS.out.versions)
+    // SAMTOOLS_STATS now emits versions via the topic channel (topic: versions)
+    // instead of a plain .out.versions -- picked up automatically by the
+    // pipeline-wide channel.topic("versions") collection in qualitycontrol.nf.
 
     //
     // ----- PICARD COVERAGE METRICS: WgsMetrics for WGS, HsMetrics for targeted/WXS -----

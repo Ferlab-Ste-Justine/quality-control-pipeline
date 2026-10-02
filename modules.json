@@ -7,18 +7,21 @@
                 "nf-core": {
                     "bcftools/index": {
                         "branch": "master",
-                        "git_sha": "f17049e03697726ace7499d2fe342f892594f6f3",
-                        "installed_by": ["modules"]
+                        "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/bcftools/index/bcftools-index.diff"
                     },
                     "bcftools/query": {
                         "branch": "master",
-                        "git_sha": "f17049e03697726ace7499d2fe342f892594f6f3",
-                        "installed_by": ["modules"]
+                        "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/bcftools/query/bcftools-query.diff"
                     },
                     "bcftools/reheader": {
                         "branch": "master",
-                        "git_sha": "f17049e03697726ace7499d2fe342f892594f6f3",
-                        "installed_by": ["modules"]
+                        "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/bcftools/reheader/bcftools-reheader.diff"
                     },
                     "bcftools/stats": {
                         "branch": "master",
@@ -30,15 +33,11 @@
                         "git_sha": "6383d8fe58f9498eecd5aa303e71a4a932d1e9f6",
                         "installed_by": ["modules"]
                     },
-                    "fastp": {
-                        "branch": "master",
-                        "git_sha": "d9ec4ef289ad39b8a662a7a12be50409b11df84b",
-                        "installed_by": ["modules"]
-                    },
                     "fastqc": {
                         "branch": "master",
-                        "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
-                        "installed_by": ["modules"]
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/fastqc/fastqc.diff"
                     },
                     "gatk4/bedtointervallist": {
                         "branch": "master",
@@ -53,16 +52,17 @@
                     "multiqc": {
                         "branch": "master",
                         "git_sha": "e10b76ca0c66213581bec2833e30d31f239dec0b",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/multiqc/multiqc.diff"
                     },
                     "ngscheckmate/fastq": {
                         "branch": "master",
-                        "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
+                        "git_sha": "7844e96252d0693fb2331969a1c9790eb831b0f6",
                         "installed_by": ["fastq_ngscheckmate"]
                     },
                     "ngscheckmate/vafncm": {
                         "branch": "master",
-                        "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
+                        "git_sha": "7844e96252d0693fb2331969a1c9790eb831b0f6",
                         "installed_by": ["fastq_ngscheckmate"]
                     },
                     "picard/collecthsmetrics": {
@@ -75,25 +75,23 @@
                         "git_sha": "df124e87c74d8b40285199f8cc20151f5aa57255",
                         "installed_by": ["modules"]
                     },
-                    "samtools/idxstats": {
-                        "branch": "master",
-                        "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
-                        "installed_by": ["modules"]
-                    },
                     "samtools/index": {
                         "branch": "master",
-                        "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
-                        "installed_by": ["modules"]
+                        "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/samtools/index/samtools-index.diff"
                     },
                     "samtools/merge": {
                         "branch": "master",
-                        "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
-                        "installed_by": ["modules"]
+                        "git_sha": "4e3e10e502ec6ab6b1c4b4fecd923ff1fa287338",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/samtools/merge/samtools-merge.diff"
                     },
                     "samtools/stats": {
                         "branch": "master",
-                        "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
-                        "installed_by": ["modules"]
+                        "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/samtools/stats/samtools-stats.diff"
                     },
                     "somalier/extract": {
                         "branch": "master",
@@ -123,7 +121,7 @@
                 "nf-core": {
                     "fastq_ngscheckmate": {
                         "branch": "master",
-                        "git_sha": "f8ba9160eb93635511a5d34fb8dee2a8ff87e437",
+                        "git_sha": "6ef220fd9252b42fb3c50348bbdbcb6246730686",
                         "installed_by": ["subworkflows"]
                     },
                     "utils_nextflow_pipeline": {

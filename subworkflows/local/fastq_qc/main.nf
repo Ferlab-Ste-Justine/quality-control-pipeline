@@ -12,14 +12,20 @@ workflow FASTQ_QC {
     ch_versions = channel.empty()
 
     FASTQ_NGSCHECKMATE (ch_fastq, ncm_snp_pt)
-    ch_versions = ch_versions.mix(FASTQ_NGSCHECKMATE.out.versions)
+    // NGSCHECKMATE_FASTQ/NGSCHECKMATE_VAFNCM now emit versions via the topic
+    // channel (topic: versions) instead of a plain .out.versions -- picked up
+    // automatically by the pipeline-wide channel.topic("versions") collection
+    // in qualitycontrol.nf. The subworkflow's own `versions` output was
+    // removed accordingly.
     ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.corr_matrix)
     ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.matched)
     ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.all)
     ch_reports = ch_reports.mix(FASTQ_NGSCHECKMATE.out.vaf)
 
     FASTQC (ch_fastq)
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    // FASTQC now emits versions via the topic channel (topic: versions)
+    // instead of a plain .out.versions -- picked up automatically by the
+    // pipeline-wide channel.topic("versions") collection in qualitycontrol.nf.
     ch_reports = ch_reports.mix(FASTQC.out.zip)
     ch_reports = ch_reports.mix(FASTQC.out.html)
 

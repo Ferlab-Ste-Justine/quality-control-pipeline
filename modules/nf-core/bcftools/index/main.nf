@@ -1,51 +1,39 @@
 process BCFTOOLS_INDEX {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_low'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/bcftools:1.20--h8b25389_0':
-        'biocontainers/bcftools:1.20--h8b25389_0' }"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://depot.galaxyproject.org/singularity/bcftools:1.23.1--hb2cee57_0'
+        : 'quay.io/biocontainers/bcftools:1.23.1--hb2cee57_0'}"
 
     input:
     tuple val(meta), path(vcf)
 
     output:
-    tuple val(meta), path("*.csi"), optional:true, emit: csi
-    tuple val(meta), path("*.tbi"), optional:true, emit: tbi
-    path "versions.yml"           , emit: versions
+    tuple val(meta), path("*.{tbi,csi}"), emit: index, optional: true
+    tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | sed '1!d; s/^.*bcftools //'"), topic: versions, emit: versions_bcftools
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
     bcftools \\
         index \\
-        $args \\
-        --threads $task.cpus \\
-        $vcf
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        bcftools: \$(bcftools --version 2>&1 | head -n1 | sed 's/^.*bcftools //; s/ .*\$//')
-    END_VERSIONS
+        ${args} \\
+        --threads ${task.cpus} \\
+        ${vcf}
     """
 
     stub:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    def extension = args.contains("--tbi") || args.contains("-t") ? "tbi" :
-                    "csi"
+    def extension = args.contains("--tbi") || args.contains("-t")
+        ? "tbi"
+        : "csi"
     """
     touch ${vcf}.${extension}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        bcftools: \$(bcftools --version 2>&1 | head -n1 | sed 's/^.*bcftools //; s/ .*\$//')
-    END_VERSIONS
     """
 }
