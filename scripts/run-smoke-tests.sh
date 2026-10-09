@@ -21,6 +21,8 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
+export NXF_FILE_ROOT="$PWD"
+
 require() {
     command -v "$1" >/dev/null 2>&1 || { echo "ERROR: '$1' not found on PATH." >&2; exit 1; }
 }
