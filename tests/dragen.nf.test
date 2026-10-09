@@ -4,13 +4,20 @@ nextflow_pipeline {
     script "../main.nf"
     tag "pipeline"
 
-    test("-profile test_dragen") {
+    test("-profile test_dragen (mixed standard + DRAGEN samples)") {
 
         when {
             params {
                 outdir = "$outputDir"
                 cohort_mode = false
-                dragen_metrics_dir = "data-test/metrics"
+                input = "${projectDir}/tests/fixtures/dragen_mixed_samplesheet.csv"
+                // Exercises all three per-sample dragenMetrics shapes in one run:
+                // NA19240 (blank -> standard recompute), NA19239 (directory),
+                // NA19238 (tarball) -- NA19240/NA19239/NA19238 share the YRI family,
+                // so the family's MultiQC report blends standard and DRAGEN-sourced
+                // metrics together. NA21118 (CEU) is a fully-DRAGEN family with
+                // cov_report/read_cov_report beds, exercising DRAGEN_COVERAGE_BY_GENE.
+                // NA21119 (SAS) is a fully-standard singleton.
             }
         }
 

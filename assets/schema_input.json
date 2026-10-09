@@ -105,6 +105,12 @@
                 "pattern": "^\\S+\\.(f(ast)?q(\\.gz)?|crai|bai|csi|tbi|idx)$",
                 "format": "file-path",
                 "exists": true
+            },
+            "dragenMetrics": {
+                "errorMessage": "Path to a directory or tarball of this sample's pre-computed DRAGEN metrics. Repeat the same value on every row for a given sample.",
+                "type": "string",
+                "format": "path",
+                "meta": ["dragenMetrics"]
             }
         },
         "dependentRequired": {

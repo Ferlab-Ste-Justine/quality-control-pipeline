@@ -1,16 +1,70 @@
 {
-    "-profile test_dragen": {
+    "-profile test_dragen (mixed standard + DRAGEN samples)": {
         "content": [
-            11,
+            41,
             {
+                "COUNT_DEL": {
+                    "bcftools": 1.2
+                },
+                "COUNT_INS": {
+                    "bcftools": 1.2
+                },
+                "COUNT_SNV": {
+                    "bcftools": 1.2
+                },
+                "COVERAGE_BY_GENE": {
+                    "aggregate_mosdepth_by_gene.py": "aggregate_mosdepth_by_gene.py 1.0.0"
+                },
                 "DRAGEN_COVERAGE_BY_GENE": {
                     "dragen_coverage_by_gene.py": "dragen_coverage_by_gene.py 1.0.0"
+                },
+                "FASTQC": {
+                    "fastqc": "0.12.1"
+                },
+                "HET_INDEL": {
+                    "bcftools": 1.2
+                },
+                "HET_SNV": {
+                    "bcftools": 1.2
+                },
+                "HOM_INDEL": {
+                    "bcftools": 1.2
+                },
+                "HOM_SNV": {
+                    "bcftools": 1.2
+                },
+                "MOSDEPTH": {
+                    "mosdepth": "0.3.11"
+                },
+                "NGSCHECKMATE_FASTQ": {
+                    "ngscheckmate": "1.0.1"
+                },
+                "NGSCHECKMATE_VAFNCM": {
+                    "ngscheckmate": "1.0.1"
+                },
+                "PICARD_COLLECTHSMETRICS": {
+                    "picard": "3.4.0"
+                },
+                "PICARD_COLLECTQUALITYYIELDMETRICS": {
+                    "picard": "3.4.0"
+                },
+                "SAMTOOLS_STATS": {
+                    "samtools": 1.24
                 },
                 "SOMALIER_EXTRACT": {
                     "somalier": "0.2.19"
                 },
                 "SOMALIER_RELATE": {
                     "somalier": "0.2.19"
+                },
+                "STATS_TSTV": {
+                    "bcftools": 1.2
+                },
+                "UNTAR": {
+                    "untar": 1.34
+                },
+                "VERIFYBAMID_VERIFYBAMID2": {
+                    "verifybamid": "2.0.1"
                 }
             },
             [
@@ -41,10 +95,41 @@
                 "reports/QC/NA19239",
                 "reports/QC/NA19239/NA19239.somalier",
                 "reports/QC/NA19240",
+                "reports/QC/NA19240/NA19240.Ancestry",
+                "reports/QC/NA19240/NA19240.CollectHsMetrics.coverage_metrics",
+                "reports/QC/NA19240/NA19240.QualityYieldMetrics.metrics",
+                "reports/QC/NA19240/NA19240.log",
+                "reports/QC/NA19240/NA19240.mosdepth.global.dist.txt",
+                "reports/QC/NA19240/NA19240.mosdepth.region.dist.txt",
+                "reports/QC/NA19240/NA19240.mosdepth.summary.txt",
+                "reports/QC/NA19240/NA19240.qc_regions_1.coverage_by_gene.tsv",
+                "reports/QC/NA19240/NA19240.qc_regions_1.mosdepth.global.dist.txt",
+                "reports/QC/NA19240/NA19240.qc_regions_1.mosdepth.region.dist.txt",
+                "reports/QC/NA19240/NA19240.qc_regions_1.mosdepth.summary.txt",
+                "reports/QC/NA19240/NA19240.qc_regions_1.regions.bed.gz",
+                "reports/QC/NA19240/NA19240.qc_regions_1.regions.bed.gz.csi",
+                "reports/QC/NA19240/NA19240.qc_regions_1.thresholds.bed.gz",
+                "reports/QC/NA19240/NA19240.qc_regions_1.thresholds.bed.gz.csi",
+                "reports/QC/NA19240/NA19240.regions.bed.gz",
+                "reports/QC/NA19240/NA19240.regions.bed.gz.csi",
+                "reports/QC/NA19240/NA19240.selfSM",
                 "reports/QC/NA19240/NA19240.somalier",
+                "reports/QC/NA19240/NA19240.stats",
+                "reports/QC/NA19240/NA19240.thresholds.bed.gz",
+                "reports/QC/NA19240/NA19240.thresholds.bed.gz.csi",
+                "reports/QC/NA19240/NA19240.vaf",
+                "reports/QC/NA19240/NA19240_1_fastqc.html",
+                "reports/QC/NA19240/NA19240_1_fastqc.zip",
+                "reports/QC/NA19240/NA19240_2_fastqc.html",
+                "reports/QC/NA19240/NA19240_2_fastqc.zip",
                 "reports/QC/NA21118",
                 "reports/QC/NA21118/NA21118.qc-coverage-region-2.coverage_by_gene.tsv",
                 "reports/QC/NA21118/NA21118.somalier",
+                "reports/QC/NA21119",
+                "reports/QC/fastq_checkmate",
+                "reports/QC/fastq_checkmate/fastq_checkmate_all.txt",
+                "reports/QC/fastq_checkmate/fastq_checkmate_matched.txt",
+                "reports/QC/fastq_checkmate/output_corr_matrix.txt",
                 "reports/pedigree",
                 "reports/pedigree/CEU",
                 "reports/pedigree/CEU/CEU.somalier.html",
@@ -58,15 +143,34 @@
             ],
             [
                 "NA21118.metrics.json:md5,7bab04bfc7291ffc1ebc89679d50b393",
-                "NA21119.metrics.json:md5,6f36d8087a58d4e2ce4a803b9fcbebda",
+                "NA21119.metrics.json:md5,6d5ed28d43bd735e944ad617468e8e87",
                 "NA19238.metrics.json:md5,e2949e413b249155484a0576c905004f",
                 "NA19239.metrics.json:md5,ec096468d68ea2b7b1cf2908ad79fe46",
-                "NA19240.metrics.json:md5,efd35dda03af70b7de8c6e25d5ef8b9b",
+                "NA19240.metrics.json:md5,fc013679b459e3aa7e4764d80ef40d69",
                 "NA19238.somalier:md5,eda83d91e74e3148ee5284eb07d940b4",
                 "NA19239.somalier:md5,2a898b285d4e6bcdfe2f8024c7f6f8ec",
+                "NA19240.Ancestry:md5,4eec49707496c52326c437a34632a7cf",
+                "NA19240.log:md5,0ef2839610692545c18f1662ceec8a37",
+                "NA19240.mosdepth.global.dist.txt:md5,7af398e9638943b066458390b5d39d79",
+                "NA19240.mosdepth.region.dist.txt:md5,acd0783f6e73457f78f3b56809067c91",
+                "NA19240.mosdepth.summary.txt:md5,1583c6672d1fb4333769fa5493d32983",
+                "NA19240.qc_regions_1.coverage_by_gene.tsv:md5,d0e99e27b99c4ad3896f7360a3f9857c",
+                "NA19240.qc_regions_1.mosdepth.global.dist.txt:md5,7af398e9638943b066458390b5d39d79",
+                "NA19240.qc_regions_1.mosdepth.region.dist.txt:md5,417bf254625ae57471d6bbfbc5ede2d6",
+                "NA19240.qc_regions_1.mosdepth.summary.txt:md5,b466d4e97c6cd35999704f2adf2ee7f5",
+                "NA19240.qc_regions_1.regions.bed.gz:md5,cc9e0734d5fe4d1c1bcae302b79c2f35",
+                "NA19240.qc_regions_1.thresholds.bed.gz:md5,8c48e34ae2b2d4532858375bf89ed849",
+                "NA19240.regions.bed.gz:md5,6d6733f03e77de78264dc1e4483d5b53",
+                "NA19240.selfSM:md5,e08a5938c72d25935af6da13591e3326",
                 "NA19240.somalier:md5,cc68d6b161b5bf7a5f749fadc89ac740",
+                "NA19240.stats:md5,20d32163baf0b68b3ec928d2d0dbeef2",
+                "NA19240.thresholds.bed.gz:md5,5946eb06b20fd496dbd13300029f4b84",
+                "NA19240.vaf:md5,436bd461639990ffbc169c79055c3360",
                 "NA21118.qc-coverage-region-2.coverage_by_gene.tsv:md5,ce53ff2f52652c9df037340bff9e992c",
                 "NA21118.somalier:md5,146095c053af5bc2749f5e782368f403",
+                "fastq_checkmate_all.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "fastq_checkmate_matched.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "output_corr_matrix.txt:md5,1463c887565c5ce9a0fe2eae8e6b2900",
                 "CEU.somalier.html:md5,cf438b48c0dfd72abf62b78f9ddb9643",
                 "CEU.somalier.pairs.tsv:md5,4a0988fc3c0fe5cfd5dd205fe6755595",
                 "CEU.somalier.samples.tsv:md5,0b2a38a30372ebd3e6febecd31825c3b",
@@ -76,10 +180,10 @@
                 "YRI.somalier.samples.tsv:md5,757c0ce579eca991680a872e78b221e9"
             ]
         ],
+        "timestamp": "2026-10-08T16:50:24.597716292",
         "meta": {
-            "nf-test": "0.9.3",
+            "nf-test": "0.9.5",
             "nextflow": "24.10.5"
-        },
-        "timestamp": "2026-06-11T14:48:24.121117"
+        }
     }
 }

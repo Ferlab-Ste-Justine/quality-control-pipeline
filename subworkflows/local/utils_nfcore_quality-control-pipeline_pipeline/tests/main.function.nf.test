@@ -278,4 +278,43 @@ nextflow_function {
             { assert function.result == [ [ 'SOLO.ped', "SOLO\tX\t0\t0\t2\t0" ] ] }
         ) }
     }
+
+    //
+    // dragenFileMatchesSample  (meta, file)
+    //
+    test("dragenFileMatchesSample: matching sample prefix -> true") {
+        function "dragenFileMatchesSample"
+        when { function { """
+            input[0] = [ sample: 'NA19238' ]
+            input[1] = file('NA19238.final.mapping_metrics.csv')
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == true }
+        ) }
+    }
+
+    test("dragenFileMatchesSample: mismatched sample prefix -> false") {
+        function "dragenFileMatchesSample"
+        when { function { """
+            input[0] = [ sample: 'NA19238' ]
+            input[1] = file('NA19239.final.mapping_metrics.csv')
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == false }
+        ) }
+    }
+
+    test("dragenFileMatchesSample: numeric sample ID still matches a string filename prefix") {
+        function "dragenFileMatchesSample"
+        when { function { """
+            input[0] = [ sample: 49886 ]
+            input[1] = file('49886.vc_metrics.csv')
+        """ } }
+        then { assertAll(
+            { assert function.success },
+            { assert function.result == true }
+        ) }
+    }
 }

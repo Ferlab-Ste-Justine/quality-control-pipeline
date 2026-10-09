@@ -23,7 +23,7 @@
 6. **VCF QC** — variant counts by type and zygosity, Ts/Tv ratio ([BCFtools](https://samtools.github.io/bcftools/))
 7. **Report aggregation** — all QC results consolidated into a single interactive report ([MultiQC](http://multiqc.info))
 
-Alignment and variant metrics can alternatively be sourced from pre-computed DRAGEN metrics CSVs via `--dragen_metrics_dir`.
+Alignment and variant metrics can alternatively be sourced, per sample, from pre-computed DRAGEN metrics via the samplesheet's `dragenMetrics` column (a directory, or a tarball, per sample) — standard and DRAGEN-sourced samples can be mixed freely in the same run.
 
 ## Usage
 
