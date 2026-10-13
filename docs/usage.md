@@ -29,6 +29,7 @@ Prepare a CSV samplesheet with one row per file (or per sequencing run for multi
 | `affected_status`         | No       | Affected status for pedigree generation. One of: `Affected`, `Unaffected`, `Unknown`. Defaults to `Unknown`.                                                                                                                                                                                                                        |
 | `lane`                    | No       | Lane or run identifier. When multiple rows share the same `participant`, `sample`, and `experimentalStrategy`, they are merged before QC.                                                                                                                                                                                           |
 | `runId`                   | No       | Run identifier. Used together with `lane` to uniquely identify a sequencing run.                                                                                                                                                                                                                                                    |
+| `dragenMetrics`           | No       | Path to a directory or tarball of this sample's pre-computed DRAGEN metrics. When set, this sample's BAM_QC/VCF_QC/FASTQ_QC are skipped in favor of DRAGEN's own metrics — see [DRAGEN metrics input](#dragen-metrics-input). Repeat the same value on every row for a given sample.                                                |
 
 ### Example samplesheet
 
@@ -156,15 +157,13 @@ Up to two custom BED region sets can be provided for per-region coverage analysi
 
 ### DRAGEN metrics input
 
-When samples have already been processed by DRAGEN, the pipeline can build the report from DRAGEN's per-sample metric CSVs instead of recomputing them with BAM_QC / VCF_QC.
+When a sample has already been processed by DRAGEN, the pipeline can build that sample's part of the report from DRAGEN's own per-sample metric files instead of recomputing them with BAM_QC / VCF_QC / FASTQ_QC. This is controlled per sample via the samplesheet's `dragenMetrics` column (see [Column reference](#column-reference)) — there is no pipeline-level flag. A single run can freely mix DRAGEN-sourced samples with standard-recompute samples, including within the same family.
 
-| Parameter              | Description                                                                                                                                                                       |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--dragen_metrics_dir` | Directory containing DRAGEN per-sample metric CSVs. When set, BAM_QC and VCF_QC are skipped. Somalier still runs against any BAM/CRAM in the samplesheet for pedigree validation. |
+Set `dragenMetrics` to either a directory or a tarball of that one sample's DRAGEN metric files (repeat the same value on every row for that sample). If a tarball is given (`.tar`, `.tar.gz`/`.tgz`, or `.tar.bz2`/`.tbz2`), it is extracted via the `untar` module — one extraction task per sample needing it — before the rest of this section applies; a flat tarball (all files at the archive root, e.g. a single sample's DRAGEN "extra" output bundle) and a tarball with subdirectories are both handled correctly.
 
-The directory is globbed at any depth for these filenames (both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` are recognised, therefore ensure the file prefix corresponds to the sample ID):
+The resulting per-sample directory is globbed at any depth for these filenames (both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` are recognised, therefore ensure the file prefix corresponds to the sample ID):
 
-| Filename suffix                              | Skips                               | Used for                                                                                                                                                                                                                                                                                                 |
+| Filename suffix                              | Skips (for that sample)             | Used for                                                                                                                                                                                                                                                                                                 |
 | -------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `*.mapping_metrics.csv`                      | FASTQ_QC, BAM_MERGE, BAM_QC, VCF_QC | `MULTIQC_PYTHON`: Alignment metrics + Q30 yield + estimated contamination                                                                                                                                                                                                                                |
 | `*.wgs_coverage_metrics.csv`                 | FASTQ_QC, BAM_MERGE, BAM_QC, VCF_QC | `MULTIQC_PYTHON`: Mean autosome coverage, uniformity (MAD proxy), %15x                                                                                                                                                                                                                                   |
@@ -172,9 +171,21 @@ The directory is globbed at any depth for these filenames (both `<sample>.<type>
 | `*.ploidy_estimation_metrics.csv`            |                                     | `CRAM_SOMALIER` (optional): XX / XY ploidy → predicted-sex fallback for `sex_check` when somalier didn't run for that sample                                                                                                                                                                             |
 | `*_cov_report.bed` + `*_read_cov_report.bed` |                                     | `DRAGEN_COVERAGE_BY_GENE` (optional): Paired per region (`qc-coverage-region-[1,2,3]`); the `DRAGEN_COVERAGE_BY_GENE` module aggregates them into a `*.coverage_by_gene.tsv`. The per-gene report tab uses region 1 by default and falls back to region 2 when region 1 has no gene-annotated intervals. |
 
-`--dragen_metrics_dir` accepts local paths and remote URIs (`s3://`, `gs://`, `az://`) provided the appropriate Nextflow plugin/credentials are configured. Files whose sample prefix doesn't match a row in the samplesheet are silently ignored.
+Somalier still runs against that sample's BAM/CRAM (if provided in the samplesheet) regardless of `dragenMetrics` — it's never skipped. For the directory form, `dragenMetrics` accepts local paths and remote URIs (`s3://`, `gs://`, `az://`) provided the appropriate Nextflow plugin/credentials are configured; a tarball is staged and extracted the same way any other process input file would be, so it can likewise live on a remote URI.
 
-Example — DRAGEN-only run with a small mixed samplesheet (some BAM for somalier, the rest GVCF-only):
+Example samplesheet mixing a DRAGEN-sourced sample (directory), a DRAGEN-sourced sample (tarball), and a standard-recompute sample in the same family:
+
+```csv
+participant,sample,familyId,experimentalStrategy,fileType,file1,file2,dragenMetrics
+P001,S001,FAM1,WGS,CRAM,/data/S001.cram,/data/S001.cram.crai,/dragen-outputs/S001/
+P001,S001,FAM1,WGS,VCF,/data/S001.vcf.gz,/data/S001.vcf.gz.tbi,/dragen-outputs/S001/
+P002,S002,FAM1,WGS,CRAM,/data/S002.cram,/data/S002.cram.crai,/dragen-outputs/S002.tar.gz
+P002,S002,FAM1,WGS,VCF,/data/S002.vcf.gz,/data/S002.vcf.gz.tbi,/dragen-outputs/S002.tar.gz
+P003,S003,FAM1,WGS,CRAM,/data/S003.cram,/data/S003.cram.crai,
+P003,S003,FAM1,WGS,VCF,/data/S003.vcf.gz,/data/S003.vcf.gz.tbi,
+```
+
+Launched the same way as any other run:
 
 ```bash
 nextflow run Ferlab-Ste-Justine/quality-control-pipeline \
@@ -183,76 +194,54 @@ nextflow run Ferlab-Ste-Justine/quality-control-pipeline \
    --outdir ./results \
    --fasta /path/to/GRCh38.fa \
    --fai /path/to/GRCh38.fa.fai \
-   --somalier_sites /path/to/sites.hg38.vcf.gz \
-   --dragen_metrics_dir s3://my-bucket/dragen-outputs/
+   --somalier_sites /path/to/sites.hg38.vcf.gz
 ```
 
-The following organization for the DRAGEN directory `s3://my-bucket/dragen-outputs/` are valid:
+The following directory layouts for a `dragenMetrics` value are all valid:
 
-<details> <summary>DRAGEN directory organized by samples</summary>
+<details> <summary>Flat directory</summary>
 
 ```bash
-my-bucket/dragen-outputs/
-├── S001/
-│   ├── S001(\.final)?.mapping_metrics.csv
-│   ├── S001(\.final)?.wgs_coverage_metrics.csv
-│   ├── S001(\.final)?.vc_metrics.csv
-│   ├── S001(\.final)?.ploidy_estimation_metrics.csv
-│   ├── S001_cov_report.bed
-│   └── S001_read_cov_report.bed
-├── S002/
-│   ├── S002(\.final)?.mapping_metrics.csv
-│   ├── S002(\.final)?.wgs_coverage_metrics.csv
-│   ├── S002(\.final)?.vc_metrics.csv
-│   ├── S002(\.final)?.ploidy_estimation_metrics.csv
-│   ├── S002_cov_report.bed
-│   └── S002_read_cov_report.bed
-└── S003/
-    ├── S003(\.final)?.mapping_metrics.csv
-    ├── S003(\.final)?.wgs_coverage_metrics.csv
-    ├── S003(\.final)?.vc_metrics.csv
-    ├── S003(\.final)?.ploidy_estimation_metrics.csv
-    ├── S003_cov_report.bed
-    └── S003_read_cov_report.bed
+S001/
+├── S001(\.final)?.mapping_metrics.csv
+├── S001(\.final)?.wgs_coverage_metrics.csv
+├── S001(\.final)?.vc_metrics.csv
+├── S001(\.final)?.ploidy_estimation_metrics.csv
+├── S001_cov_report.bed
+└── S001_read_cov_report.bed
 ```
 
 </details>
 
-<details> <summary>DRAGEN directory organized by runs</summary>
+<details> <summary>Nested under a run subdirectory</summary>
 
 ```bash
-my-bucket/dragen_outputs/
-├── Run001/
-│   ├── S001/
-│   │   ├── S001(\.final)?.mapping_metrics.csv
-│   │   ├── S001(\.final)?.wgs_coverage_metrics.csv
-│   │   ├── S001(\.final)?.vc_metrics.csv
-│   │   ├── S001(\.final)?.ploidy_estimation_metrics.csv
-│   │   ├── S001_cov_report.bed
-│   │   └── S001_read_cov_report.bed
-│   └── S002/
-│       ├── S002(\.final)?.mapping_metrics.csv
-│       ├── S002(\.final)?.wgs_coverage_metrics.csv
-│       ├── S002(\.final)?.vc_metrics.csv
-│       ├── S002(\.final)?.ploidy_estimation_metrics.csv
-│       ├── S002_cov_report.bed
-│       └── S002_read_cov_report.bed
-└── Run002/
-    ├── S003/
-    │   ├── S003(\.final)?.mapping_metrics.csv
-    │   ├── S003(\.final)?.wgs_coverage_metrics.csv
-    │   ├── S003(\.final)?.vc_metrics.csv
-    │   ├── S003(\.final)?.ploidy_estimation_metrics.csv
-    │   ├── S003_cov_report.bed
-    │   └── S003_read_cov_report.bed
-    └── S004/
-        ├── S004(\.final)?.mapping_metrics.csv
-        ├── S004(\.final)?.wgs_coverage_metrics.csv
-        ├── S004(\.final)?.vc_metrics.csv
-        ├── S004(\.final)?.ploidy_estimation_metrics.csv
-        ├── S004_cov_report.bed
-        └── S004_read_cov_report.bed
+Run001/S001/
+├── S001(\.final)?.mapping_metrics.csv
+├── S001(\.final)?.wgs_coverage_metrics.csv
+├── S001(\.final)?.vc_metrics.csv
+├── S001(\.final)?.ploidy_estimation_metrics.csv
+├── S001_cov_report.bed
+└── S001_read_cov_report.bed
 ```
+
+</details>
+
+<details> <summary>Tarball, flat (single-sample "extra" bundle)</summary>
+
+A tarball with every file at its root, no subdirectories, extracts to exactly the same shape as the flat directory above:
+
+```bash
+S001.tar.gz
+├── S001(\.final)?.mapping_metrics.csv
+├── S001(\.final)?.wgs_coverage_metrics.csv
+├── S001(\.final)?.vc_metrics.csv
+├── S001(\.final)?.ploidy_estimation_metrics.csv
+├── S001_cov_report.bed
+└── S001_read_cov_report.bed
+```
+
+A tarball can equally contain a nested subdirectory instead of a flat file list — the `untar` module preserves whatever structure the archive contains.
 
 </details>
 

@@ -335,6 +335,26 @@ def phenotypeForPed(status) {
 }
 
 //
+// A sample's dragenMetrics directory/tarball is expected to hold only that
+// sample's own DRAGEN files (one dir/tarball per sample). Guard against a
+// mismatched/misconfigured dragenMetrics value -- e.g. two samples pointed at
+// the same bundle by mistake, or a leftover batch-wide bundle from before
+// dragenMetrics became per-sample -- silently misattributing another
+// sample's QC data. Warn and drop any file whose filename-embedded sample ID
+// doesn't match meta.sample, rather than trusting the bundle's contents
+// blindly.
+//
+def dragenFileMatchesSample(meta, f) {
+    def filePrefix = f.name.tokenize('.')[0]
+    def sampleId = idToString(meta.sample)
+    if (filePrefix != sampleId) {
+        log.warn("Ignoring DRAGEN file '${f.name}' found under dragenMetrics for sample '${sampleId}' -- its filename-embedded sample ID ('${filePrefix}') does not match. Check that this sample's dragenMetrics points at a directory/tarball containing only its own files.")
+        return false
+    }
+    return true
+}
+
+//
 // Check and validate pipeline parameters
 //
 def validateInputParameters() {

@@ -208,21 +208,6 @@
                 }
             }
         },
-        "dragen_options": {
-            "title": "DRAGEN metrics input",
-            "type": "object",
-            "fa_icon": "fas fa-microchip",
-            "description": "Options for ingesting pre-computed DRAGEN per-sample metrics in place of recomputing them.",
-            "properties": {
-                "dragen_metrics_dir": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "description": "Path to a directory of DRAGEN per-sample metric files. When set, BAM_QC and VCF_QC are skipped and the report is populated from DRAGEN's pre-computed CSVs.",
-                    "help_text": "Files are globbed at any depth under the directory; both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` are recognised for mapping_metrics, wgs_coverage_metrics, vc_metrics and ploidy_estimation_metrics. Local paths and remote URIs (s3://, gs://, az://) are supported. Somalier still runs on any BAM/CRAM provided in the samplesheet for pedigree validation.",
-                    "fa_icon": "fas fa-folder-open"
-                }
-            }
-        },
         "pipeline_behaviour_options": {
             "title": "Pipeline behaviour",
             "type": "object",
@@ -350,9 +335,6 @@
         },
         {
             "$ref": "#/$defs/vcf_and_targeted_region_options"
-        },
-        {
-            "$ref": "#/$defs/dragen_options"
         },
         {
             "$ref": "#/$defs/pipeline_behaviour_options"

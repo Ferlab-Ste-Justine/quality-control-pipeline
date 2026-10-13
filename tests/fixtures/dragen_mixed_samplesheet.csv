@@ -1,0 +1,12 @@
+participant,sample,familyId,relationship_to_proband,sex,experimentalStrategy,fileType,file1,file2,dragenMetrics
+NA21118,NA21118,CEU,Proband,Male,WGS,CRAM,data-test/cram/NA21118.subset.chr20XY.cram,data-test/cram/NA21118.subset.chr20XY.cram.crai,tests/fixtures/dragen_metrics/NA21118
+NA21118,NA21118,CEU,Proband,Male,WGS,VCF,data-test/vcf/NA21118.chr20_20000000-21000000.hard-filtered.vcf.gz,data-test/vcf/NA21118.chr20_20000000-21000000.hard-filtered.vcf.gz.tbi,tests/fixtures/dragen_metrics/NA21118
+NA21119,NA21119,SAS,,Male,WGS,GVCF,data-test/vcf/NA21119.chr20_20000000-21000000.gvcf.gz,data-test/vcf/NA21119.chr20_20000000-21000000.gvcf.gz.tbi,
+NA19240,NA19240,YRI,Proband,Female,WXS,CRAM,data-test/cram/NA19240.subset.chr20XY.cram,data-test/cram/NA19240.subset.chr20XY.cram.crai,
+NA19240,NA19240,YRI,Proband,Female,WXS,VCF,data-test/vcf/NA19240.chr20_20000000-21000000.hard-filtered.vcf.gz,data-test/vcf/NA19240.chr20_20000000-21000000.hard-filtered.vcf.gz.tbi,
+NA19240,NA19240,YRI,Proband,Female,WXS,FASTQ,data-test/fastq/NA19240.chr20XY_sub_R1.fastq.gz,data-test/fastq/NA19240.chr20XY_sub_R2.fastq.gz,
+NA19239,NA19239,YRI,Father,Male,WXS,FASTQ,data-test/fastq/NA19239.chr20XY_sub_R1.fastq.gz,data-test/fastq/NA19239.chr20XY_sub_R2.fastq.gz,tests/fixtures/dragen_metrics/NA19239
+NA19239,NA19239,YRI,Father,Male,WXS,CRAM,data-test/cram/NA19239.subset.chr20XY.cram,data-test/cram/NA19239.subset.chr20XY.cram.crai,tests/fixtures/dragen_metrics/NA19239
+NA19239,NA19239,YRI,Father,Male,WXS,VCF,data-test/vcf/NA19239.chr20_20000000-21000000.hard-filtered.vcf.gz,data-test/vcf/NA19239.chr20_20000000-21000000.hard-filtered.vcf.gz.tbi,tests/fixtures/dragen_metrics/NA19239
+NA19238,NA19238,YRI,Mother,Female,WXS,CRAM,data-test/cram/NA19238.subset.chr20XY.cram,data-test/cram/NA19238.subset.chr20XY.cram.crai,tests/fixtures/dragen_metrics/NA19238.tar.gz
+NA19238,NA19238,YRI,Mother,Female,WXS,VCF,data-test/vcf/NA19238.chr20_20000000-21000000.hard-filtered.vcf.gz,data-test/vcf/NA19238.chr20_20000000-21000000.hard-filtered.vcf.gz.tbi,tests/fixtures/dragen_metrics/NA19238.tar.gz

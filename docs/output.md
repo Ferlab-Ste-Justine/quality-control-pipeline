@@ -209,9 +209,9 @@ VCF QC uses [BCFtools](https://samtools.github.io/bcftools/) to compute per-samp
 
 ## DRAGEN metrics input
 
-When `--dragen_metrics_dir` is set, BAM_QC and VCF_QC are skipped and the report's alignment / variant metrics are populated from DRAGEN's pre-computed CSVs. The pipeline does not republish these files — they're staged into the MultiQC work directory and surfaced through the MultiQC report and the per-sample JSON sidecars below.
+When a sample's samplesheet row sets `dragenMetrics`, that sample's BAM_QC/VCF_QC/FASTQ_QC are skipped and its alignment/variant metrics in the report are populated from DRAGEN's pre-computed files instead. This is a per-sample samplesheet column, not a pipeline parameter — a single run can mix DRAGEN-sourced and standard-recompute samples, including within the same family. The pipeline does not republish these files — they're staged into the MultiQC work directory and surfaced through the MultiQC report and the per-sample JSON sidecars below.
 
-Files are picked up at any depth under `--dragen_metrics_dir` (local path or `s3://` / `gs://` / `az://` URI). Both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` filenames are recognised.
+`dragenMetrics` accepts either a directory or a tarball (`.tar`, `.tar.gz`/`.tgz`, `.tar.bz2`/`.tbz2`) per sample; a tarball is extracted via the `untar` module (one task per sample needing it) first. Files are then picked up at any depth under the resulting directory (local path or `s3://` / `gs://` / `az://` URI for the directory form). Both `<sample>.<type>.csv` and `<sample>.final.<type>.csv` filenames are recognised.
 
 | Filename suffix                              | Used for                                                                                                                                                                                                                                                           |
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -221,7 +221,7 @@ Files are picked up at any depth under `--dragen_metrics_dir` (local path or `s3
 | `*.ploidy_estimation_metrics.csv`            | XX / XY ploidy → predicted-sex fallback for `sex_check` when somalier did not run for that sample                                                                                                                                                                  |
 | `*_cov_report.bed` + `*_read_cov_report.bed` | Paired per region (`qc-coverage-region-[1,2,3]`); the `DRAGEN_COVERAGE_BY_GENE` module aggregates them into a `*.coverage_by_gene.tsv`. The per-gene report tab uses region 1 by default and falls back to region 2 when region 1 has no gene-annotated intervals. |
 
-Somalier still runs against any BAM/CRAM provided in the samplesheet for pedigree validation. Samples without BAM/CRAM (e.g. GVCF-only with DRAGEN metrics) still appear in the per-family report with their `pedigree_sex` from the samplesheet-derived PED, and pick up `sex_check` from the DRAGEN ploidy estimate.
+Somalier still runs against that sample's BAM/CRAM, if provided in the samplesheet, regardless of `dragenMetrics` — it's never skipped. Samples without BAM/CRAM (e.g. GVCF-only with DRAGEN metrics) still appear in the per-family report with their `pedigree_sex` from the samplesheet-derived PED, and pick up `sex_check` from the DRAGEN ploidy estimate.
 
 ---
 
@@ -231,7 +231,7 @@ Somalier still runs against any BAM/CRAM provided in the samplesheet for pedigre
 <summary>Output files</summary>
 
 - `multiqc/`
-  - `Cohort_multiqc_report.html`: Standalone HTML report summarising QC results from all tools and samples. Includes BAM QC and VCF QC outputs extracted from DRAGEN metrics if `--dragen_metrics_dir` was provided.
+  - `Cohort_multiqc_report.html`: Standalone HTML report summarising QC results from all tools and samples. Includes BAM QC and VCF QC outputs extracted from DRAGEN metrics for any sample whose samplesheet row set `dragenMetrics`.
   - `Cohort_multiqc_report_data.zip`: Archive of parsed, tab-delimited statistics from each tool.
   - `<familyId>/<familyId>_mutliqc_report.html`: Optionally organize multiqc reports by family if `cohort_mode = false`.
   - `<familyId>/<familyId>_multiqc_report_data.zip`: Optionally organize report data by family if `cohort_mode = false`.

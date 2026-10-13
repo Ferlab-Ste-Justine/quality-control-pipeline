@@ -9,18 +9,19 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
 include { buildPedRowsForFamily  } from '../subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
+include { dragenFileMatchesSample } from '../subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline'
 include { FASTQ_QC               } from '../subworkflows/local/fastq_qc/main'
 include { BAM_QC as BAM_QC_WGS   } from '../subworkflows/local/bam_qc/main'
 include { BAM_QC as BAM_QC_TARGET  } from '../subworkflows/local/bam_qc/main'
 include { VCF_QC as VCF_QC_WGS   } from '../subworkflows/local/vcf_qc/main'
 include { VCF_QC as VCF_QC_TARGET  } from '../subworkflows/local/vcf_qc/main'
 include { BAM_MERGE              } from '../subworkflows/local/bam_merge'
-include { SAMPLE_FAMILY_MAP      } from '../subworkflows/local/sample_family_map'
 include { PED_FAMILY_CHECK       } from '../subworkflows/local/ped_family_check'
 include { PED_MULTIQC_JOIN       } from '../subworkflows/local/ped_multiqc_join'
 include { CRAM_SOMALIER          } from '../subworkflows/local/cram_somalier'
 include { GATK4_BEDTOINTERVALLIST } from '../modules/nf-core/gatk4/bedtointervallist/main'
 include { DRAGEN_COVERAGE_BY_GENE } from '../modules/local/dragen_coverage_by_gene/main'
+include { UNTAR                  } from '../modules/nf-core/untar/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,142 +73,157 @@ workflow QUALITYCONTROL {
             [ meta - meta.subMap('lane','runId'), files[0], files[1] ]
         }
 
-    if (!params.dragen_metrics_dir) {
-        /*
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            FASTQ QUALITY CONTROL
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        */
+    // meta.dragenMetrics (samplesheet column) selects, per sample and independently
+    // per fileType row, whether that row is recomputed by the standard pipeline or
+    // sourced from DRAGEN's own pre-computed metrics instead. A single run's
+    // samplesheet can freely mix both kinds of samples/families.
+    ch_fastq_branch = ch_samplesheet_parsed.fastq.branch { meta, files ->
+        dragen: meta.dragenMetrics
+        standard: true
+    }
+    ch_aln_branch = ch_samplesheet_parsed.aln.branch { meta, cram, crai ->
+        dragen: meta.dragenMetrics
+        standard: true
+    }
+    ch_vcf_branch = ch_samplesheet_parsed.vcf.branch { meta, vcf, tbi ->
+        dragen: meta.dragenMetrics
+        standard: true
+    }
 
-        // If fastq files are provided, run FastQC, SeqFu, and ngsCheckMate
-        FASTQ_QC ( ch_samplesheet_parsed.fastq, ncm_snp_pt.map { it -> [ [id:"fastq_checkmate"], it] } )
-        ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports)
-        ch_versions = ch_versions.mix(FASTQ_QC.out.versions)
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        FASTQ QUALITY CONTROL
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
 
-        /*
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            BAM/CRAM QUALITY CONTROL
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        */
-        GATK4_BEDTOINTERVALLIST( ch_intervals.flatten().map { it -> [[id:"bed"], it] },
-                                ch_dict.map { it -> [[id:"dict"], it] })
+    // If fastq files are provided, run FastQC, SeqFu, and ngsCheckMate
+    FASTQ_QC ( ch_fastq_branch.standard, ncm_snp_pt.map { it -> [ [id:"fastq_checkmate"], it] } )
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQ_QC.out.reports)
+    ch_versions = ch_versions.mix(FASTQ_QC.out.versions)
 
-        ch_interval_list = GATK4_BEDTOINTERVALLIST.out.interval_list
-                            .map { _meta, intervals -> intervals }
-                            .collect()
-                            .ifEmpty([])
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        BAM/CRAM QUALITY CONTROL
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+    GATK4_BEDTOINTERVALLIST( ch_intervals.flatten().map { it -> [[id:"bed"], it] },
+                            ch_dict.map { it -> [[id:"dict"], it] })
 
-        // Merge multiple runs
-        //
-        // ----- SAMTOOLS MERGE -----
-        //
-        bam_to_merge = ch_samplesheet_parsed.aln
-            .map { meta, cram, crai ->
-            [ groupKey(meta.subMap('id', 'participant', 'sample', 'familyId', 'sex', 'sequencingType', 'status', 'relationship_to_proband', 'affected_status'), meta.n_lanes), cram, crai ]
-        }
-        .groupTuple()
+    ch_interval_list = GATK4_BEDTOINTERVALLIST.out.interval_list
+                        .map { _meta, intervals -> intervals }
+                        .collect()
+                        .ifEmpty([])
 
-        BAM_MERGE(bam_to_merge, ch_fasta, ch_fai)
+    // Merge multiple runs
+    //
+    // ----- SAMTOOLS MERGE -----
+    //
+    bam_to_merge = ch_aln_branch.standard
+        .map { meta, cram, crai ->
+        [ groupKey(meta.subMap('id', 'participant', 'sample', 'familyId', 'sex', 'sequencingType', 'status', 'relationship_to_proband', 'affected_status'), meta.n_lanes), cram, crai ]
+    }
+    .groupTuple()
 
-        ch_versions = ch_versions.mix(BAM_MERGE.out.versions)
-        // Post-merge per-sample CRAM/CRAI feeds somalier in normal mode.
-        ch_cram_crai_source = BAM_MERGE.out.bam_bai
+    BAM_MERGE(bam_to_merge, ch_fasta, ch_fai)
 
-        //
-        // ----- ALIGNMENT QC -----
-        //
-        // separate qc for targeted seq vs wgs
-        ch_bam_qc = BAM_MERGE.out.bam_bai
-            .map { groupKey, bam, bai ->
-            [groupKey.target, bam, bai]
-            }
-            .branch { meta, bam, bai ->
-                wgs: meta.sequencingType == 'WGS'
-                targeted: meta.sequencingType != 'WGS'
-            }
+    ch_versions = ch_versions.mix(BAM_MERGE.out.versions)
 
-        BAM_QC_WGS(
-            ch_bam_qc.wgs,
-            ch_fasta,
-            ch_fai,
-            ch_dict,
-            ch_intervals,
-            qc_regions_1,
-            qc_regions_2,
-            ch_interval_list,
-            [],
-            [],
-            ch_svd_in,
-            'WGS'
-        )
-
-        BAM_QC_TARGET(
-            ch_bam_qc.targeted,
-            ch_fasta,
-            ch_fai,
-            ch_dict,
-            ch_intervals,
-            qc_regions_1,
-            qc_regions_2,
-            ch_interval_list,
-            ch_baits,
-            ch_targets,
-            ch_svd_in,
-            'TARGETED'
-        )
-
-        ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_WGS.out.reports)
-        ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_TARGET.out.reports)
-
-        ch_versions = ch_versions.mix(BAM_QC_WGS.out.versions)
-        ch_versions = ch_versions.mix(BAM_QC_TARGET.out.versions)
-
-        /*
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            VCF QUALITY CONTROL
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        */
-
-        // separate qc for targeted seq vs wgs
-        ch_vcf_qc = ch_samplesheet_parsed.vcf
-            .branch { meta, vcf, tbi ->
-                wgs: meta.sequencingType == 'WGS'
-                targeted: meta.sequencingType != 'WGS'
-            }
-
-        VCF_QC_WGS (
-            ch_vcf_qc.wgs,
-            ch_fasta,
-            ch_intervals,
-            channel.value([]),
-            ch_exons
-        )
-
-        VCF_QC_TARGET (
-            ch_vcf_qc.targeted,
-            ch_fasta,
-            ch_intervals,
-            ch_targets,
-            ch_exons
-        )
-
-        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_WGS.out.vcf_metrics)
-        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_TARGET.out.vcf_metrics)
-
-        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_WGS.out.vcf_stats)
-        ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_TARGET.out.vcf_stats)
-
-    } else {
-        // DRAGEN mode skips BAM_MERGE; feed somalier the BAM/CRAM straight from
-        // the samplesheet. Trim meta to the same fields BAM_MERGE keeps on its
-        // GroupKey target so meta.n_lanes is absent — otherwise the per-family
-        // groupTuple inside CRAM_SOMALIER emits each sample early (count=1) and
-        // fails the per-family join.
-        ch_cram_crai_source = ch_samplesheet_parsed.aln
-            .map { meta, cram, crai ->
+    // CRAM/CRAI source for somalier: standard-branch samples contribute their
+    // merged file (from BAM_MERGE); dragen-branch samples were never merged, so
+    // they feed somalier directly from the samplesheet, trimmed the same way
+    // BAM_MERGE trims its GroupKey target so meta.n_lanes is absent — otherwise
+    // the per-family groupTuple inside CRAM_SOMALIER emits each sample early
+    // (count=1) and fails the per-family join.
+    ch_cram_crai_source = BAM_MERGE.out.bam_bai
+        .mix(
+            ch_aln_branch.dragen.map { meta, cram, crai ->
                 [ meta.subMap('id', 'participant', 'sample', 'familyId', 'sex', 'sequencingType', 'status', 'relationship_to_proband', 'affected_status'), cram, crai ]
             }
-    }
+        )
+
+    //
+    // ----- ALIGNMENT QC -----
+    //
+    // separate qc for targeted seq vs wgs
+    ch_bam_qc = BAM_MERGE.out.bam_bai
+        .map { groupKey, bam, bai ->
+        [groupKey.target, bam, bai]
+        }
+        .branch { meta, bam, bai ->
+            wgs: meta.sequencingType == 'WGS'
+            targeted: meta.sequencingType != 'WGS'
+        }
+
+    BAM_QC_WGS(
+        ch_bam_qc.wgs,
+        ch_fasta,
+        ch_fai,
+        ch_dict,
+        ch_intervals,
+        qc_regions_1,
+        qc_regions_2,
+        ch_interval_list,
+        [],
+        [],
+        ch_svd_in,
+        'WGS'
+    )
+
+    BAM_QC_TARGET(
+        ch_bam_qc.targeted,
+        ch_fasta,
+        ch_fai,
+        ch_dict,
+        ch_intervals,
+        qc_regions_1,
+        qc_regions_2,
+        ch_interval_list,
+        ch_baits,
+        ch_targets,
+        ch_svd_in,
+        'TARGETED'
+    )
+
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_WGS.out.reports)
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_QC_TARGET.out.reports)
+
+    ch_versions = ch_versions.mix(BAM_QC_WGS.out.versions)
+    ch_versions = ch_versions.mix(BAM_QC_TARGET.out.versions)
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        VCF QUALITY CONTROL
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
+    // separate qc for targeted seq vs wgs
+    ch_vcf_qc = ch_vcf_branch.standard
+        .branch { meta, vcf, tbi ->
+            wgs: meta.sequencingType == 'WGS'
+            targeted: meta.sequencingType != 'WGS'
+        }
+
+    VCF_QC_WGS (
+        ch_vcf_qc.wgs,
+        ch_fasta,
+        ch_intervals,
+        channel.value([]),
+        ch_exons
+    )
+
+    VCF_QC_TARGET (
+        ch_vcf_qc.targeted,
+        ch_fasta,
+        ch_intervals,
+        ch_targets,
+        ch_exons
+    )
+
+    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_WGS.out.vcf_metrics)
+    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_TARGET.out.vcf_metrics)
+
+    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_WGS.out.vcf_stats)
+    ch_multiqc_files = ch_multiqc_files.mix(VCF_QC_TARGET.out.vcf_stats)
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -330,60 +346,80 @@ workflow QUALITYCONTROL {
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        DRAGEN METRICS (alternative to BAM_QC / VCF_QC)
+        DRAGEN METRICS (alternative to BAM_QC / VCF_QC, per sample)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
-    if (params.dragen_metrics_dir) {
-        // Build a sample -> familyId map from the samplesheet so DRAGEN files
-        // pick up the right familyId for per-family report routing.
-        SAMPLE_FAMILY_MAP(ch_samplesheet)
-        ch_sample_family = SAMPLE_FAMILY_MAP.out.sample_family
+    // One row per DRAGEN-flagged sample. A sample can have several samplesheet rows
+    // (e.g. a CRAM row and a VCF row), all repeating the same dragenMetrics value --
+    // dedupe to one UNTAR/glob per sample.
+    ch_dragen_samples = ch_samplesheet
+        .filter { meta, _files -> meta.dragenMetrics }
+        .map { meta, _files -> [ meta.sample, meta - meta.subMap('lane', 'runId', 'fileType') ] }
+        .unique { it[0] }
+        .map { _sample, meta -> meta }
 
-        ch_dragen_files = channel.fromPath([
-                "${params.dragen_metrics_dir}/*.csv",
-                "${params.dragen_metrics_dir}/**/*.csv",
-            ], checkIfExists: false)
-            .map { f -> [ f.name.tokenize('.')[0], f ] }   // [sample, file]
-            .combine(ch_sample_family, by: 0)              // [sample, file, familyId]
-            .map { sample, f, familyId -> [ [id: sample, sample: sample, familyId: familyId], f ] }
+    // meta.dragenMetrics accepts either a directory of that sample's DRAGEN metric
+    // files, or a tarball of them (e.g. a CQGC-style per-sample "extra" bundle). A
+    // tarball is extracted via UNTAR -- one task per sample needing it -- before the
+    // same glob logic below applies uniformly to either shape via ch_dragen_dir.
+    ch_dragen_input = ch_dragen_samples
+        .map { meta -> [ meta, file(meta.dragenMetrics, checkIfExists: true) ] }
+        .branch { meta, p ->
+            tarball: p.name ==~ /.*\.(tar|tar\.gz|tgz|tar\.bz2|tbz2)$/
+            directory: true
+        }
 
-        ch_multiqc_files = ch_multiqc_files.mix(ch_dragen_files)
+    UNTAR ( ch_dragen_input.tarball )
+    // UNTAR emits its version via the topic channel (topic: versions) -- picked up
+    // automatically by the pipeline-wide channel.topic("versions") collection below.
+    // if ch_dragen_input.tarball does not exist: zero UNTAR tasks get scheduled. Nextflow is purely reactive here: a process just does nothing when its input channel is empty. No task runs, no container gets pulled for it, no error.
 
-        // DRAGEN per-region per-interval coverage → per-gene coverage TSV.
-        ch_dragen_cov = channel.fromPath([
-                "${params.dragen_metrics_dir}/*_cov_report.bed",
-                "${params.dragen_metrics_dir}/**/*_cov_report.bed",
-            ], checkIfExists: false)
-            .filter { f -> !f.name.endsWith('_read_cov_report.bed') }
-            .map { f ->
-                def parts = f.name.tokenize('.')
-                def sample = parts[0]
-                def region = parts[1].replaceFirst(/_cov_report$/, '')
-                [ "${sample}|${region}".toString(), sample, region, f ]
-            }
+    ch_dragen_dir = UNTAR.out.untar.mix(ch_dragen_input.directory) // mix both channels so that ch_dragen_dir ends up with one dir
 
-        ch_dragen_read_cov = channel.fromPath([
-                "${params.dragen_metrics_dir}/*_read_cov_report.bed",
-                "${params.dragen_metrics_dir}/**/*_read_cov_report.bed",
-            ], checkIfExists: false)
-            .map { f ->
-                def parts = f.name.tokenize('.')
-                def sample = parts[0]
-                def region = parts[1].replaceFirst(/_read_cov_report$/, '')
-                [ "${sample}|${region}".toString(), f ]
-            }
+    ch_dragen_files = ch_dragen_dir
+        .flatMap { meta, dir ->
+            [ file("${dir}/*.csv", checkIfExists: false), file("${dir}/**/*.csv", checkIfExists: false) ]
+                .flatten()
+                .findAll { f -> dragenFileMatchesSample(meta, f) }
+                .collect { f -> [ meta, f ] }
+        }
 
-        ch_dragen_gene_input = ch_dragen_cov
-            .join(ch_dragen_read_cov)
-            .map { _key, sample, region, cov, read_cov -> [ sample, region, cov, read_cov ] }
-            .combine(ch_sample_family, by: 0)
-            .map { sample, region, cov, read_cov, familyId ->
-                [ [id: sample, sample: sample, region: region, familyId: familyId], cov, read_cov ]
-            }
+    ch_multiqc_files = ch_multiqc_files.mix(
+        ch_dragen_files.map { meta, f -> [ [id: meta.sample, sample: meta.sample, familyId: meta.familyId], f ] }
+    )
 
-        DRAGEN_COVERAGE_BY_GENE(ch_dragen_gene_input)
-        ch_multiqc_files = ch_multiqc_files.mix(DRAGEN_COVERAGE_BY_GENE.out.report)
-    }
+    // DRAGEN per-region per-interval coverage → per-gene coverage TSV.
+    ch_dragen_cov = ch_dragen_dir
+        .flatMap { meta, dir ->
+            [ file("${dir}/*_cov_report.bed", checkIfExists: false), file("${dir}/**/*_cov_report.bed", checkIfExists: false) ]
+                .flatten()
+                .findAll { f -> !f.name.endsWith('_read_cov_report.bed') }
+                .findAll { f -> dragenFileMatchesSample(meta, f) }
+                .collect { f ->
+                    def region = f.name.tokenize('.')[1].replaceFirst(/_cov_report$/, '')
+                    [ "${meta.sample}|${region}".toString(), meta, region, f ]
+                }
+        }
+
+    ch_dragen_read_cov = ch_dragen_dir
+        .flatMap { meta, dir ->
+            [ file("${dir}/*_read_cov_report.bed", checkIfExists: false), file("${dir}/**/*_read_cov_report.bed", checkIfExists: false) ]
+                .flatten()
+                .findAll { f -> dragenFileMatchesSample(meta, f) }
+                .collect { f ->
+                    def region = f.name.tokenize('.')[1].replaceFirst(/_read_cov_report$/, '')
+                    [ "${meta.sample}|${region}".toString(), f ]
+                }
+        }
+
+    ch_dragen_gene_input = ch_dragen_cov
+        .join(ch_dragen_read_cov)
+        .map { _key, meta, region, cov, read_cov ->
+            [ [id: meta.sample, sample: meta.sample, region: region, familyId: meta.familyId], cov, read_cov ]
+        }
+
+    DRAGEN_COVERAGE_BY_GENE(ch_dragen_gene_input)
+    ch_multiqc_files = ch_multiqc_files.mix(DRAGEN_COVERAGE_BY_GENE.out.report)
 
     // topic_versions = channel.topic('versions')
     topic_versions = channel.topic("versions")

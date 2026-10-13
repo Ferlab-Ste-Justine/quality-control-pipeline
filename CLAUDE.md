@@ -12,13 +12,15 @@ Nextflow version range: `>=24.10.5, <26.0.0`. The floor is 24.10.5, not a rounde
 
 ## High-level pipeline flow
 
-The single entry workflow is in `main.nf`, which calls `QUALITYCONTROL` in `workflows/qualitycontrol.nf`. The samplesheet is branched by `meta.fileType` into `fastq` / `aln` (BAM or CRAM) / `vcf` (VCF or GVCF) channels. `--dragen_metrics_dir` gates two mutually exclusive modes:
+The single entry workflow is in `main.nf`, which calls `QUALITYCONTROL` in `workflows/qualitycontrol.nf`. The samplesheet is branched by `meta.fileType` into `fastq` / `aln` (BAM or CRAM) / `vcf` (VCF or GVCF) channels, then each of those is branched again by whether `meta.dragenMetrics` (an optional samplesheet column) is set — **per sample, independently per row** — into a `standard` sub-branch and a `dragen` sub-branch:
 
-1. **Standard mode** (default, no `--dragen_metrics_dir`):
+1. **Standard sub-branch** (`dragenMetrics` blank for that row — the default when the column is omitted entirely):
    - `FASTQ_QC` — FastQC + ngsCheckMate (sample identity) on FASTQ rows.
    - `BAM_MERGE` — merges multi-lane/multi-run BAM/CRAM per sample, then `BAM_QC` (instantiated twice, as `BAM_QC_WGS` / `BAM_QC_TARGET`, split by `meta.sequencingType`) runs Samtools stats, Picard `CollectWgsMetrics`/`CollectHsMetrics`, quality-yield metrics, Mosdepth, per-gene coverage, and VerifyBamID2 contamination estimation.
    - `VCF_QC` (also instantiated as `VCF_QC_WGS` / `VCF_QC_TARGET`) — BCFtools variant counts by type/zygosity and Ts/Tv ratio on VCF/GVCF rows.
-2. **DRAGEN mode** (`--dragen_metrics_dir` set): skips `BAM_MERGE`/`BAM_QC`/`VCF_QC` entirely. `SAMPLE_FAMILY_MAP` builds a sample→familyId map from the samplesheet; DRAGEN's own pre-computed per-sample CSV/BED metrics are picked up directly by glob from `--dragen_metrics_dir`, and `DRAGEN_COVERAGE_BY_GENE` aggregates DRAGEN's per-region coverage into the same per-gene coverage report the standard mode produces via Mosdepth.
+2. **DRAGEN sub-branch** (`dragenMetrics` set): that sample's `FASTQ_QC`/`BAM_MERGE`+`BAM_QC`/`VCF_QC` are skipped; `meta.dragenMetrics` accepts either a directory or a tarball of that one sample's pre-computed DRAGEN metrics — a tarball is extracted via the `untar` module (`modules/nf-core/untar`), one task per sample needing it. The resulting per-sample directory is globbed directly for DRAGEN's CSV/BED metrics (no shared pipeline-wide directory or filename-based sample matching involved — the row's own `meta` is carried through), and `DRAGEN_COVERAGE_BY_GENE` aggregates DRAGEN's per-region coverage into the same per-gene coverage report the standard sub-branch produces via Mosdepth.
+
+A single run's samplesheet can freely mix standard and DRAGEN samples, including within the same family — `dragenMetrics` is expected to be repeated identically across all of one sample's own rows, same convention as `sex`/`familyId`. There is no pipeline-wide "DRAGEN mode" flag anymore — this fully replaced the old `--dragen_metrics_dir`/`--dragen_metrics` pipeline parameter.
 
 Both modes always run `CRAM_SOMALIER` for pedigree/relatedness checking, either per-family or cohort-wide (`--cohort_mode`). The PED file comes from `--ped_file` if set, otherwise it's derived from samplesheet columns (`relationship_to_proband`, `affected_status`, `sex`) via `buildPedRowsForFamily`. `PED_FAMILY_CHECK` fails fast if a `--ped_file` family has no matching samples in the samplesheet. All QC outputs converge into `MULTIQC_PYTHON`, joined with PED data via `PED_MULTIQC_JOIN` — one report per family in per-family mode, one cohort-wide report in `--cohort_mode`.
 
@@ -31,16 +33,16 @@ main.nf                       # Entry point — calls PIPELINE_INITIALISATION, Q
 nextflow.config                # Params, profiles, per-process resources, manifest
 nextflow_schema.json           # Authoritative parameter schema (use this, not the README), grouped into $defs
 nf-test.config                 # nf-test runner config (profile "test")
-workflows/qualitycontrol.nf     # Main QUALITYCONTROL workflow — standard vs DRAGEN mode gating, somalier, MultiQC assembly
+workflows/qualitycontrol.nf     # Main QUALITYCONTROL workflow — per-sample standard/DRAGEN branching, somalier, MultiQC assembly
 subworkflows/local/             # fastq_qc, bam_qc, vcf_qc, bam_merge, bam_id_repair, vcf_id_repair, cram_somalier,
-                                #   sample_family_map, ped_family_check, ped_multiqc_join, qc_coverage_regions,
-                                #   utils_nfcore_quality-control-pipeline_pipeline
+                                #   sample_family_map (currently unused -- see below), ped_family_check,
+                                #   ped_multiqc_join, qc_coverage_regions, utils_nfcore_quality-control-pipeline_pipeline
 subworkflows/nf-core/           # utils_nextflow_pipeline, utils_nfcore_pipeline, utils_nfschema_plugin,
                                 #   fastq_ngscheckmate, vcf_extract_relate_somalier
 modules/local/                  # samtools/{reheader,samples}, picard, d4tools, coverage_by_gene,
                                 #   dragen_coverage_by_gene, vcf_metrics, multiqc_python
 modules/nf-core/                # bcftools, fastp, fastqc, gatk4/bedtointervallist, mosdepth, multiqc, ngscheckmate,
-                                #   picard, samtools, somalier, tabix, verifybamid
+                                #   picard, samtools, somalier, tabix, untar, verifybamid
 conf/                           # base.config, modules.config, test.config, test_dragen.config, test_full.config,
                                 #   igenomes.config, modules/{bam_qc,fastq_qc,qc_coverage,somalier,vcf_qc}.config
 assets/                         # samplesheet.csv, schema_input.json, qc_thresholds.yml, multiqc_config.yml,
@@ -64,7 +66,7 @@ nextflow run Ferlab-Ste-Justine/quality-control-pipeline \
 Important conventions:
 
 - Pass parameters via CLI flags or `-params-file` (JSON/YAML). **Do not** put params in a `-c` config file — `-c` is reserved for resource/infrastructure tuning. `docs/usage.md` and the README both call this out.
-- `--dragen_metrics_dir` switches the pipeline into DRAGEN mode (see above) — mutually exclusive in practice with running the standard BAM_QC/VCF_QC path, though somalier still runs against any BAM/CRAM in the samplesheet either way.
+- The samplesheet's optional `dragenMetrics` column (a directory or a tarball per sample) selects, per sample, DRAGEN-sourced metrics over the standard BAM_QC/VCF_QC recompute path (see above) — somalier still runs against any BAM/CRAM in the samplesheet either way, regardless of that sample's dragenMetrics.
 - `--cohort_mode` (default `false`): per-family MultiQC reports and PED handling, vs. one cohort-wide report/PED.
 - A given `sample` cannot provide both `BAM` and `CRAM` in the same run — validated at startup (`checkSingleAlignmentFileType` in `subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline/main.nf`); mixing formats across _different_ samples is fine.
 
@@ -92,7 +94,7 @@ If running locally:
 nextflow run Ferlab-Ste-Justine/quality-control-pipeline -profile test,docker
 ```
 
-A separate `test_dragen` profile (`conf/test_dragen.config`) exercises DRAGEN mode against the same `data-test/` dataset:
+A separate `test_dragen` profile (`conf/test_dragen.config`) exercises per-sample DRAGEN sourcing (directory and tarball forms, mixed with standard samples in the same family) using `tests/fixtures/dragen_mixed_samplesheet.csv` — a repo-tracked samplesheet pointing at the same `data-test/` dataset plus small repo-tracked DRAGEN metric fixtures under `tests/fixtures/dragen_metrics/`:
 
 ```bash
 nextflow run Ferlab-Ste-Justine/quality-control-pipeline -profile test_dragen,docker
@@ -145,7 +147,7 @@ pre-commit run --all-files
 See `assets/schema_input.json` for the authoritative schema; `docs/usage.md` has the full column reference and worked examples. Summary:
 
 - Required: `participant`, `sample`, `fileType` (`FASTQ`/`BAM`/`CRAM`/`VCF`/`GVCF`), `file1`.
-- Optional: `file2` (R2/index), `familyId` (required for `--ped_file` or per-family mode), `experimentalStrategy` (defaults `WGS`), `sex`, `status`, `relationship_to_proband`, `affected_status`, `lane`, `runId`.
+- Optional: `file2` (R2/index), `familyId` (required for `--ped_file` or per-family mode), `experimentalStrategy` (defaults `WGS`), `sex`, `status`, `relationship_to_proband`, `affected_status`, `lane`, `runId`, `dragenMetrics` (per-sample directory or tarball of pre-computed DRAGEN metrics — see High-level pipeline flow above).
 - Rows sharing `participant` + `sample` + `experimentalStrategy` (e.g. multiple `lane`s) are merged before QC.
 - A `sample` cannot mix `BAM` and `CRAM` fileTypes across its own rows (validated at startup); different samples may use different formats freely.
 
@@ -154,9 +156,10 @@ See `assets/schema_input.json` for the authoritative schema; `docs/usage.md` has
 A few patterns worth knowing before editing:
 
 - **Channel shape convention.** Alignment channels carry `[meta, bam/cram, bai/crai]`; VCF channels carry `[meta, vcf, tbi]`. `meta` is trimmed of run-specific keys (`lane`, `runId`) once past per-run processing (e.g. right after the initial samplesheet branch in `qualitycontrol.nf`).
-- **Startup validation** lives in `subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline/main.nf`: `checkParticipantNotCorrupted` and `checkSingleAlignmentFileType` are plain `def` functions operating on parsed Lists (not Channels) — nf-test's `nextflow_function` test type can't `await` a Channel-returning function, which is why subworkflows that need to validate _channel_ data (e.g. `ped_family_check`, `sample_family_map`) stay as full `workflow`s instead.
+- **Startup validation** lives in `subworkflows/local/utils_nfcore_quality-control-pipeline_pipeline/main.nf`: `checkParticipantNotCorrupted` and `checkSingleAlignmentFileType` are plain `def` functions operating on parsed Lists (not Channels) — nf-test's `nextflow_function` test type can't `await` a Channel-returning function, which is why subworkflows that need to validate _channel_ data (e.g. `ped_family_check`) stay as full `workflow`s instead.
 - **Per-process resources** live in `conf/base.config`, gated by `check_max(...)` and the `max_cpus`/`max_memory`/`max_time` params.
-- **DRAGEN mode is a genuinely different code path**, not a variation of the standard one — it skips `BAM_MERGE`/`BAM_QC`/`VCF_QC` entirely (see High-level pipeline flow above). When touching version-collection or MultiQC-input wiring, check both branches of the `if (params.dragen_metrics_dir)` gate in `qualitycontrol.nf`.
+- **Standard vs DRAGEN is now a per-sample branch, not a pipeline-wide mode.** `ch_fastq_branch`/`ch_aln_branch`/`ch_vcf_branch` in `qualitycontrol.nf` each split on `meta.dragenMetrics` right after the fileType branch; `FASTQ_QC`/`BAM_MERGE`/`BAM_QC`/`VCF_QC` only ever see the `.standard` side, and the DRAGEN metrics block (`UNTAR` + per-sample glob + `DRAGEN_COVERAGE_BY_GENE`) only ever sees the `.dragen` side, built from `ch_samplesheet.filter { meta.dragenMetrics }`. When touching version-collection or MultiQC-input wiring, both sides need checking — there's no single `if` gate anymore, so don't assume one path excludes the other within the same run.
+- **`subworkflows/local/sample_family_map` is currently unused** — it was the old mechanism for attaching `familyId` to DRAGEN files matched by filename prefix against a shared `--dragen_metrics_dir`; now that `dragenMetrics` is a samplesheet column, `meta.familyId` is already on the row, so no lookup is needed. Not deleted — flagged as a candidate for a follow-up cleanup, not reused anywhere else.
 - **Version collection uses topic channels** (`topic: versions` process outputs, gathered via `channel.topic("versions")` in `qualitycontrol.nf`), gated by the `nextflow.preview.topic` flag in `main.nf` for Nextflow versions before it left preview. This is _not_ the classic nf-core `ch_versions.mix(...)` pattern used by the sibling pipelines — see "Project overview" above for why the Nextflow version floor is what it is.
 - **Adding an nf-core module:** use `nf-core modules install <tool>` so `modules.json` stays consistent. Local-only logic goes under `modules/local/`. Several installed `modules/nf-core/**` modules have diverged from their recorded `modules.json` pin (deliberately, in at least some cases — e.g. container registry choice) without being recorded via `nf-core modules patch`; that's the pre-existing lint debt mentioned above, not something to "fix" by blindly running `nf-core modules update`.
 - **Schema and params stay in sync.** `nextflow_schema.json` is the source of truth for parameter validation (via the `nf-schema` plugin). When adding a param, update both `nextflow.config` defaults and the schema.
