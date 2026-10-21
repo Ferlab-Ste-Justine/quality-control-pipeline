@@ -68,6 +68,13 @@ class SampleMetrics:
     count_hom_snvs: Optional[int] = None
     count_het_indels: Optional[int] = None
     count_hom_indels: Optional[int] = None
+    # cnv_metrics (DRAGEN *.cnv_metrics.csv, "CNV SUMMARY" section)
+    cnv_count_amplifications: Optional[int] = None
+    cnv_count_deletions: Optional[int] = None
+    cnv_count_passing_amplifications: Optional[int] = None
+    cnv_count_passing_deletions: Optional[int] = None
+    cnv_count_segments: Optional[int] = None
+    cnv_coverage_mad: Optional[float] = None
     # pedigree.
     family_id: Optional[str] = None
     pedigree_sex: Optional[str] = None  # 1=male, 2=female (PED convention)
@@ -357,6 +364,7 @@ def parse_dragen_csv_files(files, samples):
       *.wgs_coverage_metrics.csv      -> coverage + uniformity (proxy for MAD)
       *.vc_metrics.csv                -> variant calling counts and ratios
       *.ploidy_estimation_metrics.csv -> XX/XY -> somalier_sex fallback
+      *.cnv_metrics.csv               -> CNV call counts and coverage MAD
 
     Sample names are taken from the filename prefix (everything before the
     first `.`), which matches DRAGEN's `<sample>.final.<metric>.csv` convention.
@@ -409,6 +417,14 @@ def parse_dragen_csv_files(files, samples):
                 ped = _SEX_NORM.get(str(s.pedigree_sex).lower()) if s.pedigree_sex else None
                 som = _SEX_NORM.get(s.somalier_sex)
                 s.sex_check = "na" if (ped is None or som is None) else ("pass" if ped == som else "fail")
+        elif name.endswith(".cnv_metrics.csv"):
+            row = data.get("CNV SUMMARY", {})
+            s.cnv_count_amplifications         = _as_int(row.get("Number of amplifications", (None,))[0])
+            s.cnv_count_deletions              = _as_int(row.get("Number of deletions", (None,))[0])
+            s.cnv_count_passing_amplifications = _as_int(row.get("Number of passing amplifications", (None,))[0])
+            s.cnv_count_passing_deletions      = _as_int(row.get("Number of passing deletions", (None,))[0])
+            s.cnv_count_segments               = _as_int(row.get("Number of segments", (None,))[0])
+            s.cnv_coverage_mad                 = _as_float(row.get("Coverage MAD", (None,))[0])
 
 
 def _read_gene_coverage_tsv(path, sample, wanted):
@@ -610,6 +626,15 @@ GA4GH_VARIANT_HEADERS = {
     "ratio_insertion_deletion":            {"title": "Ins/Del",      "description": "GA4GH ratio_insertion_deletion.",                    "format": "{:,.2f}"},
     "ratio_heterozygous_homozygous_snv":   {"title": "Het/Hom SNV",  "description": "GA4GH ratio_heterozygous_homozygous_snv.",           "format": "{:,.2f}"},
     "ratio_heterozygous_homozygous_indel": {"title": "Het/Hom Indel","description": "GA4GH ratio_heterozygous_homozygous_indel.",         "format": "{:,.2f}"},
+}
+
+CNV_HEADERS = {
+    "cnv_count_passing_amplifications": {"title": "Passing Amplifications", "description": "DRAGEN CNV SUMMARY: Number of passing amplifications.", "format": "{:,.0f}"},
+    "cnv_count_passing_deletions":      {"title": "Passing Deletions",      "description": "DRAGEN CNV SUMMARY: Number of passing deletions.",      "format": "{:,.0f}"},
+    "cnv_count_amplifications":         {"title": "Amplifications",        "description": "DRAGEN CNV SUMMARY: Number of amplifications.",          "format": "{:,.0f}"},
+    "cnv_count_deletions":              {"title": "Deletions",             "description": "DRAGEN CNV SUMMARY: Number of deletions.",               "format": "{:,.0f}"},
+    "cnv_count_segments":               {"title": "Segments",              "description": "DRAGEN CNV SUMMARY: Number of segments.",                "format": "{:,.0f}"},
+    "cnv_coverage_mad":                 {"title": "Coverage MAD",          "description": "DRAGEN CNV SUMMARY: Coverage MAD.",                      "format": "{:,.4f}"},
 }
 
 
@@ -932,7 +957,8 @@ def main():
     gene_rows = parse_gene_coverage_files(gene_files)
     dragen_files = [f for f in args.files if f.endswith(
         (".mapping_metrics.csv", ".wgs_coverage_metrics.csv",
-         ".vc_metrics.csv", ".ploidy_estimation_metrics.csv"))]
+         ".vc_metrics.csv", ".ploidy_estimation_metrics.csv",
+         ".cnv_metrics.csv"))]
     parse_dragen_csv_files(dragen_files, samples)
 
     # 6) Per-sample pass/fail summary (sex_check is precomputed in parse_somalier)
@@ -946,6 +972,8 @@ def main():
                      anchor="alignment-metrics", headers=GA4GH_ALIGNMENT_HEADERS)
     add_metric_table(qc_module, samples, name="Variant Calling Metrics",
                      anchor="variant-calling-metrics", headers=GA4GH_VARIANT_HEADERS)
+    add_metric_table(qc_module, samples, name="CNV Metrics",
+                     anchor="cnv-metrics", headers=CNV_HEADERS)
     if args.mode == "family":
         # Per-gene coverage and the pedigree validation table are only meaningful per family.
         add_pedigree_section(qc_module, pairs, thresholds)

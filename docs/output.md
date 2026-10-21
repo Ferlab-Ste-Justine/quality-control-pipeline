@@ -219,6 +219,7 @@ When a sample's samplesheet row sets `dragenMetrics`, that sample's BAM_QC/VCF_Q
 | `*.wgs_coverage_metrics.csv`                 | Mean autosome coverage, uniformity (MAD proxy), %15x                                                                                                                                                                                                               |
 | `*.vc_metrics.csv`                           | SNV / insertion / deletion counts, Ti/Tv, het:hom ratios                                                                                                                                                                                                           |
 | `*.ploidy_estimation_metrics.csv`            | XX / XY ploidy → predicted-sex fallback for `sex_check` when somalier did not run for that sample                                                                                                                                                                  |
+| `*.cnv_metrics.csv`                          | CNV call counts (amplifications/deletions, passing and total), segment count, coverage MAD — from the `CNV SUMMARY` section                                                                                                                                        |
 | `*_cov_report.bed` + `*_read_cov_report.bed` | Paired per region (`qc-coverage-region-[1,2,3]`); the `DRAGEN_COVERAGE_BY_GENE` module aggregates them into a `*.coverage_by_gene.tsv`. The per-gene report tab uses region 1 by default and falls back to region 2 when region 1 has no gene-annotated intervals. |
 
 Somalier still runs against that sample's BAM/CRAM, if provided in the samplesheet, regardless of `dragenMetrics` — it's never skipped. Samples without BAM/CRAM (e.g. GVCF-only with DRAGEN metrics) still appear in the per-family report with their `pedigree_sex` from the samplesheet-derived PED, and pick up `sex_check` from the DRAGEN ploidy estimate.
@@ -250,6 +251,7 @@ The custom "Quality Control" tables built by `multiqc_report.py` (`modules/local
 | General Status          | `qc-general-status`          |
 | Alignment Metrics       | `qc-alignment-metrics`       |
 | Variant Calling Metrics | `qc-variant-calling-metrics` |
+| CNV Metrics             | `qc-cnv-metrics`             |
 | Pedigree                | `qc-pedigree`                |
 
 The Per-Gene Coverage section is not in this list: it's rendered as hand-written HTML (not a MultiQC table/plot object), so it has no `report_plot_data` entry at all today, with or without an id.
