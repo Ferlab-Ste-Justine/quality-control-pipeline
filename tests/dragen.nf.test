@@ -23,6 +23,14 @@ nextflow_pipeline {
                 // NA19239 -- exercises both input shapes for the CNV Metrics table,
                 // plus the "no cnv_metrics.csv -> blank cells, run still succeeds"
                 // acceptance criterion in the same run.
+                // CollectHsMetrics.out (BIOINFO-245) is present for NA19238 only (WXS;
+                // DRAGEN produces no WGS equivalent) -- its wgs_coverage_metrics.csv
+                // was removed from the fixture to match (a real DRAGEN WXS run
+                // wouldn't produce one either), so Mean Autosome Coverage / %
+                // Autosomes >=15X for NA19238 can only come from this file, proving
+                // MultiQC's content-detected picard module is what's actually
+                // supplying them. NA19239/NA21118 have no CollectHsMetrics.out,
+                // covering the "missing file doesn't fail the run" case.
             }
         }
 

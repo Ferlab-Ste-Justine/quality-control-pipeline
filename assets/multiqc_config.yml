@@ -47,6 +47,7 @@ remove_sections:
 extra_fn_clean_exts:
   - ".CollectWgsMetrics.coverage_metrics"
   - ".CollectHsMetrics.coverage_metrics"
+  - ".CollectHsMetrics.out" # DRAGEN's own bundled Picard HsMetrics filename (BIOINFO-245)
   - ".QualityYieldMetrics"
   - ".selfSM"
   - ".bcftools_stats"
