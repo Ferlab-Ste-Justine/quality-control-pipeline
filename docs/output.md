@@ -241,6 +241,19 @@ Somalier still runs against that sample's BAM/CRAM, if provided in the sampleshe
 
 [MultiQC](http://multiqc.info) aggregates QC outputs from all tools in the pipeline into a single interactive report. The report is configured via `assets/multiqc_config.yml`.
 
+### Stable table ids
+
+The custom "Quality Control" tables built by `multiqc_report.py` (`modules/local/multiqc_python`) are each given a fixed `pconfig` id, rather than letting MultiQC assign one at random on every run. This is a stable contract for any consumer reading `report_plot_data` out of `<familyId>_multiqc_report_data.zip`'s `multiqc_data.json` (or the corresponding exported `qc-*.txt` data file) — the same input always produces the same id, across runs.
+
+| Table                   | id                           |
+| ----------------------- | ---------------------------- |
+| General Status          | `qc-general-status`          |
+| Alignment Metrics       | `qc-alignment-metrics`       |
+| Variant Calling Metrics | `qc-variant-calling-metrics` |
+| Pedigree                | `qc-pedigree`                |
+
+The Per-Gene Coverage section is not in this list: it's rendered as hand-written HTML (not a MultiQC table/plot object), so it has no `report_plot_data` entry at all today, with or without an id.
+
 ---
 
 ## Pipeline information

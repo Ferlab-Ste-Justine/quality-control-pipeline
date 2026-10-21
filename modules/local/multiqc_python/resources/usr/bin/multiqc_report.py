@@ -644,12 +644,18 @@ def add_general_status_section(module, samples, thresholds, pedigree_pass):
         name="General Status",
         anchor="general-status",
         description="Per-sample pass/fail summary across QC dimensions.",
-        plot=table.plot(rows, headers=headers),
+        plot=table.plot(rows, headers=headers, pconfig={"id": "qc-general-status", "title": "General Status"}),
     )
 
 
 def add_metric_table(module, samples, *, name, anchor, headers):
-    """Render a per-sample metric table; skip the section if every cell is None."""
+    """Render a per-sample metric table; skip the section if every cell is None.
+
+    The table's own pconfig id is derived from `anchor` (not just the section's
+    anchor/id) -- without an explicit id, MultiQC assigns a random one on every
+    run (`table-<random 7-digit int>`), which breaks any consumer trying to
+    find this table by name in the exported archive (BIOINFO-244).
+    """
     rows = {sample: {k: getattr(s, k) for k in headers} for sample, s in samples.items()}
     if not any(v is not None for row in rows.values() for v in row.values()):
         return
@@ -657,7 +663,7 @@ def add_metric_table(module, samples, *, name, anchor, headers):
         name=name,
         anchor=anchor,
         description=f"Per-sample {name.lower()}.",
-        plot=table.plot(rows, headers=headers),
+        plot=table.plot(rows, headers=headers, pconfig={"id": f"qc-{anchor}", "title": name}),
     )
 
 
@@ -699,7 +705,7 @@ def add_pedigree_section(module, pairs, thresholds):
         name="Pedigree",
         anchor="pedigree",
         description="Pair-level pedigree validation from Somalier (relatedness vs expected_relatedness).",
-        plot=table.plot(rows, headers=headers),
+        plot=table.plot(rows, headers=headers, pconfig={"id": "qc-pedigree", "title": "Pedigree"}),
     )
 
 
