@@ -18,6 +18,11 @@ nextflow_pipeline {
                 // metrics together. NA21118 (CEU) is a fully-DRAGEN family with
                 // cov_report/read_cov_report beds, exercising DRAGEN_COVERAGE_BY_GENE.
                 // NA21119 (SAS) is a fully-standard singleton.
+                // cnv_metrics.csv (BIOINFO-243) is present for NA19238 (inside the
+                // tarball) and NA21118 (directory), but deliberately absent for
+                // NA19239 -- exercises both input shapes for the CNV Metrics table,
+                // plus the "no cnv_metrics.csv -> blank cells, run still succeeds"
+                // acceptance criterion in the same run.
             }
         }
 
