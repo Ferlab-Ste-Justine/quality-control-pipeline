@@ -378,7 +378,17 @@ workflow QUALITYCONTROL {
 
     ch_dragen_files = ch_dragen_dir
         .flatMap { meta, dir ->
-            [ file("${dir}/*.csv", checkIfExists: false), file("${dir}/**/*.csv", checkIfExists: false) ]
+            // *.CollectHsMetrics.out: DRAGEN's own bundled Picard HsMetrics output
+            // for exomes (no WGS equivalent). Not a DRAGEN-format CSV -- MultiQC's
+            // own picard module content-detects it (by "HsMetrics" in the file, not
+            // by filename) and parse_picard() already has the MEAN_TARGET_COVERAGE/
+            // PCT_TARGET_BASES_20X fallback this needs; staging it is the whole fix.
+            [
+                file("${dir}/*.csv", checkIfExists: false),
+                file("${dir}/**/*.csv", checkIfExists: false),
+                file("${dir}/*.CollectHsMetrics.out", checkIfExists: false),
+                file("${dir}/**/*.CollectHsMetrics.out", checkIfExists: false),
+            ]
                 .flatten()
                 .findAll { f -> dragenFileMatchesSample(meta, f) }
                 .collect { f -> [ meta, f ] }
