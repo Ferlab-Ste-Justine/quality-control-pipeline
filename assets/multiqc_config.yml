@@ -61,7 +61,13 @@ extra_fn_clean_exts:
   - ".final.wgs_coverage_metrics"
   - ".final.vc_metrics"
   - ".final.ploidy_estimation_metrics"
+  - ".final.cnv_metrics"
+  - ".final.gvcf_metrics"
   - ".final"
+    # Real DRAGEN bundles also use <sample>.<metric_type>.csv (no ".final"):
+  - ".gvcf_metrics"
+  - ".qc-coverage-region-1_coverage_metrics"
+  - ".time_metrics"
   - type: regex
     pattern: "_L[0-9]{3}"
 

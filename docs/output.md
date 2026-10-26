@@ -237,7 +237,7 @@ Somalier still runs against that sample's BAM/CRAM, if provided in the sampleshe
   - `Cohort_multiqc_report_data.zip`: Archive of parsed, tab-delimited statistics from each tool.
   - `<familyId>/<familyId>_mutliqc_report.html`: Optionally organize multiqc reports by family if `cohort_mode = false`.
   - `<familyId>/<familyId>_multiqc_report_data.zip`: Optionally organize report data by family if `cohort_mode = false`.
-  - `qc_json/<sample>.metrics.json`: Directory of statistics for each tool organized in one JSON file per sample.
+  - `qc_json/<sample>.metrics.json`: One JSON file per sample, combining GA4GH-normalized metrics (`qc_metrics.aln_metrics`/`variant_metrics`/`cnv_metrics`) with pedigree validation (`pedigree`, including per-pair `relatedness`) and a raw, unnormalized passthrough of each source tool's own fields (`dragen_metrics.{mapping,wgs_coverage,vc,ploidy_estimation,cnv,gvcf}_metrics`, `picard_metrics.{HsMetrics,WgsMetrics,QualityYieldMetrics}`) — each raw section is `{}`/absent-keyed when that tool/file wasn't staged for the sample.
 
 </details>
 

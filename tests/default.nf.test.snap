@@ -191,11 +191,11 @@
                 "reports/pedigree/Cohort.somalier.samples.tsv"
             ],
             [
-                "NA19238.metrics.json:md5,af05ce58e86d4a15aa40927e7dd8eb4d",
-                "NA19239.metrics.json:md5,002a86678fbe57e059fd9f93ae6a77a5",
-                "NA19240.metrics.json:md5,fc013679b459e3aa7e4764d80ef40d69",
-                "NA21118.metrics.json:md5,fdcfb13bd3a184a0b00aa3330d57d4be",
-                "NA21119.metrics.json:md5,6d5ed28d43bd735e944ad617468e8e87",
+                "NA19238.metrics.json:md5,07cbb28d6874cccbfc1fbb8d2b83dd01",
+                "NA19239.metrics.json:md5,95eb4672f934597bfefff90548ef37fa",
+                "NA19240.metrics.json:md5,856c1dec0d070311c84270706599700e",
+                "NA21118.metrics.json:md5,2400eb6a8a4bc5f3ed93d9004f047171",
+                "NA21119.metrics.json:md5,97ad771ec528ca57f32cb5ef05b5a593",
                 "NA19238.Ancestry:md5,a990c5dab7b13d76977fa9e8bcb3e3f7",
                 "NA19238.log:md5,c23db1036bf6f25bc7cfc462df31aff7",
                 "NA19238.mosdepth.global.dist.txt:md5,ab53e3621b3e7c2244cbb409d9f02532",
@@ -265,7 +265,7 @@
                 "output_corr_matrix.txt:md5,dc8aca5edbf54c8fb9317a277f05857e"
             ]
         ],
-        "timestamp": "2026-10-01T14:45:53.793615647",
+        "timestamp": "2026-10-22T23:50:58.28197032",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "24.10.5"

@@ -1,0 +1,19 @@
+RUN TIME,,Time loading reference,00:01:09.122,69.12
+RUN TIME,,Time aligning reads,00:01:35.139,95.14
+RUN TIME,,Time duplicate marking,00:00:02.064,2.06
+RUN TIME,,Time sorting and marking duplicates,00:02:29.807,149.81
+RUN TIME,,Time DRAGStr calibration,00:00:09.659,9.66
+RUN TIME,,Time saving map/align output,00:04:20.010,260.01
+RUN TIME,,Time processing depth of coverage,00:00:00.000,0.00
+RUN TIME,,Time variant calling,00:04:17.800,257.80
+RUN TIME,,Time calculating target counts,00:02:31.984,151.98
+RUN TIME,,Time correcting GC bias,00:00:02.438,2.44
+RUN TIME,,Time generating panel of normals,00:00:46.113,46.11
+RUN TIME,,Time normalizing case sample,00:00:28.941,28.94
+RUN TIME,,Time performing segmentation,00:00:05.771,5.77
+RUN TIME,,Time generating CNV calls,00:00:01.910,1.91
+RUN TIME,,Time generating CNV track files,00:00:01.122,1.12
+RUN TIME,,Time running RH caller,00:01:41.259,101.26
+RUN TIME,,Time partitioning,00:01:32.409,92.41
+RUN TIME,,Time structural variant calling,00:01:00.188,60.19
+RUN TIME,,Total runtime,00:09:12.077,552.08

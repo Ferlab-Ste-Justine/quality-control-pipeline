@@ -82,7 +82,19 @@ step "[4/6] nf-test dry-run (syntax check only, no execution)"
 nf-test test --dryRun
 
 step "[5/6] nf-test full suite (--profile test,docker)"
-nf-test test --profile test,docker
+# `--profile` isn't a per-test-file selector -- it's applied blanket to every
+# test a given `nf-test test` invocation runs. tests/dragen.nf.test needs
+# `ped_file` left unset (so qualitycontrol.nf's `if (params.ped_file) {..}`
+# takes the derive-from-samplesheet branch), while default.nf.test/
+# default_fam.nf.test need it set to conf/test.config's real PED file (the
+# other branch) -- no single shared `--profile` combo can satisfy both, so
+# the pipeline-level tests below run as their own separate invocations,
+# each with the profile that test actually needs.
+nf-test test modules subworkflows --profile test,docker
+
+step "[5b/6] nf-test suite: pipeline tests (each needs its own profile)"
+nf-test test tests/default.nf.test tests/default_fam.nf.test --tag pipeline --profile test,docker
+nf-test test tests/dragen.nf.test --tag pipeline --profile test_dragen,docker
 
 step "[6/6] nf-core pipelines lint --release"
 nf-core pipelines lint --release
