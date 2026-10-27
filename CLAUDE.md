@@ -106,15 +106,15 @@ For the manual smoke-test routine (debug+test profile, plain test profile) as a 
 
 ### Tests (nf-test)
 
-`nf-test` is the testing framework. Config in `nf-test.config` sets `profile "test"` (add `docker` on the command line, e.g. `--profile test,docker`). nf-core upstream tests are excluded via the `ignore` glob.
+`nf-test` is the testing framework. Config in `nf-test.config` sets `profile "test"`; `tests/dragen.nf.test` overrides it with its own `profile "test_dragen"`. Add `docker` on the command line with a `+` prefix (`--profile +docker`), which appends to each test's profile. A profile without `+` (e.g. `--profile test,docker`) replaces it, which runs `dragen.nf.test` under the wrong profile. Don't try to give tests different profiles by running separate invocations on separate paths: `--changed-since` (used in CI) replaces any paths given with the changed files. nf-core upstream tests are excluded via the `ignore` glob.
 
 If running locally:
 
 - Make sure to run `export NXF_FILE_ROOT=$PWD` to allow nf-core's `nf-test` framework to find test files.
 
 ```bash
-nf-test test                                  # run all tests
-nf-test test tests/default.nf.test --tag pipeline --profile test,docker   # run the full end-to-end pipeline tests
+nf-test test --profile +docker                # run all tests
+nf-test test --tag pipeline --profile +docker  # run the full end-to-end pipeline tests
 nf-test test subworkflows/local/bam_qc        # target one module/subworkflow
 ```
 

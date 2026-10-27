@@ -9,7 +9,7 @@
 # Requires:
 #   - Docker running
 #   - data-test/ synced locally, e.g.:
-#       aws s3 cp s3://ferlab-public-dataset/nextflow/quality-control-pipeline/V1 data-test --recursive
+#       aws s3 cp s3://ferlab-public-dataset/nextflow/quality-control-pipeline/V1/data-test data-test --recursive
 #
 # Existing output directories are left alone (not wiped) so you can diff
 # against a previous run; use `nextflow clean -f` or remove them yourself
@@ -31,7 +31,7 @@ require docker
 
 if [ ! -d data-test ]; then
     echo "ERROR: data-test/ not found. Sync it first -- see CLAUDE.md's 'Test dataset' section:" >&2
-    echo "  aws s3 cp s3://ferlab-public-dataset/nextflow/quality-control-pipeline/V1 data-test --recursive" >&2
+    echo "  aws s3 cp s3://ferlab-public-dataset/nextflow/quality-control-pipeline/V1/data-test data-test --recursive" >&2
     exit 1
 fi
 

@@ -3,6 +3,11 @@ nextflow_pipeline {
     name "Test pipeline"
     script "../main.nf"
     tag "pipeline"
+    // Replaces nf-test.config's default "test" profile for this file only:
+    // conf/test.config sets params.ped_file, which this test needs unset.
+    // A `+`-prefixed CLI profile (e.g. `--profile +docker`, as CI uses) is
+    // appended to it; a CLI profile without `+` replaces it.
+    profile "test_dragen"
 
     test("-profile test_dragen (mixed standard + DRAGEN samples)") {
 
