@@ -367,7 +367,13 @@ def _read_dragen_csv(path):
 
 def _coerce_dragen_value(value):
     """Best-effort int/float coercion for a raw DRAGEN CSV value string,
-    falling back to the original string (e.g. "NA") when not numeric.
+    falling back to the original string unchanged when not numeric.
+
+    int() is tried first only so whole numbers stay ints ("3" -> 3, not 3.0);
+    it rejects decimal strings outright, so those fall through to float()
+    rather than being truncated ("3.99" -> 3.99). Non-numeric values are
+    passed through verbatim, never converted to None ("NA" -> "NA",
+    "PASS" -> "PASS", "foobar" -> "foobar").
     """
     try:
         return int(value)
