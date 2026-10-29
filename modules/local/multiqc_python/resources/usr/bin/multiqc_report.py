@@ -24,7 +24,7 @@ import json
 import logging
 import os
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
@@ -80,6 +80,12 @@ class SampleMetrics:
     pedigree_sex: Optional[str] = None  # 1=male, 2=female (PED convention)
     somalier_sex: Optional[str] = None
     sex_check: str = "na"               # pass | fail | na; set by parse_somalier
+    # Raw per-tool passthrough (BIOINFO-246), for the JSON sidecar's
+    # dragen_metrics / picard_metrics sections. Keyed by our own canonical
+    # DRAGEN file-type name / the picard sub-tool name; empty dict when that
+    # tool/file wasn't staged for this sample (e.g. standard, non-DRAGEN samples).
+    dragen_raw: dict = field(default_factory=dict)
+    picard_raw: dict = field(default_factory=dict)
 
 
 
@@ -233,15 +239,18 @@ def parse_picard(samples):
                 s.mean_autosome_coverage = _as_float(row.get("MEAN_COVERAGE"))
                 s.mad_autosome_coverage = _as_float(row.get("MAD_COVERAGE"))
                 s.pct_autosomes_15x = _as_float(row.get("PCT_15X"))
+                s.picard_raw["WgsMetrics"] = dict(row)
             # HsMetrics (targeted/WXS) — TARGET-based equivalents. HsMetrics has no
             # 15X bucket (jumps 10X -> 20X); use 20X as the closest proxy. HsMetrics
             # has no MAD coverage, so mad_autosome_coverage stays None for WXS.
             elif "MEAN_TARGET_COVERAGE" in row:
                 s.mean_autosome_coverage = _as_float(row.get("MEAN_TARGET_COVERAGE"))
                 s.pct_autosomes_15x = _as_float(row.get("PCT_TARGET_BASES_20X"))
+                s.picard_raw["HsMetrics"] = dict(row)
             # CollectQualityYieldMetrics (GA4GH yield_bp_q30)
             if "PF_Q30_BASES" in row:
                 s.yield_bp_q30 = _as_int(row.get("PF_Q30_BASES"))
+                s.picard_raw["QualityYieldMetrics"] = dict(row)
 
 
 def parse_verifybamid(samples):
@@ -356,6 +365,69 @@ def _read_dragen_csv(path):
     return out
 
 
+def _coerce_dragen_value(value):
+    """Best-effort int/float coercion for a raw DRAGEN CSV value string,
+    falling back to the original string unchanged when not numeric.
+
+    int() is tried first only so whole numbers stay ints ("3" -> 3, not 3.0);
+    it rejects decimal strings outright, so those fall through to float()
+    rather than being truncated ("3.99" -> 3.99). Non-numeric values are
+    passed through verbatim, never converted to None ("NA" -> "NA",
+    "PASS" -> "PASS", "foobar" -> "foobar").
+    """
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        pass
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return value
+
+
+def _flatten_dragen_section(data, section):
+    """Flatten one named section of _read_dragen_csv()'s
+    {section: {metric: (value, pct)}} into a flat {metric: coerced_value}
+    dict for the JSON sidecar's raw passthrough -- dropping the pct component
+    to match the flat metric-name -> value shape of the real CQDG output this
+    replaces.
+
+    Deliberately restricted to a single section rather than merging every
+    section in the file: real DRAGEN CSVs commonly carry multiple sections
+    that are NOT safe to merge blindly --
+      - vc_metrics.csv has PREFILTER/POSTFILTER/SUMMARY sections that can
+        share a metric name with genuinely different values (e.g. "SNPs"
+        before vs after filtering) -- merging would silently let one
+        overwrite the other.
+      - mapping_metrics.csv's PER RG section repeats SUMMARY's own metric
+        names (one arbitrary lane's value, per _read_dragen_csv()'s own
+        same-section dedup) -- merging would overwrite the correct
+        summary-level value with one lane's.
+      - cnv_metrics.csv's SEX GENOTYPER section lists every reference-panel
+        sample's own inferred sex, keyed by that sample's ID, not a CNV
+        metric at all -- merging would leak unrelated per-sample data into
+        this sample's dragen_metrics.
+    Each section name here matches the one the curated SampleMetrics fields
+    below are themselves read from, so the raw dump and the curated fields
+    can never disagree about which section's values are authoritative.
+    """
+    return {metric: _coerce_dragen_value(value) for metric, (value, _pct) in data.get(section, {}).items()}
+
+
+# Canonical dragen_metrics JSON key + source section for each recognised
+# DRAGEN CSV suffix.
+_DRAGEN_RAW_KEYS = {
+    ".mapping_metrics.csv":                       ("mapping_metrics",           "MAPPING/ALIGNING SUMMARY"),
+    ".wgs_coverage_metrics.csv":                  ("wgs_coverage_metrics",      "COVERAGE SUMMARY"),
+    ".vc_metrics.csv":                            ("vc_metrics",                "VARIANT CALLER POSTFILTER"),
+    ".ploidy_estimation_metrics.csv":              ("ploidy_estimation_metrics", "PLOIDY ESTIMATION"),
+    ".cnv_metrics.csv":                            ("cnv_metrics",               "CNV SUMMARY"),
+    ".gvcf_metrics.csv":                           ("gvcf_metrics",              "VARIANT CALLER POSTFILTER GVCF"),
+    ".qc-coverage-region-1_coverage_metrics.csv":  ("capture_coverage_metrics",  "COVERAGE SUMMARY"),
+    ".time_metrics.csv":                           ("time_metrics",              "RUN TIME"),
+}
+
+
 def parse_dragen_csv_files(files, samples):
     """Populate SampleMetrics from DRAGEN per-sample CSVs.
 
@@ -365,6 +437,14 @@ def parse_dragen_csv_files(files, samples):
       *.vc_metrics.csv                -> variant calling counts and ratios
       *.ploidy_estimation_metrics.csv -> XX/XY -> somalier_sex fallback
       *.cnv_metrics.csv               -> CNV call counts and coverage MAD
+      *.gvcf_metrics.csv              -> raw passthrough only (dragen_metrics.gvcf_metrics)
+      *.qc-coverage-region-1_coverage_metrics.csv -> raw passthrough only (dragen_metrics.capture_coverage_metrics)
+      *.time_metrics.csv              -> raw passthrough only (dragen_metrics.time_metrics)
+
+    Every recognised file is also retained in full (raw, flattened, lightly
+    coerced) on `s.dragen_raw[<type>]` for the JSON sidecar's dragen_metrics
+    passthrough section, in addition to whatever curated SampleMetrics fields
+    it contributes below.
 
     Sample names are taken from the filename prefix (everything before the
     first `.`), which matches DRAGEN's `<sample>.final.<metric>.csv` convention.
@@ -374,6 +454,10 @@ def parse_dragen_csv_files(files, samples):
         sample = name.split(".", 1)[0]
         s = samples.setdefault(sample, SampleMetrics())
         data = _read_dragen_csv(path)
+        for suffix, (key, section) in _DRAGEN_RAW_KEYS.items():
+            if name.endswith(suffix):
+                s.dragen_raw[key] = _flatten_dragen_section(data, section)
+                break
         if name.endswith(".mapping_metrics.csv"):
             row = data.get("MAPPING/ALIGNING SUMMARY", {})
             s.total_reads               = _as_float(row.get("Total input reads", (None,))[0])
@@ -557,6 +641,37 @@ def classify_pair_relatedness(rel, exp, thresholds):
         return "fail"
     # "Other" or "na": ±0.10 around expected when both numbers are present.
     return "pass" if abs(rel - exp) <= 0.10 else "fail"
+
+
+def relatedness_for_sample(pairs, sample):
+    """Return this sample's somalier pair comparisons as a flat list, always
+    naming the *other* sample as `sample_b` regardless of which side of the
+    pair `sample` was recorded on.
+
+    Sorted by partner sample name: `pairs`' own order reflects somalier's
+    pairwise output order, which in turn depends on upstream task-completion
+    order and is not guaranteed stable between runs -- sorting keeps this
+    JSON's content reproducible regardless.
+    """
+    out = []
+    for p in pairs:
+        if p["sample_a"] == sample:
+            partner = p["sample_b"]
+        elif p["sample_b"] == sample:
+            partner = p["sample_a"]
+        else:
+            continue
+        out.append({
+            "sample_b":              partner,
+            "expected_relationship": p["expected_relationship"],
+            "expected_relatedness":  p["expected_relatedness"],
+            "relatedness":           p["relatedness"],
+            "ibs0":                  p["ibs0"],
+            "ibs2":                  p["ibs2"],
+            "verdict":               p["verdict"],
+        })
+    out.sort(key=lambda p: p["sample_b"])
+    return out
 
 
 def pedigree_validation_by_sample(pairs):
@@ -858,18 +973,32 @@ def add_gene_coverage_section(module, rows):
 # JSON sidecar
 # ---------------------------------------------------------------------------
 
-def write_per_sample_json(samples, json_dir, pedigree_pass):
+_PICARD_RAW_KEY_ORDER = ["HsMetrics", "WgsMetrics", "QualityYieldMetrics"]
+
+
+def _ordered_raw(d, key_order):
+    """Return `d`'s items in a fixed canonical order (dropping keys `d`
+    doesn't have). `d`'s own insertion order follows whatever order Nextflow
+    staged/processed its source files in, which isn't guaranteed stable
+    between runs -- this keeps the JSON sidecar's content reproducible.
     """
-    Write one JSON file per sample matching GA4GH layout.
+    return {k: d[k] for k in key_order if k in d}
+
+
+def write_per_sample_json(samples, json_dir, pedigree_pass, pairs):
+    """
+    Write one JSON file per sample matching our GA4GH-flavored QC report schema.
     """
     json_dir = Path(json_dir)
     json_dir.mkdir(parents=True, exist_ok=True)
     for sample, s in samples.items():
         doc = {
+            "schema_version": "1.0",
             "biosample": {"id": sample},
             "qc_metrics": {
                 "aln_metrics":     {k: getattr(s, k) for k in GA4GH_ALIGNMENT_HEADERS},
                 "variant_metrics": {k: getattr(s, k) for k in GA4GH_VARIANT_HEADERS},
+                "cnv_metrics":     {k: getattr(s, k) for k in CNV_HEADERS},
             },
             "pedigree": {
                 "family_id":              s.family_id,
@@ -877,7 +1006,12 @@ def write_per_sample_json(samples, json_dir, pedigree_pass):
                 "inferred_sex": s.somalier_sex,
                 "sex_check":              s.sex_check,
                 "pedigree_validation":    pedigree_pass.get(sample, "na"),
+                "relatedness":            relatedness_for_sample(pairs, sample),
             },
+            # Raw per-tool passthrough (BIOINFO-246) -- empty {} for samples
+            # with no staged DRAGEN files / no matching picard sub-tool.
+            "dragen_metrics": _ordered_raw(s.dragen_raw, (key for key, _section in _DRAGEN_RAW_KEYS.values())),
+            "picard_metrics": _ordered_raw(s.picard_raw, _PICARD_RAW_KEY_ORDER),
         }
         (json_dir / f"{sample}.metrics.json").write_text(json.dumps(doc, indent=2, default=str))
 
@@ -958,7 +1092,8 @@ def main():
     dragen_files = [f for f in args.files if f.endswith(
         (".mapping_metrics.csv", ".wgs_coverage_metrics.csv",
          ".vc_metrics.csv", ".ploidy_estimation_metrics.csv",
-         ".cnv_metrics.csv"))]
+         ".cnv_metrics.csv", ".gvcf_metrics.csv",
+         ".qc-coverage-region-1_coverage_metrics.csv", ".time_metrics.csv"))]
     parse_dragen_csv_files(dragen_files, samples)
 
     # 6) Per-sample pass/fail summary (sex_check is precomputed in parse_somalier)
@@ -982,7 +1117,7 @@ def main():
 
     # 8) JSON sidecar + write the HTML report
     if args.json_out:
-        write_per_sample_json(samples, args.json_out, pedigree_pass)
+        write_per_sample_json(samples, args.json_out, pedigree_pass, pairs)
     write_kwargs = {"force": True, "title": args.title or None, "zip_data_dir": True}
     if args.filename:
         write_kwargs["filename"] = args.filename

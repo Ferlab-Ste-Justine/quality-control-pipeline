@@ -81,8 +81,11 @@ NXF_VER="$nxf_floor" nextflow run . -profile test,docker -preview --outdir "$nxf
 step "[4/6] nf-test dry-run (syntax check only, no execution)"
 nf-test test --dryRun
 
-step "[5/6] nf-test full suite (--profile test,docker)"
-nf-test test --profile test,docker
+step "[5/6] nf-test full suite (--profile +docker)"
+# `+docker` is appended to each test's own profile: nf-test.config's default
+# "test", or tests/dragen.nf.test's `profile "test_dragen"`. A profile without
+# `+` (e.g. `--profile test,docker`) would replace test_dragen for that test.
+nf-test test --profile +docker
 
 step "[6/6] nf-core pipelines lint --release"
 nf-core pipelines lint --release

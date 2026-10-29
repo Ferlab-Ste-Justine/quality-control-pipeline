@@ -205,11 +205,11 @@
                 "reports/pedigree/YRI/YRI.somalier.samples.tsv"
             ],
             [
-                "NA21118.metrics.json:md5,47348a153b55ae728925d9fe5863515e",
-                "NA21119.metrics.json:md5,6d5ed28d43bd735e944ad617468e8e87",
-                "NA19238.metrics.json:md5,af05ce58e86d4a15aa40927e7dd8eb4d",
-                "NA19239.metrics.json:md5,002a86678fbe57e059fd9f93ae6a77a5",
-                "NA19240.metrics.json:md5,fc013679b459e3aa7e4764d80ef40d69",
+                "NA21118.metrics.json:md5,516c70a42176c96be2830b13df16dd4d",
+                "NA21119.metrics.json:md5,97ad771ec528ca57f32cb5ef05b5a593",
+                "NA19238.metrics.json:md5,c5293e77380da6f1bd10b603bd5acdf9",
+                "NA19239.metrics.json:md5,d60eabd63e79d65c877ebf66c1824c41",
+                "NA19240.metrics.json:md5,ee2d3dcb9f551cddefad7cce7226df0b",
                 "NA19238.Ancestry:md5,a990c5dab7b13d76977fa9e8bcb3e3f7",
                 "NA19238.log:md5,c23db1036bf6f25bc7cfc462df31aff7",
                 "NA19238.mosdepth.global.dist.txt:md5,ab53e3621b3e7c2244cbb409d9f02532",
@@ -286,7 +286,7 @@
                 "YRI.somalier.samples.tsv:md5,757c0ce579eca991680a872e78b221e9"
             ]
         ],
-        "timestamp": "2026-10-01T14:54:00.922712945",
+        "timestamp": "2026-10-22T23:53:17.623662036",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "24.10.5"
