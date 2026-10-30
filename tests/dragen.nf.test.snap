@@ -1,7 +1,7 @@
 {
     "-profile test_dragen (mixed standard + DRAGEN samples)": {
         "content": [
-            41,
+            40,
             {
                 "COUNT_DEL": {
                     "bcftools": 1.2
