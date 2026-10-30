@@ -106,7 +106,17 @@ workflow QUALITYCONTROL {
         BAM/CRAM QUALITY CONTROL
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
-    GATK4_BEDTOINTERVALLIST( ch_intervals.flatten().map { it -> [[id:"bed"], it] },
+    // The interval_list is only read by PICARD_COLLECTWGSMETRICS (BAM_QC_WGS), so
+    // only build it when at least one standard-branch WGS alignment row exists --
+    // an all-DRAGEN (or all-targeted) run then schedules no GATK task at all.
+    ch_has_standard_wgs_aln = ch_aln_branch.standard
+        .filter { meta, _cram, _crai -> meta.sequencingType == 'WGS' }
+        .first()
+        .map { _row -> true }
+
+    GATK4_BEDTOINTERVALLIST( ch_intervals.flatten()
+                                .combine(ch_has_standard_wgs_aln)
+                                .map { bed, _has_wgs -> [[id:"bed"], bed] },
                             ch_dict.map { it -> [[id:"dict"], it] })
 
     ch_interval_list = GATK4_BEDTOINTERVALLIST.out.interval_list
