@@ -1,0 +1,5 @@
+participant,sample,familyId,relationship_to_proband,sex,experimentalStrategy,fileType,file1,file2
+NA19238,NA19238,YRI,Mother,Female,WXS,CRAM,data-test/cram/NA19238.subset.chr20XY.cram,data-test/cram/NA19238.subset.chr20XY.cram.crai
+NA19239,NA19239,YRI,Father,Male,WXS,CRAM,data-test/cram/NA19239.subset.chr20XY.cram,data-test/cram/NA19239.subset.chr20XY.cram.crai
+NA19240,NA19240,YRI,Proband,Female,WXS,CRAM,data-test/cram/NA19240.subset.chr20XY.cram,data-test/cram/NA19240.subset.chr20XY.cram.crai
+NA19239,NA19239,CA1000019,Proband,Male,WXS,CRAM,data-test/cram/NA19239.subset.chr20XY.cram,data-test/cram/NA19239.subset.chr20XY.cram.crai

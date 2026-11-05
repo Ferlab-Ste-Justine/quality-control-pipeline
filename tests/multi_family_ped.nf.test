@@ -1,0 +1,49 @@
+nextflow_pipeline {
+
+    name "Test pipeline"
+    script "../main.nf"
+    tag "pipeline"
+
+    // Reuses test_dragen.config's reference/resource defaults (fasta,
+    // somalier_sites, target/bait BEDs, etc.) purely for convenience -- this
+    // samplesheet has no dragenMetrics column, so the DRAGEN sub-branch never
+    // triggers. The property this test actually needs from it is that
+    // ped_file stays unset, so pedigree is derived from the samplesheet (see
+    // workflows/qualitycontrol.nf) -- the code path BIOINFO-248 was in.
+    profile "test_dragen"
+
+    test("a sample shared across two families keeps its own PED row (and somalier extract) in both -- BIOINFO-248") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+                cohort_mode = false
+                input = "${projectDir}/tests/fixtures/multi_family_samplesheet.csv"
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
+                { assert snapshot(
+                    removeFromYamlMap("$outputDir/pipeline_info/quality-control-pipeline_software_mqc_versions.yml", "Workflow")
+                ).match() },
+
+                // Before the fix, deduping the derived PED on sample alone meant
+                // only the first family to claim NA19239 kept its row; the other
+                // family's PED was never written, and CRAM_SOMALIER's per-family
+                // join against it failed outright ("Join mismatch ... key=[id:
+                // CA1000019]"). Both families must now get their own PED row for
+                // the shared sample.
+                { assert path("$outputDir/reports/pedigree/YRI.ped").text.contains("NA19239") },
+                { assert path("$outputDir/reports/pedigree/CA1000019.ped").text.contains("NA19239") },
+
+                // And each family's own somalier relate actually ran against its
+                // own PED -- not just that some file with the right name exists.
+                { assert path("$outputDir/reports/pedigree/YRI/YRI.somalier.samples.tsv").exists() },
+                { assert path("$outputDir/reports/pedigree/CA1000019/CA1000019.somalier.samples.tsv").exists() }
+            )
+        }
+    }
+}

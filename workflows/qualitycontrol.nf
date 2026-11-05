@@ -243,10 +243,15 @@ workflow QUALITYCONTROL {
 
     ch_cram_crai_somalier = ch_cram_crai_source
         .map { meta, cram, crai ->
-        [meta.sample, meta, cram, crai]
+        // Keyed by [familyId, sample], not sample alone: a sample shared
+        // across two families (e.g. a parent re-used in two cases) must stay
+        // two independent, single-occurrence groups -- each gets sample_idx 0
+        // and an unprefixed samplename_somalier -- rather than being
+        // disambiguated against its own other-family occurrence.
+        [[meta.familyId, meta.sample], meta, cram, crai]
         }
         .groupTuple()
-        .map { _sample, meta, cram, crai ->  [meta.withIndex(), cram, crai] }
+        .map { _family_sample, meta, cram, crai ->  [meta.withIndex(), cram, crai] }
         .transpose()
         .map { meta_idx, cram, crai -> [meta_idx[0] + [sample_idx:meta_idx[1]], cram, crai] }
         .map { meta, cram, crai ->
@@ -298,10 +303,31 @@ workflow QUALITYCONTROL {
     } else {
         ch_somalier_input_ped = ch_samplesheet
             .map { meta, _files ->
-                [ meta.sample, meta + [samplename_somalier: meta.sample, sample_idx: 0] ]
+                // One row per true occurrence: a sample can have several
+                // samplesheet rows sharing a family/sequencingType/lane (one
+                // per fileType -- e.g. a CRAM row and a VCF row), which must
+                // collapse to a single entry before counting occurrences
+                // below, the same way BAM_MERGE collapses lanes before
+                // ch_cram_crai_somalier (above) does its own counting.
+                [ [meta.familyId, meta.sample, meta.sequencingType, meta.lane], meta ]
             }
             .unique { entry -> entry[0] }
-            .map { _sample, meta -> [meta.familyId, meta] }
+            // Keyed by [familyId, sample], not sample alone -- see
+            // ch_cram_crai_somalier above for why.
+            .map { _occurrence, meta -> [ [meta.familyId, meta.sample], meta ] }
+            .groupTuple()
+            .flatMap { _family_sample, metas -> metas.withIndex() }
+            .map { meta, idx ->
+                // Mirrors ch_cram_crai_somalier's own samplename_somalier
+                // computation exactly, so a sample's PED row always names the
+                // extract CRAM_SOMALIER actually produced for it in this
+                // family.
+                def m = meta + [sample_idx: idx]
+                def prefix = (m.n_seqTypes > 1 ? "${m.sequencingType}." : "") + (m.n_lanes > 1 ? "${m.lane}" : "")
+                def samplename_somalier = m.sample_idx > 0 ? "${m.sample}.${prefix}" : m.sample
+                m + [samplename_somalier: samplename_somalier]
+            }
+            .map { meta -> [meta.familyId, meta] }
             .groupTuple()
             .flatMap { familyId, metas ->
                 buildPedRowsForFamily(familyId, metas, !(params.cohort_mode as boolean))
