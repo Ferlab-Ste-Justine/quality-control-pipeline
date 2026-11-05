@@ -1,0 +1,37 @@
+{
+    "a sample shared across two families keeps its own PED row (and somalier extract) in both -- BIOINFO-248": {
+        "content": [
+            {
+                "COVERAGE_BY_GENE": {
+                    "aggregate_mosdepth_by_gene.py": "aggregate_mosdepth_by_gene.py 1.0.0"
+                },
+                "MOSDEPTH": {
+                    "mosdepth": "0.3.11"
+                },
+                "PICARD_COLLECTHSMETRICS": {
+                    "picard": "3.4.0"
+                },
+                "PICARD_COLLECTQUALITYYIELDMETRICS": {
+                    "picard": "3.4.0"
+                },
+                "SAMTOOLS_STATS": {
+                    "samtools": 1.24
+                },
+                "SOMALIER_EXTRACT": {
+                    "somalier": "0.2.19"
+                },
+                "SOMALIER_RELATE": {
+                    "somalier": "0.2.19"
+                },
+                "VERIFYBAMID_VERIFYBAMID2": {
+                    "verifybamid": "2.0.1"
+                }
+            }
+        ],
+        "timestamp": "2026-11-04T16:00:03.991082702",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "24.10.5"
+        }
+    }
+}
