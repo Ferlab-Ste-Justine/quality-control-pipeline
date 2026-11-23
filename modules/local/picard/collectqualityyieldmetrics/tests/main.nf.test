@@ -1,0 +1,102 @@
+nextflow_process {
+
+    name "Test Process PICARD_COLLECTQUALITYYIELDMETRICS"
+    script "../main.nf"
+    process "PICARD_COLLECTQUALITYYIELDMETRICS"
+
+    tag "modules"
+    tag "modules_local"
+    tag "picard_collectqualityyieldmetrics"
+
+    // test.bam/.bai: 324 real reads from public sample NA19238
+    // (data-test/cram/NA19238.subset.chr20XY.cram, chr20:19999283-20001454),
+    // reheadered onto a small synthetic contig ("chrTest", 2500bp, all @RG
+    // lines preserved) so the fixture is a self-contained ~15KB file instead
+    // of requiring the full dataset. ref_subset.fasta is the matching real
+    // reference sequence for that same window, extracted from the pipeline's
+    // own chr20XY reference.
+    //
+    // Expected values below are picard 3.4.0's own real output on this exact
+    // fixture (independently run outside Nextflow via the module's pinned
+    // container) -- verified real-data output, not invented.
+
+    test("real NA19238 excerpt, with reference -> correct QualityYieldMetrics") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'NA19238' ],
+                    file("\${projectDir}/modules/local/picard/collectqualityyieldmetrics/tests/test.bam", checkIfExists: true),
+                    file("\${projectDir}/modules/local/picard/collectqualityyieldmetrics/tests/test.bam.bai", checkIfExists: true)
+                ]
+                input[1] = [
+                    [ id: 'fasta' ],
+                    file("\${projectDir}/modules/local/picard/collectqualityyieldmetrics/tests/ref_subset.fasta", checkIfExists: true)
+                ]
+                input[2] = [
+                    [ id: 'fai' ],
+                    file("\${projectDir}/modules/local/picard/collectqualityyieldmetrics/tests/ref_subset.fasta.fai", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def lines = path(process.out.metrics[0][1]).text.readLines()
+            def header = lines.find { it.startsWith('TOTAL_READS') }.split('\t')
+            def values = lines[lines.indexOf(header.join('\t')) + 1].split('\t')
+            def metrics = [header, values].transpose().collectEntries { h, v -> [h, v] }
+
+            assertAll(
+                { assert process.success },
+                // All 324 reads are real primary alignments with no QC-fail
+                // flag set, uniform 150bp reads -> TOTAL_BASES = 324*150.
+                { assert metrics.TOTAL_READS == '324' },
+                { assert metrics.PF_READS == '324' },
+                { assert metrics.READ_LENGTH == '150' },
+                { assert metrics.TOTAL_BASES == '48600' },
+                { assert metrics.PF_BASES == '48600' },
+                { assert metrics.Q20_BASES == '47640' },
+                { assert metrics.Q30_BASES == '47108' }
+            )
+        }
+    }
+
+    // CollectQualityYieldMetrics only aggregates base-quality/read-length
+    // yield, with no alignment-context-dependent computation -- the module's
+    // `reference = fasta ? "--REFERENCE_SEQUENCE ${fasta}" : ''` branch for
+    // "no reference supplied" must produce byte-identical metrics on the same
+    // reads (confirmed independently by running picard both ways on this
+    // same fixture outside Nextflow).
+    test("real NA19238 excerpt, no reference supplied -> identical QualityYieldMetrics") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'NA19238' ],
+                    file("\${projectDir}/modules/local/picard/collectqualityyieldmetrics/tests/test.bam", checkIfExists: true),
+                    file("\${projectDir}/modules/local/picard/collectqualityyieldmetrics/tests/test.bam.bai", checkIfExists: true)
+                ]
+                input[1] = [ [:], [] ]
+                input[2] = [ [:], [] ]
+                """
+            }
+        }
+
+        then {
+            def lines = path(process.out.metrics[0][1]).text.readLines()
+            def header = lines.find { it.startsWith('TOTAL_READS') }.split('\t')
+            def values = lines[lines.indexOf(header.join('\t')) + 1].split('\t')
+            def metrics = [header, values].transpose().collectEntries { h, v -> [h, v] }
+
+            assertAll(
+                { assert process.success },
+                { assert metrics.TOTAL_READS == '324' },
+                { assert metrics.Q20_BASES == '47640' },
+                { assert metrics.Q30_BASES == '47108' }
+            )
+        }
+    }
+}

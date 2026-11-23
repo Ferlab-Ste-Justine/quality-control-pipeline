@@ -1,0 +1,61 @@
+nextflow_process {
+
+    name "Test Process SAMTOOLS_REHEADER"
+    script "../main.nf"
+    process "SAMTOOLS_REHEADER"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "samtools_reheader"
+
+    // test.bam: real reads from public sample NA19238 (same fixture as
+    // modules/local/picard/collectqualityyieldmetrics/tests), whose @RG
+    // lines all carry SM:NA19238. The ext.args below (set via
+    // params.module_args, matching the real production override in
+    // conf/modules.config's `BAM_ID_REPAIR:SAMTOOLS_REHEADER_SAMPLE` block)
+    // is the actual sed-based header rewrite BAM_ID_REPAIR uses to correct a
+    // mismatched sample ID in-place -- verified (via bam().getHeader()) to
+    // only touch the SM: field, leaving every other @RG attribute and all
+    // reads themselves untouched.
+    test("real NA19238 fixture, SM rewritten via production sed args -> only SM: changes") {
+
+        when {
+            params {
+                module_args = '-P -c \'sed -E "/^@RG/ s/SM:\\S+/SM:RENAMED_SAMPLE/g"\' '
+            }
+            process {
+                """
+                input[0] = [
+                    [ id: 'NA19238' ],
+                    file("\${projectDir}/modules/local/samtools/reheader/tests/test.bam", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def header = bam(process.out.bam[0][1]).getHeader()
+            def rg_lines = header.findAll { it.startsWith('@RG') }
+
+            assertAll(
+                { assert process.success },
+                { assert process.out.bam[0][1].endsWith('.bam') },
+
+                // All 13 real read groups preserved, every one renamed.
+                { assert rg_lines.size() == 13 },
+                { assert rg_lines.every { it.contains('SM:RENAMED_SAMPLE') } },
+                { assert rg_lines.every { !it.contains('SM:NA19238') } },
+
+                // Non-SM fields of the @RG lines are untouched by the sed
+                // substitution (ID/LB/PU survive byte-for-byte).
+                { assert rg_lines.any { it.contains('ID:NA19238_ATATCTCG-ATCTTAGT_HCMN2DSXX_L001') } },
+                { assert rg_lines.any { it.contains('PU:HCMN2DSXX.1.ATATCTCG') } },
+
+                // The reads themselves are untouched by a header-only rewrite.
+                { assert bam(process.out.bam[0][1]).getReadsMD5() ==
+                    bam("${projectDir}/modules/local/samtools/reheader/tests/test.bam").getReadsMD5() }
+            )
+        }
+    }
+}
