@@ -1,0 +1,2 @@
+#chrom	start	end	total_cvg	mean_cvg	Q1_cvg	median_cvg	Q3_cvg	min_cvg	max_cvg	pct_above_5	pct_above_15	pct_above_20	pct_above_30	pct_above_50	pct_above_100	pct_above_200	pct_above_300	pct_above_400	pct_above_500	pct_above_1000
+chr20	1	100	500	200.00	190.00	200.00	210.00	180	220	100.00	100.00	100.00	100.00	100.00	100.00	0.00	0.00	0.00	0.00	0.00

@@ -1,0 +1,103 @@
+nextflow_process {
+
+    name "Test Process COVERAGE_BY_GENE"
+    script "../main.nf"
+    process "COVERAGE_BY_GENE"
+
+    tag "modules"
+    tag "modules_local"
+    tag "coverage_by_gene"
+
+    // Real mosdepth output for public sample NA19238 (chr20), trimmed to two
+    // genes: RIN2 (a single interval) and NAA20 (six intervals, exercising
+    // the groupby-and-sum aggregation path). Expected values below were
+    // independently verified in Python from this same real data before being
+    // written into the test, not derived from the script's own output.
+    test("real mosdepth regions+thresholds excerpt -> correct per-gene aggregates") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'NA19238' ],
+                    file("\${projectDir}/modules/local/coverage_by_gene/tests/regions.bed.gz", checkIfExists: true),
+                    file("\${projectDir}/modules/local/coverage_by_gene/tests/thresholds.bed.gz", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def lines = path(process.out.report[0][1]).text.readLines()
+            def header = lines[0].split('\t')
+            def rows = lines[1..-1].collect { line ->
+                def cells = line.split('\t')
+                [header, cells].transpose().collectEntries { h, c -> [h, c] }
+            }
+            def naa20 = rows.find { it['#gene'] == 'NAA20' }
+            def rin2  = rows.find { it['#gene'] == 'RIN2' }
+
+            assertAll(
+                { assert process.success },
+                { assert rows.size() == 2 },
+
+                // RIN2: single interval (size 324, mean 38.65) -- hand/Python
+                // verified: totalcvg = int(38.65*324) = 12522. Divisions use
+                // explicit `d`-suffixed double literals: an unsuffixed decimal
+                // like `324.0` is a BigDecimal in Groovy, not a double, and
+                // BigDecimal division of a non-terminating fraction doesn't
+                // exactly match the IEEE-754 double pandas/Python wrote.
+                { assert rin2.size == '324' },
+                { assert rin2.totalcvg == '12522' },
+                { assert rin2.count == '1' },
+                { assert rin2.average_coverage.toDouble() == 12522 / 324.0d },
+                { assert rin2.coverage30.toDouble() == 273 / 324.0d },
+                { assert rin2.coverage50.toDouble() == 2 / 324.0d },
+                { assert rin2.coverage100.toDouble() == 0.0d },
+
+                // NAA20: six intervals summed -- size 537, totalcvg 22802,
+                // fully covered at 5X/15X/20X/30X (every interval's count for
+                // those thresholds equals its own size), partially at 50X.
+                { assert naa20.size == '537' },
+                { assert naa20.totalcvg == '22802' },
+                { assert naa20.count == '6' },
+                { assert naa20.average_coverage.toDouble() == 22802 / 537.0d },
+                { assert naa20.coverage5.toDouble() == 1.0d },
+                { assert naa20.coverage15.toDouble() == 1.0d },
+                { assert naa20.coverage20.toDouble() == 1.0d },
+                { assert naa20.coverage30.toDouble() == 1.0d },
+                { assert naa20.coverage50.toDouble() == 15 / 537.0d },
+                { assert naa20.coverage100.toDouble() == 0.0d }
+            )
+        }
+    }
+
+    // When regions and thresholds don't join on any row (e.g. a mismatched
+    // pairing of inputs), the script deliberately exits 1 with "No results to
+    // output" rather than silently emitting an empty/malformed report.
+    test("regions and thresholds share no matching interval -> process fails, not a silent empty report") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'nomatch' ],
+                    file("\${projectDir}/modules/local/coverage_by_gene/tests/regions_no_match.bed.gz", checkIfExists: true),
+                    file("\${projectDir}/modules/local/coverage_by_gene/tests/thresholds_no_match.bed.gz", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            // The script's own `sys.exit(1)` on this path prints "No results
+            // to output" to stderr (confirmed by running the script directly
+            // outside Nextflow) -- but neither the task's own .command.err
+            // nor nf-test's process.stderr reliably captured that line for
+            // this process in this environment, so this only asserts the
+            // reliably-observable part: it fails, rather than silently
+            // producing an empty/bogus report.
+            assert !process.success
+        }
+    }
+}

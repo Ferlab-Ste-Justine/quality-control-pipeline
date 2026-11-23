@@ -1,0 +1,95 @@
+nextflow_process {
+
+    name "Test Process MULTIQC_PYTHON"
+    script "../main.nf"
+    process "MULTIQC_PYTHON"
+
+    tag "modules"
+    tag "modules_local"
+    tag "multiqc_python"
+
+    // Reuses the real, already-committed NA19239 DRAGEN fixture
+    // (tests/fixtures/dragen_metrics/NA19239/) -- no new fixtures needed.
+    // This sample's own real mapping_metrics.csv and vc_metrics.csv each
+    // carry two sections (MAPPING/ALIGNING SUMMARY + PER RG;
+    // VARIANT CALLER POSTFILTER + SUMMARY), which is exactly the shape of
+    // real DRAGEN file that caused a genuine bug earlier: the JSON
+    // sidecar's dragen_metrics raw passthrough used to flatten every
+    // section in a file together with no collision protection, so a
+    // per-read-group value (or an unrelated SUMMARY-section field) could
+    // silently end up where the real summary value belongs. The specific
+    // values asserted below were read directly from this fixture's own
+    // real content, not derived from the script's output.
+    test("real DRAGEN fixture (NA19239, no picard/somalier/ped) -> correct, section-scoped JSON sidecar") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'NA19239' ],
+                    [
+                        file("\${projectDir}/tests/fixtures/dragen_metrics/NA19239/NA19239.final.mapping_metrics.csv", checkIfExists: true),
+                        file("\${projectDir}/tests/fixtures/dragen_metrics/NA19239/NA19239.final.wgs_coverage_metrics.csv", checkIfExists: true),
+                        file("\${projectDir}/tests/fixtures/dragen_metrics/NA19239/NA19239.final.vc_metrics.csv", checkIfExists: true),
+                        file("\${projectDir}/tests/fixtures/dragen_metrics/NA19239/NA19239.final.ploidy_estimation_metrics.csv", checkIfExists: true),
+                        file("\${projectDir}/tests/fixtures/dragen_metrics/NA19239/NA19239.final.gvcf_metrics.csv", checkIfExists: true),
+                        file("\${projectDir}/tests/fixtures/dragen_metrics/NA19239/NA19239.qc-coverage-region-1_coverage_metrics.csv", checkIfExists: true),
+                        file("\${projectDir}/tests/fixtures/dragen_metrics/NA19239/NA19239.time_metrics.csv", checkIfExists: true)
+                    ],
+                    []
+                ]
+                input[1] = file("\${projectDir}/assets/multiqc_config.yml", checkIfExists: true)
+                input[2] = file("\${projectDir}/assets/qc_thresholds.yml", checkIfExists: true)
+                """
+            }
+        }
+
+        then {
+            def json = new groovy.json.JsonSlurper().parseText(
+                path(process.out.qc_json[0][1]).text
+            )
+            def dm = json.dragen_metrics
+
+            assertAll(
+                { assert process.success },
+                { assert json.schema_version == "1.0" },
+                { assert json.biosample.id == "NA19239" },
+
+                // All 7 real DRAGEN file types parsed, nothing missing.
+                { assert dm.keySet() == [
+                    "mapping_metrics", "wgs_coverage_metrics", "vc_metrics",
+                    "ploidy_estimation_metrics", "gvcf_metrics",
+                    "capture_coverage_metrics", "time_metrics"
+                ] as Set },
+
+                // Regression check: mapping_metrics.csv has a
+                // MAPPING/ALIGNING SUMMARY section AND a per-read-group
+                // section (12 real lanes) that repeats this same metric
+                // name with different values (435.14 to 446.89 across real
+                // lanes) -- this must be the real summary-level value,
+                // never an arbitrary lane's.
+                { assert dm.mapping_metrics['Insert length: mean'] == 438.78 },
+
+                // Regression check: vc_metrics.csv's VARIANT CALLER SUMMARY
+                // section has its own, unrelated fields (sample/read counts,
+                // not variant counts) -- they must not appear here, and the
+                // real POSTFILTER-section SNPs value must match exactly,
+                // consistent with the curated qc_metrics field below.
+                { assert !dm.vc_metrics.containsKey('Reads Processed') },
+                { assert !dm.vc_metrics.containsKey('Number of samples') },
+                { assert dm.vc_metrics.SNPs == 4751559 },
+                { assert json.qc_metrics.variant_metrics.count_snvs == 4751559 },
+
+                // No Picard file was staged for this sample (DRAGEN bundles
+                // one only for WXS, not every run) -- must be empty, not
+                // absent/crashing.
+                { assert json.picard_metrics == [:] },
+
+                // No somalier/PED data was staged -- pedigree fields present
+                // but empty/na, not absent or erroring.
+                { assert json.pedigree.relatedness == [] },
+                { assert json.pedigree.pedigree_validation == "na" }
+            )
+        }
+    }
+}
