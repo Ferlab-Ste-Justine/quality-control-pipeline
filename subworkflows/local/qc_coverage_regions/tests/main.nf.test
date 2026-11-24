@@ -1,0 +1,66 @@
+nextflow_workflow {
+
+    name "Test workflow QC_COVERAGE_REGIONS"
+    script "../main.nf"
+    workflow "QC_COVERAGE_REGIONS"
+    config "./nextflow.config"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "qc_coverage_regions"
+
+    // test.bam/.bai: real reads from public sample NA19238
+    // (data-test/cram/NA19238.subset.chr20XY.cram), extracted directly over
+    // the RIN2 CDS interval (chr20:20000612-20000936) with the real @SQ
+    // header untouched (no synthetic contig needed here -- MOSDEPTH doesn't
+    // validate a BAM's sequence dictionary against an external reference the
+    // way Picard does, so the real chr20 coordinates/lengths can stay as-is).
+    //
+    // rin2_regions.bed.gz: the real RIN2 CDS line from the pipeline's own
+    // gencode.v48.basic.CDS_canonical annotation (same file used by
+    // conf/test.config's qc_coverage_region_1), bgzipped.
+    //
+    // This exercises the real wiring MOSDEPTH -> COVERAGE_BY_GENE end to end
+    // -- running real mosdepth on this exact fixture (independently, outside
+    // Nextflow, via the module's pinned container) reproduces the identical
+    // regions/thresholds numbers already verified in
+    // modules/local/coverage_by_gene/tests/main.nf.test (same real data,
+    // same real tool), which is also what's asserted below.
+    test("real NA19238/RIN2 excerpt -> MOSDEPTH + COVERAGE_BY_GENE produce the correct per-gene report") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'NA19238' ],
+                    file("\${projectDir}/subworkflows/local/qc_coverage_regions/tests/test.bam", checkIfExists: true),
+                    file("\${projectDir}/subworkflows/local/qc_coverage_regions/tests/test.bam.bai", checkIfExists: true)
+                ])
+                input[1] = Channel.of(
+                    file("\${projectDir}/subworkflows/local/qc_coverage_regions/tests/rin2_regions.bed.gz", checkIfExists: true)
+                )
+                input[2] = Channel.of([])
+                """
+            }
+        }
+
+        then {
+            def lines = path(workflow.out.reports[0][1]).text.readLines()
+            def header = lines[0].split('\t')
+            def row = [header, lines[1].split('\t')].transpose().collectEntries { h, v -> [h, v] }
+
+            assertAll(
+                { assert workflow.success },
+                { assert lines.size() == 2 },
+                { assert row['#gene'] == 'RIN2' },
+                { assert row.size == '324' },
+                { assert row.totalcvg == '12522' },
+                { assert row.count == '1' },
+                { assert row.average_coverage.toDouble() == 12522 / 324.0d },
+                { assert row.coverage30.toDouble() == 273 / 324.0d },
+                { assert row.coverage50.toDouble() == 2 / 324.0d },
+                { assert row.coverage100.toDouble() == 0.0d }
+            )
+        }
+    }
+}
