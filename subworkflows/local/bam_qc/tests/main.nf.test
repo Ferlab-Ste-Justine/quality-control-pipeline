@@ -1,0 +1,137 @@
+nextflow_workflow {
+
+    name "Test workflow BAM_QC"
+    script "../main.nf"
+    workflow "BAM_QC"
+    config "./nextflow.config"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "bam_qc"
+
+    // test.bam/ref_subset.fasta: the same self-contained 324-real-read
+    // NA19238 excerpt reused across several other tests in this ticket.
+    // target.bed/target.dict exist to exercise the targeted (HsMetrics)
+    // branch's internal BedToIntervalList conversion with a real, matching
+    // reference dictionary.
+    //
+    // This subworkflow has almost no logic of its own -- it just runs
+    // several well-established tools (Samtools stats, two different Picard
+    // coverage metrics, Mosdepth, VerifyBamID2) and mixes all their outputs
+    // into one ch_reports channel, each already covered by its own
+    // module-level test (local) or upstream nf-core tests (vendored). The
+    // one thing that IS genuinely this subworkflow's own logic is the
+    // val_seq_type == 'WGS' branch choosing CollectWgsMetrics vs
+    // CollectHsMetrics -- that's what these two tests actually verify.
+    //
+    // VERIFYBAMID_VERIFYBAMID2 is disabled here (ext.when = false, see
+    // ./nextflow.config) -- it always needs a real, non-trivial genome-wide
+    // SVD ancestry reference panel (even the repo's own reduced
+    // data-test/reference/verifyBamID/ files are ~1MB and reference real
+    // chr20/X/Y coordinates that this fixture's synthetic contig can't
+    // match), which is disproportionate for what is otherwise a pure wiring
+    // test; it is unconditional regardless of the WGS/targeted branch, so
+    // skipping it doesn't affect what either test case is actually checking.
+    test("val_seq_type == WGS -> CollectWgsMetrics runs, not CollectHsMetrics") {
+
+        when {
+            params {
+                qc_coverage_region_1 = false
+                qc_coverage_region_2 = false
+            }
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'NA19238' ],
+                    file("\${projectDir}/subworkflows/local/bam_qc/tests/test.bam", checkIfExists: true),
+                    file("\${projectDir}/subworkflows/local/bam_qc/tests/test.bam.bai", checkIfExists: true)
+                ])
+                input[1] = Channel.value(file("\${projectDir}/subworkflows/local/bam_qc/tests/ref_subset.fasta", checkIfExists: true))
+                input[2] = Channel.value(file("\${projectDir}/subworkflows/local/bam_qc/tests/ref_subset.fasta.fai", checkIfExists: true))
+                input[3] = Channel.value(file("\${projectDir}/subworkflows/local/bam_qc/tests/ref_subset.dict", checkIfExists: true))
+                // conf/modules/qc_coverage.config gates MOSDEPTH's own
+                // --thresholds arg on params.regions_bed (always set in
+                // production, not on qc_coverage_region_1/2) -- must supply a
+                // real --by bed here too, or mosdepth errors on --thresholds
+                // without --by.
+                input[4] = Channel.value(file("\${projectDir}/subworkflows/local/bam_qc/tests/target.bed", checkIfExists: true))
+                input[5] = Channel.value([])
+                input[6] = Channel.value([])
+                input[7] = Channel.value([])
+                input[8] = Channel.value([])
+                input[9] = Channel.value([])
+                // Distinct filenames from ref_subset.fasta itself: VERIFYBAMID_VERIFYBAMID2's
+                // own 4th positional arg (ch_fasta, "ref_subset.fasta") is staged
+                // independently of this svd_in tuple into the same task, so reusing
+                // that name here would collide.
+                input[10] = Channel.value([
+                    file("\${projectDir}/subworkflows/local/bam_qc/tests/target.bed", checkIfExists: true),
+                    file("\${projectDir}/subworkflows/local/bam_qc/tests/ref_subset.fasta.fai", checkIfExists: true),
+                    file("\${projectDir}/subworkflows/local/bam_qc/tests/ref_subset.dict", checkIfExists: true)
+                ])
+                input[11] = 'WGS'
+                """
+            }
+        }
+
+        then {
+            def reports = workflow.out.reports.collect { it[1].toString() }
+
+            assertAll(
+                { assert workflow.success },
+                { assert reports.any { it.contains('CollectWgsMetrics') } },
+                { assert !reports.any { it.contains('CollectHsMetrics') } },
+                { assert reports.any { it.endsWith('.stats') } },
+                { assert reports.any { it.endsWith('.QualityYieldMetrics.metrics') } },
+                { assert reports.any { it.endsWith('.mosdepth.global.dist.txt') } }
+            )
+        }
+    }
+
+    test("val_seq_type != WGS -> CollectHsMetrics runs, not CollectWgsMetrics") {
+
+        when {
+            params {
+                qc_coverage_region_1 = false
+                qc_coverage_region_2 = false
+            }
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'NA19238' ],
+                    file("\${projectDir}/subworkflows/local/bam_qc/tests/test.bam", checkIfExists: true),
+                    file("\${projectDir}/subworkflows/local/bam_qc/tests/test.bam.bai", checkIfExists: true)
+                ])
+                input[1] = Channel.value(file("\${projectDir}/subworkflows/local/bam_qc/tests/ref_subset.fasta", checkIfExists: true))
+                input[2] = Channel.value(file("\${projectDir}/subworkflows/local/bam_qc/tests/ref_subset.fasta.fai", checkIfExists: true))
+                input[3] = Channel.value(file("\${projectDir}/subworkflows/local/bam_qc/tests/ref_subset.dict", checkIfExists: true))
+                input[4] = Channel.value(file("\${projectDir}/subworkflows/local/bam_qc/tests/target.bed", checkIfExists: true))
+                input[5] = Channel.value([])
+                input[6] = Channel.value([])
+                input[7] = Channel.value([])
+                input[8] = Channel.value(file("\${projectDir}/subworkflows/local/bam_qc/tests/target.bed", checkIfExists: true))
+                input[9] = Channel.value(file("\${projectDir}/subworkflows/local/bam_qc/tests/target.bed", checkIfExists: true))
+                input[10] = Channel.value([
+                    file("\${projectDir}/subworkflows/local/bam_qc/tests/target.bed", checkIfExists: true),
+                    file("\${projectDir}/subworkflows/local/bam_qc/tests/ref_subset.fasta.fai", checkIfExists: true),
+                    file("\${projectDir}/subworkflows/local/bam_qc/tests/ref_subset.dict", checkIfExists: true)
+                ])
+                input[11] = 'WXS'
+                """
+            }
+        }
+
+        then {
+            def reports = workflow.out.reports.collect { it[1].toString() }
+
+            assertAll(
+                { assert workflow.success },
+                { assert reports.any { it.contains('CollectHsMetrics') } },
+                { assert !reports.any { it.contains('CollectWgsMetrics') } },
+                { assert reports.any { it.endsWith('.stats') } },
+                { assert reports.any { it.endsWith('.QualityYieldMetrics.metrics') } },
+                { assert reports.any { it.endsWith('.mosdepth.global.dist.txt') } }
+            )
+        }
+    }
+}
