@@ -46,5 +46,6 @@ process BCFTOOLS_STATS {
 
     """
     touch ${prefix}.bcftools_stats.txt
+    echo -e "TSTV\t0\t0\t0\t0.00\t0\t0\t0.00" >> ${prefix}.bcftools_stats.txt
     """
 }
