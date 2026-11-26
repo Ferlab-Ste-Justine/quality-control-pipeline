@@ -97,7 +97,10 @@ nextflow_process {
             // this process in this environment, so this only asserts the
             // reliably-observable part: it fails, rather than silently
             // producing an empty/bogus report.
-            assert !process.success
+            assertAll(
+                { assert !process.success },
+                { assert process.out.report == [] }
+            )
         }
     }
 }
