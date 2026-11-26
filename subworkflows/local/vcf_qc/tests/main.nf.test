@@ -1,0 +1,80 @@
+nextflow_workflow {
+
+    name "Test workflow VCF_QC"
+    script "../main.nf"
+    workflow "VCF_QC"
+    config "./nextflow.config"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "vcf_qc"
+
+    // test.vcf.gz: 26 real, all-PASS variant records for public sample
+    // NA19238 (data-test/vcf/NA19238.chr20_20000000-21000000.hard-filtered.vcf.gz,
+    // subset to chr20:20001000-20015000). This subworkflow's only real value
+    // beyond wiring is the 7 bcftools view filter expressions (configured in
+    // conf/modules/vcf_qc.config, reproduced in this test's own
+    // nextflow.config) that each count a specific variant subset -- getting
+    // one wrong (e.g. counting hom instead of het) would be a silent
+    // regression nf-core's own BCFtools module tests can't catch. Expected
+    // counts below were independently computed by running real bcftools
+    // (outside Nextflow, via the module's pinned container) with these exact
+    // same filter expressions against this exact fixture, not derived from
+    // this subworkflow's own output.
+    test("real NA19238 excerpt -> each bcftools filter counts the correct variant subset, final JSON matches") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'NA19238' ],
+                    file("\${projectDir}/subworkflows/local/vcf_qc/tests/test.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/subworkflows/local/vcf_qc/tests/test.vcf.gz.tbi", checkIfExists: true)
+                ])
+                input[1] = Channel.value([])
+                input[2] = Channel.value([])
+                input[3] = Channel.value([])
+                input[4] = Channel.value([])
+                """
+            }
+        }
+
+        then {
+            def json = new groovy.json.JsonSlurper().parseText(path(workflow.out.vcf_metrics[0][1]).text)
+
+            assertAll(
+                { assert workflow.success },
+                { assert json.sample_id == 'NA19238' },
+
+                // 11 real indels total (6 deletions, ILEN<0; 5 insertions,
+                // ILEN>0) -- every real indel is one or the other, none
+                // double-counted or missed.
+                { assert json.total_deletions == 6 },
+                { assert json.total_insertions == 5 },
+
+                // 15 real SNVs total, split 8 het / 7 hom -- every SNV is one
+                // or the other.
+                { assert json.total_snvs == 15 },
+                { assert json.heterozygous_snvs == 8 },
+                { assert json.homozygous_snvs == 7 },
+
+                // 11 indels split 10 het / 1 hom.
+                { assert json.heterozygous_indels == 10 },
+                { assert json.homozygous_indels == 1 },
+
+                // Ratios derived from the above, matching vcf_metrics' own
+                // (separately mutation-tested) arithmetic -- Groovy's
+                // BigDecimal division truncates non-terminating results to
+                // 10 decimal digits rather than full double precision, so
+                // these are the exact truncated values, not 8/7.0d raw.
+                { assert json.het_hom_ratio_snvs == 1.1428571429 },
+                { assert json.het_hom_ratio_indels == 10 },
+                { assert json.ins_dels_ratio == 0.8333333333 },
+
+                // Real Ts/Tv from bcftools stats on this exact fixture: 10
+                // transitions, 5 transversions.
+                { assert json.ti_tv_ratio == 2.00 }
+            )
+        }
+    }
+}

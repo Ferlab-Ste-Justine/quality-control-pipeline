@@ -1,0 +1,17 @@
+Changes in component 'nf-core/bcftools/stats'
+Changes in 'bcftools/stats/main.nf':
+--- modules/nf-core/bcftools/stats/main.nf
++++ modules/nf-core/bcftools/stats/main.nf
+@@ -46,5 +46,6 @@
+ 
+     """
+     touch ${prefix}.bcftools_stats.txt
++    echo -e "TSTV\t0\t0\t0\t0.00\t0\t0\t0.00" >> ${prefix}.bcftools_stats.txt
+     """
+ }
+
+'modules/nf-core/bcftools/stats/environment.yml' is unchanged
+'modules/nf-core/bcftools/stats/meta.yml' is unchanged
+'modules/nf-core/bcftools/stats/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/bcftools/stats/tests/main.nf.test' is unchanged
+************************************************************

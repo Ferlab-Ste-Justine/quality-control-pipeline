@@ -35,7 +35,7 @@ process COVERAGE_BY_GENE {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch qc_regions.tsv
+    touch ${prefix}.coverage_by_gene.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

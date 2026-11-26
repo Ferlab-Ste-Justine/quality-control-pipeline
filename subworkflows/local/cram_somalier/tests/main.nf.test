@@ -1,0 +1,120 @@
+nextflow_workflow {
+
+    name "Test workflow CRAM_SOMALIER"
+    script "../main.nf"
+    workflow "CRAM_SOMALIER"
+    config "./nextflow.config"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "cram_somalier"
+
+    // NA19238/NA19239/NA19240.bam: real reads for the real YRI trio
+    // (NA19238=mother, NA19239=father, NA19240=child -- same trio as
+    // data-test/testPedigree.ped) at chr20:20040400-20040900, reheadered
+    // onto a small synthetic contig ("chrTest") the same way the picard
+    // fixture was built. sites.vcf.gz carries the one real somalier site
+    // that falls in this window (chr20:20040657 T>C, shifted to chrTest:1157)
+    // -- with only one informative site, somalier can't meaningfully
+    // discriminate relatedness categories (confirmed: it even reports
+    // NA19238/NA19240 as "apparent identical twins" from this single site),
+    // so this test deliberately does NOT assert specific relatedness
+    // coefficients -- that's somalier's own job, already covered by its
+    // upstream tests. What's actually custom to this subworkflow, and what
+    // this test verifies, is the per-family (non-cohort) grouping/sorting/PED
+    // join: that all 3 samples of one real family end up extracted, grouped
+    // under that one family, joined with its own PED, and related together in
+    // a single somalier relate call producing output for all 3 pairs.
+    test("real YRI trio, per-family (non-cohort) mode -> all 3 samples grouped under one family, related together") {
+
+        when {
+            params {
+                cohort_mode = false
+            }
+            workflow {
+                """
+                // The 4th tuple element (count) feeds this subworkflow's own
+                // groupKey(new_meta, count) for the per-family groupTuple --
+                // it needs to be the TOTAL number of samples expected in the
+                // family (3, here). Using 1 for all 3 instead (as a same-sized
+                // per-sample value, e.g. a real single-lane sample's n_lanes,
+                // would be) reproducibly caused Nextflow to treat each sample
+                // as individually completing the family's group on its own,
+                // triggering a duplicate per-family emission and a join crash
+                // against the single real PED entry -- but ONLY when all 3
+                // items arrive in one synchronous burst, as Channel.of(...)
+                // does here. Confirmed (by running the real per-family e2e
+                // test, tests/default_fam.nf.test, which uses this same real
+                // trio with the pipeline's actual meta.n_lanes-derived count
+                // and passes) that production's naturally-staggered dataflow
+                // never actually hits this: it's an artifact of this
+                // synchronous test channel, not a real pipeline bug.
+                input[0] = Channel.of(
+                    [
+                        [ id: 'NA19238', sample: 'NA19238', familyId: 'YRI', samplename_somalier: 'NA19238' ],
+                        file("\${projectDir}/subworkflows/local/cram_somalier/tests/NA19238.bam", checkIfExists: true),
+                        file("\${projectDir}/subworkflows/local/cram_somalier/tests/NA19238.bam.bai", checkIfExists: true),
+                        3
+                    ],
+                    [
+                        [ id: 'NA19239', sample: 'NA19239', familyId: 'YRI', samplename_somalier: 'NA19239' ],
+                        file("\${projectDir}/subworkflows/local/cram_somalier/tests/NA19239.bam", checkIfExists: true),
+                        file("\${projectDir}/subworkflows/local/cram_somalier/tests/NA19239.bam.bai", checkIfExists: true),
+                        3
+                    ],
+                    [
+                        [ id: 'NA19240', sample: 'NA19240', familyId: 'YRI', samplename_somalier: 'NA19240' ],
+                        file("\${projectDir}/subworkflows/local/cram_somalier/tests/NA19240.bam", checkIfExists: true),
+                        file("\${projectDir}/subworkflows/local/cram_somalier/tests/NA19240.bam.bai", checkIfExists: true),
+                        3
+                    ]
+                )
+                // .first() turns these single-value channels into proper
+                // broadcastable "value channels" so every one of the 3 cram
+                // items above can pair with them -- a plain Channel.of(x) is
+                // a queue channel that drains after its first pairing, which
+                // is exactly what silently dropped samples 2 and 3 the first
+                // time this test was written (confirmed while debugging: in
+                // production these come from Channel.fromPath(params.fasta)
+                // et al., which Nextflow already treats as broadcastable for
+                // a single concrete path, so this gotcha never surfaces there).
+                input[1] = Channel.of([ [ id: 'fasta' ], file("\${projectDir}/subworkflows/local/cram_somalier/tests/somalier_ref.fasta", checkIfExists: true) ]).first()
+                input[2] = Channel.of([ [ id: 'fai' ], file("\${projectDir}/subworkflows/local/cram_somalier/tests/somalier_ref.fasta.fai", checkIfExists: true) ]).first()
+                input[3] = Channel.of([ [ id: 'sites' ], file("\${projectDir}/subworkflows/local/cram_somalier/tests/sites.vcf.gz", checkIfExists: true) ]).first()
+                input[4] = Channel.of([ [ id: 'YRI' ], file("\${projectDir}/subworkflows/local/cram_somalier/tests/trio.ped", checkIfExists: true) ])
+                input[5] = []
+                input[6] = 'familyId'
+                """
+            }
+        }
+
+        then {
+            def samples_lines = path(workflow.out.samples_tsv[0][1]).text.readLines()
+            def pairs_lines = path(workflow.out.pairs_tsv[0][1]).text.readLines()
+            def sample_ids = samples_lines[1..-1].collect { it.split('\t')[1] } as Set
+
+            assertAll(
+                { assert workflow.success },
+                // One extract file per sample -- none dropped.
+                { assert workflow.out.extract.size() == 3 },
+                { assert workflow.out.extract.collect { it[0].id } as Set == ['NA19238', 'NA19239', 'NA19240'] as Set },
+
+                // All 3 samples of this ONE family grouped and related
+                // together in a single somalier relate call -- not 3
+                // separate singleton calls, and not mixed with another
+                // family's samples (there is only one family here, but the
+                // key behavior is that the per-family groupKey+join actually
+                // produced ONE group, not one per sample).
+                { assert workflow.out.html.size() == 1 },
+                { assert workflow.out.html[0][0].id == 'YRI' },
+                { assert workflow.out.pairs_tsv[0][0].id == 'YRI' },
+                { assert workflow.out.samples_tsv[0][0].id == 'YRI' },
+                { assert sample_ids == ['NA19238', 'NA19239', 'NA19240'] as Set },
+
+                // 3 samples -> 3 choose 2 = 3 pairwise comparisons, all
+                // involving only this family's own samples.
+                { assert pairs_lines.size() - 1 == 3 }
+            )
+        }
+    }
+}

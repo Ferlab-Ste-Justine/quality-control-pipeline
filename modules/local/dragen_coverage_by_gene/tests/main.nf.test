@@ -1,0 +1,122 @@
+nextflow_process {
+
+    name "Test Process DRAGEN_COVERAGE_BY_GENE"
+    script "../main.nf"
+    process "DRAGEN_COVERAGE_BY_GENE"
+
+    tag "modules"
+    tag "modules_local"
+    tag "dragen_coverage_by_gene"
+
+    // cov_report.bed / read_cov_report.bed: real DRAGEN qc-coverage-region-2
+    // rows for public sample NA21118 (chr20), chosen to cover both a
+    // single-gene interval repeated across two rows (ADA) and two real
+    // multi-gene intervals that share one gene between them
+    // (['RP5-850E9.3','SRXN1'] and ['RP5-850E9.3','SCRT2']) -- exercising
+    // both the explode-to-one-row-per-gene step and a gene accumulating
+    // across two different exploded intervals. One row (chr20:1-100, "[]")
+    // is synthetic, standing in for an intergenic interval that must be
+    // dropped rather than aggregated under some blank/"[]" gene.
+    // Expected values were independently computed in Python from these same
+    // rows before being written here, not derived from the script's output.
+    test("real DRAGEN cov_report/read_cov_report excerpt -> correct per-gene aggregates, multi-gene rows counted for each gene") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'NA21118' ],
+                    file("\${projectDir}/modules/local/dragen_coverage_by_gene/tests/cov_report.bed", checkIfExists: true),
+                    file("\${projectDir}/modules/local/dragen_coverage_by_gene/tests/read_cov_report.bed", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def lines = path(process.out.report[0][1]).text.readLines()
+            def header = lines[0].split('\t')
+            def rows = lines[1..-1].collect { line ->
+                def cells = line.split('\t')
+                [header, cells].transpose().collectEntries { h, c -> [h, c] }
+            }
+            def byGene = rows.collectEntries { [(it['#gene']): it] }
+
+            assertAll(
+                { assert process.success },
+                // Four genes: ADA, RP5-850E9.3, SRXN1, SCRT2 -- the
+                // synthetic "[]" row must NOT appear as a gene of its own.
+                { assert rows.size() == 4 },
+                { assert !byGene.containsKey('') },
+                { assert !byGene.containsKey('[]') },
+
+                // ADA: two single-gene intervals (size 9 + 101 = 110).
+                // totalcvg sums cov_report's own total_cvg column (NOT
+                // read_cov_report's, a different, unused-here column of the
+                // same name disambiguated by pandas' merge suffix):
+                // int(1697) + int(15878) = 17575.
+                { assert byGene['ADA'].size == '110' },
+                { assert byGene['ADA'].totalcvg == '17575' },
+                { assert byGene['ADA'].count == '2' },
+                { assert byGene['ADA'].average_coverage.toDouble() == 17575 / 110.0d },
+                { assert byGene['ADA'].coverage100.toDouble() == 0.9545499999999999d },
+                { assert byGene['ADA'].coverage200.toDouble() == 0.0d },
+
+                // RP5-850E9.3: appears in BOTH multi-gene intervals -- each
+                // exploded row carries that interval's FULL coverage (the
+                // overlapping gene isn't split), so this gene's totals are
+                // the sum of both intervals in full, same as SRXN1 and
+                // SCRT2 individually, but doubled up.
+                { assert byGene['RP5-850E9.3'].size == '330' },
+                { assert byGene['RP5-850E9.3'].totalcvg == '82436' },
+                { assert byGene['RP5-850E9.3'].count == '2' },
+                { assert byGene['RP5-850E9.3'].average_coverage.toDouble() == 82436 / 330.0d },
+                { assert byGene['RP5-850E9.3'].coverage200.toDouble() == 0.7424175757575758d },
+                { assert byGene['RP5-850E9.3'].coverage300.toDouble() == 0.23940333333333336d },
+
+                // SRXN1 and SCRT2: each gets the FULL coverage of its one
+                // shared interval (not half), same numbers the cov_report
+                // row itself reports, just reconstructed from percentages.
+                { assert byGene['SRXN1'].size == '199' },
+                { assert byGene['SRXN1'].totalcvg == '44315' },
+                { assert byGene['SRXN1'].count == '1' },
+                { assert byGene['SRXN1'].coverage200.toDouble() == 0.598d },
+                { assert byGene['SRXN1'].coverage300.toDouble() == 0.0905d },
+
+                { assert byGene['SCRT2'].size == '131' },
+                { assert byGene['SCRT2'].totalcvg == '38121' },
+                { assert byGene['SCRT2'].count == '1' },
+                { assert byGene['SCRT2'].average_coverage.toDouble() == 291.0d },
+                { assert byGene['SCRT2'].coverage200.toDouble() == 0.9618000000000001d },
+                { assert byGene['SCRT2'].coverage300.toDouble() == 0.46560000000000007d }
+            )
+        }
+    }
+
+    // When every interval is intergenic (no gene annotation at all), the
+    // script prints a message and exits 0 without writing a file -- this is
+    // NOT an error (a targeted region with no genes in it is a completely
+    // normal, expected shape of input), hence `optional: true` on the
+    // process's own report output.
+    test("no gene-annotated intervals at all -> succeeds with no report emitted") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'nogenes' ],
+                    file("\${projectDir}/modules/local/dragen_coverage_by_gene/tests/cov_report_no_genes.bed", checkIfExists: true),
+                    file("\${projectDir}/modules/local/dragen_coverage_by_gene/tests/read_cov_report_no_genes.bed", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.report == [] }
+            )
+        }
+    }
+}

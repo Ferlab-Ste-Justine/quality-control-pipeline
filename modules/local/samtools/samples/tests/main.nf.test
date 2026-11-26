@@ -1,0 +1,79 @@
+nextflow_process {
+
+    name "Test Process SAMTOOLS_SAMPLES"
+    script "../main.nf"
+    process "SAMTOOLS_SAMPLES"
+
+    tag "modules"
+    tag "modules_local"
+    tag "samtools_samples"
+
+    // test.bam: real NA19238 excerpt (same fixture as
+    // modules/local/picard/collectqualityyieldmetrics/tests), all 13 @RG
+    // lines carry SM:NA19238 -- the single-sample case BAM_ID_REPAIR expects
+    // on its "direct" (no rename needed) path.
+    test("real NA19238 fixture, single sample -> one line, sample name first token") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'NA19238' ],
+                    file("\${projectDir}/modules/local/samtools/samples/tests/test.bam", checkIfExists: true),
+                    file("\${projectDir}/modules/local/samtools/samples/tests/test.bam.bai", checkIfExists: true)
+                ]
+                input[1] = []
+                input[2] = []
+                """
+            }
+        }
+
+        then {
+            def lines = path(process.out.output[0][1]).text.readLines()
+
+            assertAll(
+                { assert process.success },
+                // BAM_ID_REPAIR relies on exactly this shape: one line, and
+                // its sample name is the first whitespace-separated token
+                // (`query_result.text.split().first()`).
+                { assert lines.size() == 1 },
+                { assert lines[0].split()[0] == 'NA19238' }
+            )
+        }
+    }
+
+    // multi_sample.bam: the same real reads, but one of the 13 @RG lines
+    // (HCMN2DSXX_L001) was reheadered to a different SM -- the two-sample
+    // case BAM_ID_REPAIR's own `assert query_result.countLines() < 2 :
+    // 'More than one sample in bam file'` is designed to catch. Confirms
+    // `samtools samples` itself (not just the calling workflow) genuinely
+    // reports one line per distinct sample, which is the invariant that
+    // assertion depends on.
+    test("real NA19238 fixture with one @RG relabelled to a second sample -> two lines") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'multi' ],
+                    file("\${projectDir}/modules/local/samtools/samples/tests/multi_sample.bam", checkIfExists: true),
+                    file("\${projectDir}/modules/local/samtools/samples/tests/multi_sample.bam.bai", checkIfExists: true)
+                ]
+                input[1] = []
+                input[2] = []
+                """
+            }
+        }
+
+        then {
+            def lines = path(process.out.output[0][1]).text.readLines()
+            def samples = lines.collect { it.split()[0] } as Set
+
+            assertAll(
+                { assert process.success },
+                { assert lines.size() == 2 },
+                { assert samples == ['NA19238', 'OTHER_SAMPLE'] as Set }
+            )
+        }
+    }
+}

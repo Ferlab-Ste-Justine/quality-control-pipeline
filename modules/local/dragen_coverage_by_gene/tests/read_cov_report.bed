@@ -1,0 +1,6 @@
+#chrom	start	end	name	gene_id	total_cvg	read1_cvg	read2_cvg
+chr20	648718	648917	['RP5-850E9.3', 'SRXN1']		617	310	307
+chr20	675470	675601	['RP5-850E9.3', 'SCRT2']		556	285	271
+chr20	44619838	44619847	['ADA']		206	104	102
+chr20	44620300	44620401	['ADA']		254	127	127
+chr20	1	100	[]		50	25	25

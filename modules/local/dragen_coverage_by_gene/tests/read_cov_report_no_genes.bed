@@ -1,0 +1,2 @@
+#chrom	start	end	name	gene_id	total_cvg	read1_cvg	read2_cvg
+chr20	1	100	[]		50	25	25

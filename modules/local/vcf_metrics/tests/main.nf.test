@@ -1,0 +1,108 @@
+nextflow_process {
+
+    name "Test Process VCF_METRICS"
+    script "../main.nf"
+    process "VCF_METRICS"
+
+    tag "modules"
+    tag "modules_local"
+    tag "vcf_metrics"
+
+    // Unlike the other local modules covered in this ticket, VCF_METRICS
+    // never touches a genomic file itself -- its input is already-aggregated
+    // integer counts (produced upstream in VCF_QC by bcftools view/stats line
+    // counts) plus a pre-formatted tstv_ratio string. So there is no genomic
+    // fixture to derive here: the counts below are plain representative
+    // integers chosen specifically to exercise this module's own logic --
+    // the three div-by-zero ternary guards, and Groovy's BigDecimal
+    // truncation behaviour on a non-terminating division (7/3), confirmed
+    // independently (outside Nextflow) to truncate to 10 decimal digits
+    // rather than throw ArithmeticException.
+    test("well-defined ratios, including a non-terminating division -> correct JSON, no crash") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'SAMPLE1' ],
+                    [
+                        count_dels: 100,
+                        count_ins: 150,
+                        count_snvs: 5000,
+                        count_het_snvs: 7,
+                        count_hom_snvs: 3,
+                        count_het_indels: 40,
+                        count_hom_indels: 20,
+                        tstv_ratio: "1.95"
+                    ]
+                ]
+                """
+            }
+        }
+
+        then {
+            def json = new groovy.json.JsonSlurper().parseText(path(process.out.json[0][1]).text)
+
+            assertAll(
+                { assert process.success },
+                { assert json.sample_id == 'SAMPLE1' },
+                { assert json.total_deletions == 100 },
+                { assert json.total_insertions == 150 },
+                { assert json.total_snvs == 5000 },
+                // 7/3 is non-terminating in decimal -- Groovy's BigDecimal
+                // division truncates to 10 decimal digits rather than
+                // throwing ArithmeticException; this must round-trip through
+                // the JSON write/parse unchanged.
+                { assert json.het_hom_ratio_snvs == 2.3333333333 },
+                { assert json.het_hom_ratio_indels == 2.0 },
+                { assert json.ins_dels_ratio == 1.5 },
+                // tstv_ratio is a pre-formatted string from upstream bcftools
+                // stats output, interpolated unquoted -- must appear as a
+                // bare JSON number, not a string, and not corrupt the JSON.
+                { assert json.ti_tv_ratio == 1.95 }
+            )
+        }
+    }
+
+    // count_hom_snvs == 0 and count_hom_indels == 0: a sample with only
+    // heterozygous calls of a given type (e.g. a single affected carrier)
+    // must not divide by zero -- the module's own guard
+    // (`metrics.count_hom_snvs > 0 ? ... : 0`) must produce 0, not a crash
+    // or Infinity/NaN in the JSON.
+    test("zero homozygous calls -> het/hom ratios guard to 0, not divide-by-zero") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'SAMPLE2' ],
+                    [
+                        count_dels: 0,
+                        count_ins: 0,
+                        count_snvs: 10,
+                        count_het_snvs: 10,
+                        count_hom_snvs: 0,
+                        count_het_indels: 5,
+                        count_hom_indels: 0,
+                        tstv_ratio: "2.10"
+                    ]
+                ]
+                """
+            }
+        }
+
+        then {
+            def json = new groovy.json.JsonSlurper().parseText(path(process.out.json[0][1]).text)
+
+            assertAll(
+                { assert process.success },
+                { assert json.het_hom_ratio_snvs == 0 },
+                { assert json.het_hom_ratio_indels == 0 },
+                // count_dels == 0 guards ins_dels_ratio to 0 too, even though
+                // count_ins is also 0 here (0/0 would otherwise be NaN).
+                { assert json.ins_dels_ratio == 0 },
+                { assert json.ti_tv_ratio == 2.10 }
+            )
+        }
+    }
+}

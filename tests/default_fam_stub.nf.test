@@ -1,0 +1,32 @@
+nextflow_pipeline {
+
+    name "Test pipeline"
+    script "../main.nf"
+    tag "pipeline"
+
+    // -stub counterpart of tests/default_fam.nf.test -- same per-family
+    // (cohort_mode=false) code path, confirming it also wires up and
+    // completes under -stub. See tests/default_stub.nf.test for why this
+    // exists; content is fake, so this only asserts success.
+    test("-profile test_fam -stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+                cohort_mode = false
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
+                { assert snapshot(
+                    removeFromYamlMap("$outputDir/pipeline_info/quality-control-pipeline_software_mqc_versions.yml", "Workflow")
+                ).match() }
+            )
+        }
+    }
+}

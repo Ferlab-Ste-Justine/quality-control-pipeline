@@ -1,0 +1,38 @@
+nextflow_pipeline {
+
+    name "Test pipeline"
+    script "../main.nf"
+    tag "pipeline"
+
+    // Fast smoke test: confirms the whole pipeline DAG wires up and runs to
+    // completion under -stub (no real tool execution, every process just
+    // touches/echoes its declared outputs). This exists because every local
+    // module has its own stub: block, but nothing previously exercised them
+    // together as a full pipeline -- a full -stub run used to fail partway
+    // through (see git history for the two module-level fixes this
+    // uncovered: a stub block parsed by downstream Groovy code that needed a
+    // real-shaped line, and a stub block that hardcoded its output filename
+    // instead of using the task's own prefix, causing a collision across
+    // samples). Content is fake, so this only asserts success, not output
+    // correctness -- that's what tests/default.nf.test and friends are for.
+    test("-profile test -stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
+                { assert snapshot(
+                    removeFromYamlMap("$outputDir/pipeline_info/quality-control-pipeline_software_mqc_versions.yml", "Workflow")
+                ).match() }
+            )
+        }
+    }
+}

@@ -1,0 +1,73 @@
+nextflow_workflow {
+
+    name "Test workflow FASTQ_QC"
+    script "../main.nf"
+    workflow "FASTQ_QC"
+    config "./nextflow.config"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "fastq_qc"
+
+    // test_R1/R2.fastq.gz: the first 2000 real paired-end reads from public
+    // sample NA19239 (data-test/fastq/NA19239.chr20XY_sub_R{1,2}.fastq.gz).
+    // This subworkflow has no aggregation logic of its own -- it just runs
+    // FASTQC and the vendored nf-core FASTQ_NGSCHECKMATE subworkflow (both
+    // already covered by their own upstream tests) and mixes every one of
+    // their outputs into a single ch_reports channel. What's actually worth
+    // testing here is the wiring itself: that every expected report type from
+    // both tools survives the mix and comes back tagged with the right meta,
+    // not dropped or silently swallowed.
+    test("real NA19239 paired-end excerpt -> both tools run, every report type comes through") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'NA19239', single_end: false ],
+                    [
+                        file("\${projectDir}/subworkflows/local/fastq_qc/tests/test_R1.fastq.gz", checkIfExists: true),
+                        file("\${projectDir}/subworkflows/local/fastq_qc/tests/test_R2.fastq.gz", checkIfExists: true)
+                    ]
+                ])
+                input[1] = Channel.of([
+                    [ id: 'fastq_checkmate' ],
+                    file("\${projectDir}/data-test/reference/NGScheckmate/SNP.pt", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            // Each report entry is [meta, path] or [meta, [path, path]] (e.g.
+            // FastQC emits one tuple per sample with both R1/R2 files as a
+            // list) -- flatten to a flat list of paths per meta.id for
+            // straightforward counting.
+            def by_sample = workflow.out.reports.groupBy { it[0].id }
+            def paths = { id -> by_sample[id].collect { it[1] }.flatten().collect { it.toString() } }
+
+            assertAll(
+                { assert workflow.success },
+                // FastQC/NGSCHECKMATE_FASTQ outputs are tagged with the
+                // sample's own meta (NA19239); NGSCHECKMATE_VAFNCM's
+                // cohort-level outputs are tagged with the snp_pt input's own
+                // meta ('fastq_checkmate') -- both metas must come through,
+                // nothing silently dropped or mis-tagged.
+                { assert by_sample.keySet() == ['NA19239', 'fastq_checkmate'] as Set },
+
+                // FastQC: one zip + one html per paired-end sample (FastQC
+                // reports per-read-file, so 2 of each for R1/R2).
+                { assert paths('NA19239').count { it.endsWith('_fastqc.zip') } == 2 },
+                { assert paths('NA19239').count { it.endsWith('_fastqc.html') } == 2 },
+                // FASTQ_NGSCHECKMATE_FASTQ: one .vaf for this one sample.
+                { assert paths('NA19239').count { it.endsWith('.vaf') } == 1 },
+
+                // NGSCHECKMATE_VAFNCM: cohort-level correlation/matched/all
+                // outputs, all three present.
+                { assert paths('fastq_checkmate').any { it.endsWith('_matched.txt') } },
+                { assert paths('fastq_checkmate').any { it.endsWith('_all.txt') } },
+                { assert paths('fastq_checkmate').any { it.endsWith('_corr_matrix.txt') } }
+            )
+        }
+    }
+}

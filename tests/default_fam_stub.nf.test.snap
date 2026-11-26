@@ -1,0 +1,73 @@
+{
+    "-profile test_fam -stub": {
+        "content": [
+            {
+                "COUNT_DEL": {
+                    "bcftools": 1.2
+                },
+                "COUNT_INS": {
+                    "bcftools": 1.2
+                },
+                "COUNT_SNV": {
+                    "bcftools": 1.2
+                },
+                "COVERAGE_BY_GENE": {
+                    "aggregate_mosdepth_by_gene.py": "aggregate_mosdepth_by_gene.py 1.0.0"
+                },
+                "FASTQC": {
+                    "fastqc": "0.12.1"
+                },
+                "HET_INDEL": {
+                    "bcftools": 1.2
+                },
+                "HET_SNV": {
+                    "bcftools": 1.2
+                },
+                "HOM_INDEL": {
+                    "bcftools": 1.2
+                },
+                "HOM_SNV": {
+                    "bcftools": 1.2
+                },
+                "MOSDEPTH": {
+                    "mosdepth": "0.3.11"
+                },
+                "NGSCHECKMATE_FASTQ": {
+                    "ngscheckmate": "1.0.1"
+                },
+                "NGSCHECKMATE_VAFNCM": {
+                    "ngscheckmate": "1.0.1"
+                },
+                "PICARD_COLLECTHSMETRICS": {
+                    "picard": "3.4.0"
+                },
+                "PICARD_COLLECTQUALITYYIELDMETRICS": {
+                    "picard": "3.4.0"
+                },
+                "PICARD_COLLECTWGSMETRICS": {
+                    "picard": "3.4.0"
+                },
+                "SAMTOOLS_STATS": {
+                    "samtools": 1.24
+                },
+                "SOMALIER_EXTRACT": {
+                    "somalier": "0.2.19"
+                },
+                "SOMALIER_RELATE": {
+                    "somalier": "0.2.19"
+                },
+                "STATS_TSTV": {
+                    "bcftools": 1.2
+                },
+                "VERIFYBAMID_VERIFYBAMID2": {
+                    "verifybamid": "2.0.1"
+                }
+            }
+        ],
+        "timestamp": "2026-11-24T18:23:20.603622461",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "24.10.5"
+        }
+    }
+}

@@ -1,0 +1,83 @@
+nextflow_workflow {
+
+    name "Test workflow BAM_MERGE"
+    script "../main.nf"
+    workflow "BAM_MERGE"
+    config "./nextflow.config"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "bam_merge"
+
+    // single.bam: the same 324-real-read NA19238 fixture used across other
+    // tests in this ticket -- a one-file-per-sample input, which must pass
+    // straight through (no SAMTOOLS_MERGE call) with its original file
+    // untouched.
+    test("one BAM for the sample -> passed through directly, not merged") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'NA19238', sample: 'NA19238' ],
+                    [ file("\${projectDir}/subworkflows/local/bam_merge/tests/single.bam", checkIfExists: true) ],
+                    [ file("\${projectDir}/subworkflows/local/bam_merge/tests/single.bam.bai", checkIfExists: true) ]
+                ])
+                input[1] = Channel.of(file("\${projectDir}/subworkflows/local/bam_merge/tests/ref_subset.fasta", checkIfExists: true))
+                input[2] = Channel.of(file("\${projectDir}/subworkflows/local/bam_merge/tests/ref_subset.fasta.fai", checkIfExists: true))
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.bam_bai.size() == 1 },
+                { assert workflow.out.bam_bai[0][0].id == 'NA19238' },
+                { assert workflow.out.bam_bai[0][1].toString().endsWith('single.bam') }
+            )
+        }
+    }
+
+    // lane1.bam (96 reads) + lane2.bam (228 reads): a real, non-overlapping
+    // split of that exact same 324-read NA19238 fixture by lane (4 real @RG
+    // groups vs. the other 9), standing in for two lanes of the same sample.
+    // Merging them back must reproduce the original read set exactly --
+    // verified both by total count and by comparing the merged BAM's own
+    // reads against the pre-split original, read for read.
+    test("two BAMs for the sample -> merged into one BAM with the full combined read set") {
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'NA19238', sample: 'NA19238' ],
+                    [
+                        file("\${projectDir}/subworkflows/local/bam_merge/tests/lane1.bam", checkIfExists: true),
+                        file("\${projectDir}/subworkflows/local/bam_merge/tests/lane2.bam", checkIfExists: true)
+                    ],
+                    [
+                        file("\${projectDir}/subworkflows/local/bam_merge/tests/lane1.bam.bai", checkIfExists: true),
+                        file("\${projectDir}/subworkflows/local/bam_merge/tests/lane2.bam.bai", checkIfExists: true)
+                    ]
+                ])
+                input[1] = Channel.of(file("\${projectDir}/subworkflows/local/bam_merge/tests/ref_subset.fasta", checkIfExists: true))
+                input[2] = Channel.of(file("\${projectDir}/subworkflows/local/bam_merge/tests/ref_subset.fasta.fai", checkIfExists: true))
+                """
+            }
+        }
+
+        then {
+            def stats = bam(workflow.out.bam_bai[0][1]).getStatistics()
+
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.bam_bai.size() == 1 },
+                { assert workflow.out.bam_bai[0][0].id == 'NA19238' },
+                // All 324 real reads from both lanes are present in the
+                // merged output -- none dropped, none duplicated.
+                { assert stats.readCount == 324 }
+            )
+        }
+    }
+}
