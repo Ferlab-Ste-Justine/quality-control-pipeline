@@ -5,6 +5,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v2.1.0 - [26/11/2026]
+
 ### `Added`
 
 [#46](https://github.com/Ferlab-Ste-Justine/quality-control-pipeline/pull/46) Reject a sample that provides both `BAM` and `CRAM` alignment inputs in the same run, with a clear error instead of a downstream MultiQC file-collision crash.
